@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  api:
+    build: .
+    command: bash runserver.sh
+    volumes:
+      - .:/code
+    ports:
+      - 8001:8001
+    depends_on:
+      - db
+    environment:
+      - DJANGO_SETTINGS_MODULE=django_tasks.settings.dev
+      - LC_ALL=C.UTF-8
+      - LANG=C.UTF-8
+      - LANGUAGE=C:en
+  db:
+    image: postgres:latest
+    environment:
+      - PGPORT=5433
+      - POSTGRES_PASSWORD=postgres
