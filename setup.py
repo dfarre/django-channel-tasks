@@ -8,7 +8,7 @@ setuptools.setup(
     version='0.1',
     packages=setuptools.find_packages(),
     install_requires=['Django', 'django-filter', 'djangorestframework', 'psycopg2-binary',
-                      'channels', 'daphne', 'tzdata'],
+                      'channels', 'channels-redis', 'daphne', 'tzdata'],
     extras_require={'dev': ['ipdb', 'ipython'], 'test': tests_require},
     tests_require=tests_require
 )

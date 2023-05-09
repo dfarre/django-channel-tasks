@@ -20,3 +20,5 @@ services:
     environment:
       - PGPORT=5433
       - POSTGRES_PASSWORD=postgres
+  redis:
+    image: redis:latest
