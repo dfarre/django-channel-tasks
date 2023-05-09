@@ -1,6 +1,6 @@
 import asyncio
 
 
-async def sleep(duration=1):
-    asyncio.sleep(duration)
+async def sleep_test(duration=1):
+    await asyncio.sleep(duration)
     return f"Slept for {duration} seconds"

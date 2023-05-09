@@ -1,9 +1,10 @@
 import asyncio
 import datetime
-import logging
 import threading
 
 from typing import Coroutine, Dict, Any
+
+from django_tasks import models
 
 
 class TaskRunnerUsageError(Exception):
@@ -18,7 +19,6 @@ class TaskRunner:
     running_tasks: Dict[str, Any]
     event_loop: asyncio.SelectorEventLoop
     worker_thread: threading.Thread
-    logger = logging.getLogger("task-runner")
 
     def __init__(self, *args, **kwargs):
         self.event_loop = asyncio.new_event_loop()
@@ -29,10 +29,12 @@ class TaskRunner:
         asyncio.set_event_loop(self.event_loop)
         self.event_loop.run_forever()
 
+    def run_coroutine(self, coroutine: Coroutine):
+        return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, self.event_loop))
+
     def on_completion(self, task: asyncio.Future):
         """The 'task done' callback, it populates the result and completion time."""
         task_info = self.get_task_info(task)
-        task_info['completed_at'] = datetime.datetime.utcnow()
 
         if task.cancelled():
             task_info['status'] = 'Cancelled'
@@ -43,14 +45,18 @@ class TaskRunner:
         else:
             task_info.update({'status': 'Success', 'output': task.result()})
 
-        self.logger.info('Done %s %s.', task, task_info)
+        self.run_coroutine(self.save_task_info(task))
 
     async def schedule(self, coroutine: Coroutine):
-        task = asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, self.event_loop))
-        self.running_tasks[id(task)] = {'started_at': datetime.datetime.utcnow()}
+        task = self.run_coroutine(coroutine)
+        self.running_tasks[id(task)] = {}
         task.add_done_callback(self.on_completion)
 
         return task
 
     def get_task_info(self, task: asyncio.Future):
         return self.running_tasks[id(task)]
+
+    async def save_task_info(self, task: asyncio.Future):
+        scheduled_task = await models.ScheduledTask.objects.aget(task_id=id(task))
+        await scheduled_task.on_completion(self.get_task_info(task))

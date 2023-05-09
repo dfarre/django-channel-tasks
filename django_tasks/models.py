@@ -21,23 +21,14 @@ class ScheduledTask(models.Model):
         """Creates a `ScheduledTask` instance to run the given function with given arguments.
         The resulting `task` (actually an `asyncio.Future`) should return a JSON-serializable object
         as result -task document- to be stored; `inputs` should be JSON-serializable as well,
-        and valid keyword arguments to `callable`
+        and valid keyword arguments to `callable`.
         """
         task = await runner.schedule(callable(**inputs))
         scheduled_task = cls(task_id=id(task), name=callable.__name__, inputs=inputs)
-        task.add_done_callback(scheduled_task.on_completion)
         await scheduled_task.asave()
         return scheduled_task
 
-    def on_completion(self, task):
-        """The 'task done' callback. It populates the result and completion time."""
+    async def on_completion(self, task_info):
         self.completed_at = datetime.datetime.now()
-
-        if task.cancelled():
-            self.document = {'status': 'Cancelled'}
-        elif task.exception():
-            self.document = {'status': 'Error',
-                             'exception-type': task.exception().__class__.__name__,
-                             'exception-text': str(task.exception())}
-        else:
-            self.document = {'status': 'Ok', 'output': task.result()}
+        self.document = task_info
+        await self.asave()
