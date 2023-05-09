@@ -20,7 +20,8 @@ class ScheduledTask(models.Model):
     async def schedule(cls, runner, callable, **inputs):
         """Creates a `ScheduledTask` instance to run the given function with given arguments.
         The resulting `task` (actually an `asyncio.Future`) should return a JSON-serializable object
-        as result -task document- to be stored; `inputs` should be JSON-serializable as well.
+        as result -task document- to be stored; `inputs` should be JSON-serializable as well,
+        and valid keyword arguments to `callable`
         """
         task = await runner.schedule(callable(**inputs))
         scheduled_task = cls(task_id=id(task), name=callable.__name__, inputs=inputs)
@@ -29,10 +30,7 @@ class ScheduledTask(models.Model):
         return scheduled_task
 
     def on_completion(self, task):
-        """The 'task done' callback.
-        It populates the result and completion time. Since this is called from an async context,
-        the instance is saved in a thread as required by Django.
-        """
+        """The 'task done' callback. It populates the result and completion time."""
         self.completed_at = datetime.datetime.now()
 
         if task.cancelled():

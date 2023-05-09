@@ -37,4 +37,6 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
     async def schedule_task(self, task_runner: TaskRunner):
         task_callable = clean_task_name(self.data['name'])
 
+        # TODO: validate inputs
+
         self.instance = await self.Meta.model.schedule(task_runner, task_callable, **self.data['inputs'])
