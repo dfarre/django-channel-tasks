@@ -9,6 +9,7 @@ class ScheduledTask(models.Model):
     task_id = models.PositiveBigIntegerField()
     scheduled_at = models.DateTimeField(default=datetime.datetime.now)
     completed_at = models.DateTimeField(null=True)
+    inputs = models.JSONField(null=False, default=dict)
     document = models.JSONField(null=True)
 
     def __str__(self):
@@ -16,13 +17,13 @@ class ScheduledTask(models.Model):
         return text if not self.completed_at else text + f'. Completed at {self.completed_at}'
 
     @classmethod
-    async def schedule(cls, runner, callable, *args, **kwargs):
+    async def schedule(cls, runner, callable, **inputs):
         """Creates a `ScheduledTask` instance to run the given function with given arguments.
         The resulting `task` (actually an `asyncio.Future`) should return a JSON-serializable object
-        as result -task document- to be stored.
+        as result -task document- to be stored; `inputs` should be JSON-serializable as well.
         """
-        task = await runner.schedule(callable(*args, **kwargs))
-        scheduled_task = cls(task_id=id(task), name=callable.__name__)
+        task = await runner.schedule(callable(**inputs))
+        scheduled_task = cls(task_id=id(task), name=callable.__name__, inputs=inputs)
         task.add_done_callback(scheduled_task.on_completion)
         await scheduled_task.asave()
         return scheduled_task
@@ -30,7 +31,8 @@ class ScheduledTask(models.Model):
     def on_completion(self, task):
         """The 'task done' callback.
         It populates the result and completion time. Since this is called from an async context,
-        the instance is saved in a thread as required by Django."""
+        the instance is saved in a thread as required by Django.
+        """
         self.completed_at = datetime.datetime.now()
 
         if task.cancelled():

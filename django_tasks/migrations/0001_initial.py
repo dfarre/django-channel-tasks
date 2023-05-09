@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
                 ('scheduled_at', models.DateTimeField(default=datetime.datetime.utcnow)),
                 ('completed_at', models.DateTimeField(null=True)),
                 ('document', models.JSONField(null=True)),
+                ('inputs', models.JSONField(null=False, default=dict)),
             ],
         ),
     ]
