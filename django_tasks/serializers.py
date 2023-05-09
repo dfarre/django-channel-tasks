@@ -1,28 +1,8 @@
 from asgiref.sync import async_to_sync
-import inspect
-import importlib
-from typing import Callable
+
 from rest_framework import exceptions, serializers
 
-from django.conf import settings
-
-from django_tasks import models
-
-
-def clean_task_name(name: str) -> Callable:
-    method_name = name.strip()
-    module_names = settings.DJANGO_TASKS.get('coroutine_modules', [])
-
-    for module_name in module_names:
-        try:
-            module = importlib.import_module(module_name)
-        except ImportError:
-            pass
-        else:
-            callable = getattr(module, method_name, None)
-
-            if inspect.iscoroutinefunction(callable):
-                return callable
+from django_tasks import models, task_inspector
 
 
 class ScheduledTaskSerializer(serializers.ModelSerializer):
@@ -44,17 +24,19 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
         return instance
 
     def validate(self, attrs):
-        self.context['task_callable'] = clean_task_name(attrs['name'])
+        coroutine_info = task_inspector.TaskCoroInfo(attrs['name'])
+        self.context['task_callable'] = coroutine_info.coroutine
 
         if self.context['task_callable'] is None:
             raise exceptions.ValidationError({'name': "No task coroutine found."})
 
-        signature = inspect.signature(self.context['task_callable'])
-        unknown_params = set(attrs['inputs']) - set(signature.parameters)
+        params = coroutine_info.parameters
+        unknown_params = set(attrs['inputs']) - set(params)
 
         if unknown_params:
-            raise exceptions.ValidationError({'inputs': f'Unknown parameters {unknown_params}'})
+            raise exceptions.ValidationError({'inputs': f'Unknown parameters {unknown_params}.'})
 
+        # TODO: Check required parameters
         return attrs
 
     def create(self, validated_data):
