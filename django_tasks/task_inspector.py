@@ -27,7 +27,7 @@ class TaskCoroInfo:
                     return callable
 
     @property
-    def parameters(self, name: str):
+    def parameters(self):
         coroutine = self.coroutine
 
         if coroutine is None:
