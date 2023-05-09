@@ -28,6 +28,10 @@ class TaskRunner:
         asyncio.set_event_loop(self.event_loop)
         self.event_loop.run_forever()
 
+    def ensure_alive(self):
+        if not self.worker_thread.is_alive():
+            self.worker_thread.start()
+
     def run_coroutine(self, coroutine: Coroutine):
         return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, self.event_loop))
 

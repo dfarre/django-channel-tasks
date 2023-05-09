@@ -92,5 +92,5 @@ REST_FRAMEWORK = {
 }
 
 DJANGO_TASKS = {
-    'coroutines_module': 'django_tasks.tasks',
+    'coroutine_modules': ['django_tasks.tasks'],
 }
