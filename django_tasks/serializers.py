@@ -1,4 +1,4 @@
-
+import inspect
 from typing import Callable
 from rest_framework import exceptions, serializers
 
@@ -10,8 +10,8 @@ def clean_task_name(name: str) -> Callable:
     reduced_name = name.strip()
     callable = getattr(tasks, reduced_name, None)
 
-    if callable is None:
-        raise exceptions.ValidationError(f"No task function '{reduced_name}'")
+    if not inspect.iscoroutinefunction(callable):
+        raise exceptions.ValidationError(f"No task coroutine '{reduced_name}'.")
 
     return callable
 
