@@ -30,13 +30,23 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
         if self.context['task_callable'] is None:
             raise exceptions.ValidationError({'name': "No task coroutine found."})
 
-        params = coroutine_info.parameters
-        unknown_params = set(attrs['inputs']) - set(params)
+        input_keys = set(attrs['inputs'])
+        required_keys, optional_keys = coroutine_info.parameter_keys
+        errors = []
 
-        if unknown_params:
-            raise exceptions.ValidationError({'inputs': f'Unknown parameters {unknown_params}.'})
+        missing_keys = required_keys - input_keys
 
-        # TODO: Check required parameters
+        if missing_keys:
+            errors.append(f'Missing required parameters {missing_keys}.')
+
+        unknown_keys = input_keys - required_keys - optional_keys
+
+        if unknown_keys:
+            errors.append(f'Unknown parameters {unknown_keys}.')
+
+        if errors:
+            raise exceptions.ValidationError({'inputs': errors})
+
         return attrs
 
     def create(self, validated_data):

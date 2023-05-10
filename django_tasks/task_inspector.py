@@ -27,12 +27,14 @@ class TaskCoroInfo:
                     return callable
 
     @property
-    def parameters(self):
+    def parameter_keys(self):
         coroutine = self.coroutine
 
         if coroutine is None:
             return
 
         params = inspect.signature(coroutine).parameters
+        required_keys = set(k for k, v in params.items() if v.default == inspect._empty)
+        optional_keys = set(k for k, v in params.items() if v.default != inspect._empty)
 
-        return params
+        return required_keys, optional_keys

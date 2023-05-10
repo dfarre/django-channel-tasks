@@ -1,7 +1,7 @@
 import asyncio
 
 
-async def sleep_test(duration=1, raise_error=False):
+async def sleep_test(duration, raise_error=False):
     await asyncio.sleep(duration)
 
     if raise_error:
