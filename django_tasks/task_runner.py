@@ -38,24 +38,28 @@ class TaskRunner:
         return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, self.event_loop))
 
     def on_completion(self, task: asyncio.Future):
-        """
-        The 'task done' callback, it populates the result and completion time in DB,
-        and it broadcasts a task-done websocket message.
-        """
+        """The 'task done' callback."""
         self.update_task_info(task)
-        self.run_coroutine(self.save_task_info(task))
-        self.broadcast_task_done(task)
+        self.run_coroutine(self.on_completion_coro(task))
+
+    async def on_completion_coro(self, task: asyncio.Future):
+        """
+        The task-done coroutine. It populates the result and completion time in DB,
+        then it broadcasts a task-done websocket message.
+        """
+        await self.save_task_info(task)
+        await self.broadcast_task(task, 'task.done')
 
     async def save_task_info(self, task: asyncio.Future):
         scheduled_task = await models.ScheduledTask.objects.aget(task_id=id(task))
         await scheduled_task.on_completion(self.get_task_info(task))
 
-    def broadcast_task_done(self, task: asyncio.Future):
+    async def broadcast_task(self, task: asyncio.Future, message_type: str):
         channel_layer = get_channel_layer()
-        self.run_coroutine(channel_layer.group_send("tasks", {
-            "type": "task.done",
+        await channel_layer.group_send("tasks", {
+            "type": message_type,
             "content": self.get_task_info(task),
-        }))
+        })
 
     def update_task_info(self, task: asyncio.Future):
         task_info = self.get_task_info(task)
@@ -71,8 +75,9 @@ class TaskRunner:
 
     async def schedule(self, coroutine: Coroutine):
         task = self.run_coroutine(coroutine)
-        self.running_tasks[id(task)] = {}
+        self.running_tasks[id(task)] = {'status': 'Started', 'memory-id': id(task)}
         task.add_done_callback(self.on_completion)
+        self.run_coroutine(self.broadcast_task(task, 'task.started'))
 
         return task
 
