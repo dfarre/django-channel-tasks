@@ -1,11 +1,9 @@
 import asyncio
 import threading
 
-from typing import Coroutine, Dict, Any
+from typing import Coroutine
 
 from channels.layers import get_channel_layer
-
-from django_tasks import models
 
 
 class TaskRunnerUsageError(Exception):
@@ -14,12 +12,18 @@ class TaskRunnerUsageError(Exception):
 
 class TaskRunner:
     """
-    Class in charge of in-memory handling of `asyncio` background tasks,
-    with a worker thread per instance.
+    Class in charge of in-memory handling of `asyncio` background tasks, with a worker thread per instance.
     """
-    running_tasks: Dict[str, Any]
-    event_loop: asyncio.SelectorEventLoop
-    worker_thread: threading.Thread
+    _instances = []
+
+    @classmethod
+    def get(cls):
+        if not cls._instances:
+            cls._instances.append(cls())
+
+        cls._instances[-1].ensure_alive()
+
+        return cls._instances[-1]
 
     def __init__(self, *args, **kwargs):
         self.event_loop = asyncio.new_event_loop()
@@ -37,29 +41,15 @@ class TaskRunner:
     def run_coroutine(self, coroutine: Coroutine):
         return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, self.event_loop))
 
-    def on_completion(self, task: asyncio.Future):
-        """The 'task done' callback."""
-        self.update_task_info(task)
-        self.run_coroutine(self.on_completion_coro(task))
+    def run_on_task_info(self, async_callback, task: asyncio.Future):
+        """Runs the `async_callback` taking the task info as the argument."""
+        self.run_coroutine(async_callback(self.get_task_info(task)))
 
-    async def on_completion_coro(self, task: asyncio.Future):
-        """
-        The task-done coroutine. It populates the result and completion time in DB,
-        then it broadcasts a task-done websocket message.
-        """
-        await self.save_task_info(task)
-        await self.broadcast_task(task, 'task.done')
-
-    async def save_task_info(self, task: asyncio.Future):
-        scheduled_task = await models.ScheduledTask.objects.aget(task_id=id(task))
-        await scheduled_task.on_completion(self.get_task_info(task))
-
-    async def broadcast_task(self, task: asyncio.Future, message_type: str):
+    async def broadcast_task(self, task: asyncio.Future):
+        task_info = self.get_task_info(task)
+        message_type = f"task.{task_info['status'].lower()}"
         channel_layer = get_channel_layer()
-        await channel_layer.group_send("tasks", {
-            "type": message_type,
-            "content": self.get_task_info(task),
-        })
+        await channel_layer.group_send("tasks", {'type': message_type, 'content': task_info})
 
     def update_task_info(self, task: asyncio.Future):
         task_info = self.get_task_info(task)
@@ -73,11 +63,16 @@ class TaskRunner:
         else:
             task_info.update({'status': 'Success', 'output': task.result()})
 
-    async def schedule(self, coroutine: Coroutine):
+    async def schedule(self, coroutine: Coroutine, *async_callbacks):
         task = self.run_coroutine(coroutine)
         self.running_tasks[id(task)] = {'status': 'Started', 'memory-id': id(task)}
-        task.add_done_callback(self.on_completion)
-        self.run_coroutine(self.broadcast_task(task, 'task.started'))
+        task.add_done_callback(self.update_task_info)
+        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(tk)))
+
+        for callback in async_callbacks:
+            task.add_done_callback(lambda tk: self.run_on_task_info(callback, tk))
+
+        await self.broadcast_task(task)
 
         return task
 

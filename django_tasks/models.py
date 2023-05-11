@@ -23,8 +23,9 @@ class ScheduledTask(models.Model):
         as result -task document- to be stored; `inputs` should be JSON-serializable as well,
         and valid keyword arguments to `callable`.
         """
-        task = await runner.schedule(callable(**inputs))
-        scheduled_task = cls(task_id=id(task), name=callable.__name__, inputs=inputs)
+        scheduled_task = cls(name=callable.__name__, inputs=inputs)
+        task = await runner.schedule(callable(**inputs), scheduled_task.on_completion)
+        scheduled_task.task_id = id(task)
         await scheduled_task.asave()
         return scheduled_task
 

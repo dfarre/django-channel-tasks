@@ -2,7 +2,7 @@ from asgiref.sync import async_to_sync
 
 from rest_framework import exceptions, serializers
 
-from django_tasks import models, task_inspector
+from django_tasks import models, task_inspector, task_runner
 
 
 class ScheduledTaskSerializer(serializers.ModelSerializer):
@@ -11,17 +11,16 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('scheduled_at', 'completed_at', 'document', 'task_id')
 
-    @property
-    def task_runner(self):
-        runner = self.context['view'].task_runner
-        runner.ensure_alive()
-        return runner
-
     async def schedule_task(self, validated_data):
         instance = await self.Meta.model.schedule(
-            self.task_runner, self.context['task_callable'], **validated_data['inputs']
+            task_runner.TaskRunner.get(), self.context['task_callable'], **validated_data['inputs']
         )
         return instance
+
+    async def schedule(self):
+        runner = task_runner.TaskRunner.get()
+        task = await runner.schedule(self.context['task_callable'](**self.data['inputs']))
+        return task
 
     def validate(self, attrs):
         coroutine_info = task_inspector.TaskCoroInfo(attrs['name'])

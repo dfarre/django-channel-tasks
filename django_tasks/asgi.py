@@ -8,6 +8,6 @@ from django_tasks.consumers import TaskStatusConsumer
 application = ProtocolTypeRouter(
     {
         "http": get_asgi_application(),
-        "websocket": URLRouter([path("tasks/status/", TaskStatusConsumer.as_asgi())]),
+        "websocket": URLRouter([path("tasks/", TaskStatusConsumer.as_asgi())]),
     }
 )
