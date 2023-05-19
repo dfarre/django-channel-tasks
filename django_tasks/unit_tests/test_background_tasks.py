@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from tasks.task_runner import TaskRunner
+from django_tasks.task_runner import TaskRunner
 
 
 class TestBackgroundTasks:

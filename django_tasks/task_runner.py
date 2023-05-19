@@ -1,7 +1,7 @@
 import asyncio
 import threading
 
-from typing import Coroutine
+from typing import Any, Coroutine, Dict, Tuple
 
 from channels.layers import get_channel_layer
 
@@ -25,10 +25,10 @@ class TaskRunner:
 
         return cls._instances[-1]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.event_loop = asyncio.new_event_loop()
         self.worker_thread = threading.Thread(target=self.run_loop_forever, daemon=True)
-        self.running_tasks = {}
+        self.running_tasks: Dict[int, Dict[str, Any]] = {}
 
     def run_loop_forever(self):
         asyncio.set_event_loop(self.event_loop)
@@ -38,12 +38,13 @@ class TaskRunner:
         if not self.worker_thread.is_alive():
             self.worker_thread.start()
 
-    def run_coroutine(self, coroutine: Coroutine):
+    def run_coroutine(self, coroutine: Coroutine) -> asyncio.Future:
+        """Runs the given `coroutine` thread-safe in the loop."""
         return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, self.event_loop))
 
-    def run_on_task_info(self, async_callback, task: asyncio.Future):
+    def run_on_task_info(self, async_callback: Coroutine, task: asyncio.Future) -> asyncio.Future:
         """Runs the `async_callback` taking the task info as the argument."""
-        self.run_coroutine(async_callback(self.get_task_info(task)))
+        return self.run_coroutine(async_callback(self.get_task_info(task)))
 
     async def broadcast_task(self, task: asyncio.Future):
         task_info = self.get_task_info(task)
@@ -63,7 +64,7 @@ class TaskRunner:
         else:
             task_info.update({'status': 'Success', 'output': task.result()})
 
-    async def schedule(self, coroutine: Coroutine, *async_callbacks):
+    async def schedule(self, coroutine: Coroutine, *async_callbacks: Tuple[Coroutine, ...]) -> asyncio.Future:
         task = self.run_coroutine(coroutine)
         self.running_tasks[id(task)] = {'status': 'Started', 'memory-id': id(task)}
         task.add_done_callback(self.update_task_info)
@@ -76,5 +77,5 @@ class TaskRunner:
 
         return task
 
-    def get_task_info(self, task: asyncio.Future):
+    def get_task_info(self, task: asyncio.Future) -> Dict[str, Any]:
         return self.running_tasks[id(task)]

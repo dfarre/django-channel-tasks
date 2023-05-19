@@ -8,6 +8,7 @@ build
 
 .pytest_cache
 .coverage
+.mypy_cache
 .tox
 
 db.sqlite3

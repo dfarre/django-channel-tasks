@@ -25,6 +25,7 @@ class TaskCoroInfo:
 
                 if inspect.iscoroutinefunction(callable):
                     return callable
+        return None
 
     @property
     def parameter_keys(self):
