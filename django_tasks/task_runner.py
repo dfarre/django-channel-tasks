@@ -1,7 +1,7 @@
 import asyncio
 import threading
 
-from typing import Any, Coroutine, Dict, Tuple
+from typing import Any, Callable, Coroutine, Dict
 
 from channels.layers import get_channel_layer
 
@@ -42,7 +42,9 @@ class TaskRunner:
         """Runs the given `coroutine` thread-safe in the loop."""
         return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, self.event_loop))
 
-    def run_on_task_info(self, async_callback: Coroutine, task: asyncio.Future) -> asyncio.Future:
+    def run_on_task_info(self,
+                         async_callback: Callable[[Dict[str, Any]], Coroutine],
+                         task: asyncio.Future) -> asyncio.Future:
         """Runs the `async_callback` taking the task info as the argument."""
         return self.run_coroutine(async_callback(self.get_task_info(task)))
 
@@ -64,7 +66,9 @@ class TaskRunner:
         else:
             task_info.update({'status': 'Success', 'output': task.result()})
 
-    async def schedule(self, coroutine: Coroutine, *async_callbacks: Tuple[Coroutine, ...]) -> asyncio.Future:
+    async def schedule(self,
+                       coroutine: Coroutine,
+                       *async_callbacks: Callable[[Dict[str, Any]], Coroutine]) -> asyncio.Future:
         task = self.run_coroutine(coroutine)
         self.running_tasks[id(task)] = {'status': 'Started', 'memory-id': id(task)}
         task.add_done_callback(self.update_task_info)
