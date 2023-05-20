@@ -1,16 +1,16 @@
 import datetime
 
-from django.db import models
+from django.db.models import Model, CharField, PositiveBigIntegerField, DateTimeField, JSONField
 
 
-class ScheduledTask(models.Model):
+class ScheduledTask(Model):
     """Information of each execution."""
-    name = models.CharField(max_length=80)
-    task_id = models.PositiveBigIntegerField()
-    scheduled_at = models.DateTimeField(default=datetime.datetime.now)
-    completed_at = models.DateTimeField(null=True)
-    inputs = models.JSONField(null=False, default=dict)
-    document = models.JSONField(null=True)
+    name: CharField = CharField(max_length=80)
+    task_id: PositiveBigIntegerField = PositiveBigIntegerField()
+    scheduled_at: DateTimeField = DateTimeField(default=datetime.datetime.now)
+    completed_at: DateTimeField = DateTimeField(null=True)
+    inputs: JSONField = JSONField(null=False, default=dict)
+    document: JSONField = JSONField(null=True)
 
     def __str__(self):
         text = f'Task {self.task_id}'

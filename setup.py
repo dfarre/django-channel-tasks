@@ -1,7 +1,7 @@
 import setuptools
 
 
-tests_require = ['pytest', 'pytest-cov', 'pytest-django', 'bdd-coder==2.2.3.dev1']
+tests_require = ['pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio', 'bdd-coder==2.2.3.dev1']
 
 setuptools.setup(
     name='mastermind',

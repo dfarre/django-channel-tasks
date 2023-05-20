@@ -18,8 +18,11 @@ class TaskRunner:
 
     @classmethod
     def get(cls):
+        """
+        Returns the last instance created, a new one if necessary, and ensures that its worker thread is alive.
+        """
         if not cls._instances:
-            cls._instances.append(cls())
+            cls()
 
         cls._instances[-1].ensure_alive()
 
@@ -29,12 +32,14 @@ class TaskRunner:
         self.event_loop = asyncio.new_event_loop()
         self.worker_thread = threading.Thread(target=self.run_loop_forever, daemon=True)
         self.running_tasks: Dict[int, Dict[str, Any]] = {}
+        self.__class__._instances.append(self)
 
     def run_loop_forever(self):
         asyncio.set_event_loop(self.event_loop)
         self.event_loop.run_forever()
 
     def ensure_alive(self):
+        """Ensures the worker thread is alive."""
         if not self.worker_thread.is_alive():
             self.worker_thread.start()
 
@@ -49,12 +54,16 @@ class TaskRunner:
         return self.run_coroutine(async_callback(self.get_task_info(task)))
 
     async def broadcast_task(self, task: asyncio.Future):
+        """
+        Sends the task info to the 'tasks' group of consumers, specifying a message type per task status.
+        """
         task_info = self.get_task_info(task)
         message_type = f"task.{task_info['status'].lower()}"
         channel_layer = get_channel_layer()
         await channel_layer.group_send("tasks", {'type': message_type, 'content': task_info})
 
     def update_task_info(self, task: asyncio.Future):
+        """Updates the corresponding task info with the current task status."""
         task_info = self.get_task_info(task)
 
         if task.cancelled():
@@ -82,4 +91,5 @@ class TaskRunner:
         return task
 
     def get_task_info(self, task: asyncio.Future) -> Dict[str, Any]:
+        """Retrieves the corresponding task info."""
         return self.running_tasks[id(task)]

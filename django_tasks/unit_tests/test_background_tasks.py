@@ -17,8 +17,7 @@ class TestBackgroundTasks:
 
     @pytest.mark.asyncio
     async def test_parallel_tasks(self):
-        runner = TaskRunner()
-        runner.worker_thread.start()
+        runner = TaskRunner.get()
         durations = [0.995, 0.95, 0.94, 0.8]
         failed_task, cancelled_task, *ok_tasks = await asyncio.gather(
             runner.schedule(self.fake_task_coro_raise(0.001)),
