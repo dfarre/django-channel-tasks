@@ -1,0 +1,12 @@
+Title: A Few Tasks Run
+
+Story: |-
+  Several tasks may be scheduled to run concurrently, and their states are broadcasted.
+
+Scenarios:
+  Concurrent error and cancellation:
+    - When a `failed`, a `cancelled` and some `OK` tasks are scheduled
+    - Then corresponding $(started) messages are broadcasted
+    - And completion times do not accumulate
+    - And the different task statuses are correctly stored
+    - And corresponding $(done) messages are broadcasted
