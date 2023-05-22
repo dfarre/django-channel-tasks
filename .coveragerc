@@ -6,6 +6,4 @@ exclude_lines =
     raise NotImplementedError
     raise AssertionError
     NO COVER
-fail_under = 92
-omit =
-  django_tasks/asgi.py
+fail_under = 100

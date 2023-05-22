@@ -73,6 +73,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "sesame.backends.ModelBackend",
+]
+
+SESAME_MAX_AGE = 86400*5
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Madrid'
@@ -88,6 +95,12 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
 }
 
