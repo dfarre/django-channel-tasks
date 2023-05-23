@@ -4,7 +4,7 @@ import setuptools
 tests_require = ['pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio', 'bdd-coder==2.2.3.dev2']
 
 setuptools.setup(
-    name='mastermind',
+    name='django-tasks',
     version='0.1',
     packages=setuptools.find_packages(),
     install_requires=[

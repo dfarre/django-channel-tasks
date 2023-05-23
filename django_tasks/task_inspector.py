@@ -28,7 +28,7 @@ class TaskCoroInfo:
         return None
 
     @property
-    def parameter_keys(self):
+    def parameter_keys(self) -> Optional[tuple[set[str], set[str]]]:
         coroutine = self.coroutine
 
         if coroutine is None:
