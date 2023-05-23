@@ -41,10 +41,14 @@ class SerializerForm(forms.ModelForm):
         pass
 
 
-def make_serializer_modeladmin(serializer_class: Type[serializers.ModelSerializer]):
-    """Type factory function that initializes a `ModelAdmin` subclass from the serializer type."""
-    class SerializerModelAdmin(admin.ModelAdmin):
-        form = SerializerForm.construct_modelform(serializer_class)
-        readonly_fields = serializer_class.Meta.read_only_fields
+class MakeSerializerModeladmin:
+    """Decorator that initializes a `ModelAdmin` subclass with a given serializer type."""
 
-    return SerializerModelAdmin
+    def __init__(self, serializer_class: Type[serializers.ModelSerializer]):
+        self.serializer_class = serializer_class
+
+    def __call__(self, modeladmin: Type[admin.ModelAdmin]):
+        modeladmin.form = SerializerForm.construct_modelform(self.serializer_class)
+        modeladmin.readonly_fields = self.serializer_class.Meta.read_only_fields
+
+        return modeladmin

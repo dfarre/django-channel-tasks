@@ -1,5 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
+from django_tasks import task_runner
 from django_tasks.serializers import ScheduledTaskSerializer
 
 
@@ -26,4 +27,5 @@ class TaskStatusConsumer(AsyncJsonWebsocketConsumer):
         """Pocesses task schedule requests."""
         serializer = ScheduledTaskSerializer(data=content)
         serializer.is_valid(raise_exception=True)
-        await serializer.schedule()
+        runner = task_runner.TaskRunner.get()
+        await runner.schedule(serializer.callable(**serializer.data['inputs']))

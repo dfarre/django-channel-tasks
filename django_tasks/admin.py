@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from django_tasks import models
-from django_tasks.generic_forms import make_serializer_modeladmin
+from django_tasks.generic_forms import MakeSerializerModeladmin
 from django_tasks.serializers import ScheduledTaskSerializer
 
 
@@ -15,7 +15,8 @@ site = AdminSite()
 
 
 @admin.register(models.ScheduledTask, site=site)
-class ScheduledTaskModelAdmin(make_serializer_modeladmin(ScheduledTaskSerializer)):
+@MakeSerializerModeladmin(ScheduledTaskSerializer)
+class ScheduledTaskModelAdmin(admin.ModelAdmin):
     list_display = ('name', 'inputs', *ScheduledTaskSerializer.Meta.read_only_fields)
 
     def has_change_permission(self, request, obj=None):
