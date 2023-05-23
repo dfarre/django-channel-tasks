@@ -1,3 +1,5 @@
+from asgiref.sync import async_to_sync
+
 from typing import Type
 
 from django import forms
@@ -5,6 +7,8 @@ from django.contrib import admin
 from django.core import exceptions
 
 from rest_framework import serializers
+
+from django_tasks import task_runner
 
 
 class SerializerForm(forms.ModelForm):
@@ -52,3 +56,13 @@ class MakeSerializerModeladmin:
         modeladmin.readonly_fields = self.serializer_class.Meta.read_only_fields
 
         return modeladmin
+
+
+def task_admin_action(method_name: str, **kwargs):
+    async def action_callable(modeladmin, request, queryset):
+        runner = task_runner.TaskRunner.get()
+
+        async for instance in queryset.all():
+            await runner.schedule(getattr(instance, method_name)())
+
+    return admin.action(**kwargs)(async_to_sync(action_callable))

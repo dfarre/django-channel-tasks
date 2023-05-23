@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from django_tasks import models
-from django_tasks.generic_forms import MakeSerializerModeladmin
+from django_tasks.admin_tools import MakeSerializerModeladmin
 from django_tasks.serializers import ScheduledTaskSerializer
 
 
