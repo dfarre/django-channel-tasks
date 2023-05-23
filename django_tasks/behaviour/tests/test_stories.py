@@ -1,5 +1,4 @@
 import asyncio
-import collections
 import time
 
 from . import base

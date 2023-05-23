@@ -2,7 +2,8 @@ import asyncio
 import collections
 import importlib
 
-import pytest, pytest_asyncio
+import pytest
+import pytest_asyncio
 
 from channels.testing import WebsocketCommunicator
 

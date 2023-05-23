@@ -4,7 +4,6 @@ from typing import Callable
 
 from django.db.models import Model, CharField, PositiveBigIntegerField, DateTimeField, JSONField
 
-
 from django_tasks.task_runner import TaskRunner
 
 
