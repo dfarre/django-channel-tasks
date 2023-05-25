@@ -1,5 +1,7 @@
 import asyncio
+import logging
 import threading
+import traceback
 
 from typing import Any, Callable, Coroutine
 
@@ -30,13 +32,11 @@ class TaskRunner:
 
     def __init__(self):
         self.event_loop = asyncio.new_event_loop()
-        self.worker_thread = threading.Thread(target=self.run_loop_forever, daemon=True)
+        asyncio.set_event_loop(self.event_loop)
+        self.worker_thread = threading.Thread(target=self.event_loop.run_forever, daemon=True)
         self.running_tasks: dict[int, dict[str, Any]] = {}
         self.__class__._instances.append(self)
-
-    def run_loop_forever(self):
-        asyncio.set_event_loop(self.event_loop)
-        self.event_loop.run_forever()
+        logging.getLogger('django').info('New task runner: %s.', self.event_loop)
 
     def ensure_alive(self):
         """Ensures the worker thread is alive."""
@@ -63,15 +63,15 @@ class TaskRunner:
         await channel_layer.group_send("tasks", {'type': message_type, 'content': task_info})
 
     def update_task_info(self, task: asyncio.Future):
-        """Updates the corresponding task info with the current task status."""
-        task_info = self.get_task_info(task)
+        """Updates the corresponding task info with the current task status, when done"""
+        task_info = self.get_task(task)
 
         if task.cancelled():
             task_info['status'] = 'Cancelled'
         elif task.exception():
             task_info.update({'status': 'Error',
                               'exception-type': task.exception().__class__.__name__,
-                              'exception-text': str(task.exception())})
+                              'traceback': traceback.format_exception(task.exception())})
         else:
             task_info.update({'status': 'Success', 'output': task.result()})
 
@@ -79,7 +79,7 @@ class TaskRunner:
                        coroutine: Coroutine,
                        *async_callbacks: Callable[[dict[str, Any]], Coroutine]) -> asyncio.Future:
         task = self.run_coroutine(coroutine)
-        self.running_tasks[id(task)] = {'status': 'Started', 'memory-id': id(task)}
+        self.running_tasks[id(task)] = {'status': 'Started', 'task': task}
         task.add_done_callback(self.update_task_info)
         task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(tk)))
 
@@ -91,5 +91,9 @@ class TaskRunner:
         return task
 
     def get_task_info(self, task: asyncio.Future) -> dict[str, Any]:
-        """Retrieves the corresponding task info."""
+        """Retrieves the corresponding task info, and returns a copy without the task object."""
+        return {k: v for k, v in self.running_tasks[id(task)].items() if k != 'task'}
+
+    def get_task(self, task: asyncio.Future) -> dict[str, Any]:
+        """Returns the corresponding task info."""
         return self.running_tasks[id(task)]
