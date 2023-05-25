@@ -56,3 +56,5 @@ class ScheduledTask(Model):
         self.completed_at = datetime.datetime.now()
         self.document = task_info
         await self.asave()
+        del TaskRunner.get().running_tasks[self.task_id]
+
