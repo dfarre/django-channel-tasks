@@ -8,8 +8,8 @@ setuptools.setup(
     version='0.1',
     packages=setuptools.find_packages(),
     install_requires=[
-        'Django', 'django-filter', 'django-sesame', 'djangorestframework', 'psycopg2-binary',
-        'channels', 'channels-redis', 'daphne', 'tzdata'],
+        'Django', 'django-filter', 'django-sesame', 'django-extensions', 'djangorestframework',
+        'channels', 'channels-redis', 'daphne', 'tzdata', 'psycopg2-binary'],
     extras_require={'dev': ['ipdb', 'ipython'],
                     'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]'],
                     'test': tests_require},

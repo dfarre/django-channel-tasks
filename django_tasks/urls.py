@@ -11,7 +11,7 @@ router = routers.SimpleRouter()
 router.register('tasks', views.TaskViewSet)
 
 urlpatterns = [
-    urls.path('', urls.include(router.urls)),
+    urls.path('drf/', urls.include('rest_framework.urls')),
+    urls.path('api/', urls.include(router.urls)),
     urls.path('', admin.site.urls),
-    urls.path('', urls.include('rest_framework.urls')),
 ]

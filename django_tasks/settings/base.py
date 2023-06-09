@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django_tasks.apps.TasksConfig',
     'rest_framework',
+    'django_extensions',
     'django_filters',
 ]
 
