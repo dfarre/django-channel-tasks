@@ -108,7 +108,9 @@ class AsyncAdminInstanceAction:
         return task
 
     def __call__(self, coro_callable: Callable) -> Callable:
+        @admin.action(**self.kwargs)
         @functools.wraps(coro_callable)
+        @async_to_sync
         async def action_coro_callable(modeladmin, request, queryset):
             tasks = []
             async for instance in queryset.all():
@@ -118,17 +120,4 @@ class AsyncAdminInstanceAction:
                 tasks.append(task)
             return tasks
 
-        @admin.action(**self.kwargs)
-        @functools.wraps(action_coro_callable)
-        def action_callable(modeladmin, request, queryset):
-            tasks = async_to_sync(action_coro_callable)(modeladmin, request, queryset)
-            runner = task_runner.TaskRunner.get()
-
-            for task_info in [runner.get_task_info(task) for task in tasks]:
-                message_level = TASK_STATUS_MESSAGE_LEVEL[task_info['status']]
-                modeladmin.message_user(
-                    request,
-                    f"Scheduled new task. Function: {action_coro_callable.__name__}. Status: {task_info['status']}.",
-                    message_level)
-
-        return action_callable
+        return action_coro_callable
