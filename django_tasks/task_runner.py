@@ -27,7 +27,6 @@ class TaskRunner:
             cls()
 
         cls._instances[-1].ensure_alive()
-        logging.getLogger('django').info('Running tasks: %s.', cls._instances[-1].running_tasks)
 
         return cls._instances[-1]
 
@@ -35,7 +34,6 @@ class TaskRunner:
         self.event_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.event_loop)
         self.worker_thread = threading.Thread(target=self.event_loop.run_forever, daemon=True)
-        self.running_tasks: dict[int, dict[str, Any]] = {}
         self.__class__._instances.append(self)
         logging.getLogger('django').info('New task runner: %s.', self.event_loop)
 
@@ -54,23 +52,36 @@ class TaskRunner:
         """Runs the `async_callback` taking the task info as the argument."""
         return self.run_coroutine(async_callback(self.get_task_info(task)))
 
-    async def broadcast_task(self, task: asyncio.Future, drop=False):
+    async def schedule(self,
+                       coroutine: Coroutine,
+                       *coro_callbacks: Callable[[dict[str, Any]], Coroutine]) -> asyncio.Future:
+        task = self.run_coroutine(coroutine)
+        await self.broadcast_task(task)
+        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(tk)))
+
+        for coro_callback in coro_callbacks:
+            task.add_done_callback(lambda tk: self.run_on_task_info(coro_callback, tk))
+
+        return task
+
+    @classmethod
+    async def broadcast_task(cls, task: asyncio.Future):
         """
         Sends the task info to the 'tasks' group of consumers, specifying a message type per task status.
         """
-        task_info = self.get_task_info(task)
+        task_info = cls.get_task_info(task)
         message_type = f"task.{task_info['status'].lower()}"
         channel_layer = get_channel_layer()
         await channel_layer.group_send("tasks", {'type': message_type, 'content': task_info})
 
-        if drop:
-            self.drop_task(task)
+    @staticmethod
+    def get_task_info(task: asyncio.Future) -> dict[str, Any]:
+        """Extracts and returns the corresponding task info, with the current task status."""
+        task_info = {'task_id': id(task)}
 
-    def update_task_info(self, task: asyncio.Future):
-        """Updates the corresponding task info with the current task status, when done"""
-        task_info = self.get_task(task)
-
-        if task.cancelled():
+        if not task.done():
+            task_info['status'] = 'Started'
+        elif task.cancelled():
             task_info['status'] = 'Cancelled'
         elif task.exception():
             task_info.update({'status': 'Error',
@@ -79,29 +90,4 @@ class TaskRunner:
         else:
             task_info.update({'status': 'Success', 'output': task.result()})
 
-    async def schedule(self,
-                       coroutine: Coroutine,
-                       *coro_callbacks: Callable[[dict[str, Any]], Coroutine]) -> asyncio.Future:
-        task = self.run_coroutine(coroutine)
-        self.running_tasks[id(task)] = {'status': 'Started', 'task': task}
-        task.add_done_callback(self.update_task_info)
-        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(tk, drop=not coro_callbacks)))
-
-        for coro_callback in coro_callbacks:
-            task.add_done_callback(lambda tk: self.run_on_task_info(coro_callback, tk))
-
-        await self.broadcast_task(task)
-
-        return task
-
-    def get_task_info(self, task: asyncio.Future) -> dict[str, Any]:
-        """Retrieves the corresponding task info, and returns a copy without the task object."""
-        return {k: v for k, v in self.running_tasks[id(task)].items() if k != 'task'}
-
-    def get_task(self, task: asyncio.Future) -> dict[str, Any]:
-        """Returns the corresponding task info."""
-        return self.running_tasks[id(task)]
-
-    def drop_task(self, task: asyncio.Future) -> dict[str, Any]:
-        """Deletes the corresponding info from the index."""
-        del self.running_tasks[id(task)]
+        return task_info

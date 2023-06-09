@@ -55,7 +55,7 @@ class TestAFewTasksRun(base.BddTester):
     async def the_different_task_statuses_are_correctly_stored(self):
         failed_task_info = self.runner.get_task_info(self.get_output('failed'))
         assert failed_task_info['status'] == 'Error'
-        assert failed_task_info['exception-text'] == 'Fake error'
+        assert failed_task_info['traceback'][-1].strip() == 'Exception: Fake error'
 
         await asyncio.sleep(0.01)
         cancelled_task_info = self.runner.get_task_info(self.get_output('cancelled'))

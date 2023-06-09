@@ -34,10 +34,6 @@ class ScheduledTask(Model):
     def duration(self):
         return (self.completed_at if self.completed_at else datetime.datetime.now()) - self.scheduled_at
 
-    @property
-    def task_info(self):
-        return TaskRunner.get().running_tasks[self.task_id]
-
     @classmethod
     async def schedule(cls, callable: Callable, **inputs):
         """Creates a `ScheduledTask` instance to run the given function with given arguments.
@@ -56,4 +52,3 @@ class ScheduledTask(Model):
         self.completed_at = datetime.datetime.now()
         self.document = task_info
         await self.asave()
-        del TaskRunner.get().running_tasks[self.task_id]
