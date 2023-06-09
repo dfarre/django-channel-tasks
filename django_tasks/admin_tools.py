@@ -1,5 +1,5 @@
 import functools
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import async_to_sync
 from typing import Callable, Type
 
 from django import forms
@@ -75,7 +75,7 @@ class AsyncAdminAction:
         @async_to_sync
         async def action_callable(modeladmin, request, queryset):
             runner = task_runner.TaskRunner.get()
-            task = await runner.schedule(coro_callable(modeladmin, request, queryset))
+            await runner.schedule(coro_callable(modeladmin, request, queryset))
 
         return action_callable
 

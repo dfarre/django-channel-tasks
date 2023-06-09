@@ -57,4 +57,3 @@ class ScheduledTask(Model):
         self.document = task_info
         await self.asave()
         del TaskRunner.get().running_tasks[self.task_id]
-
