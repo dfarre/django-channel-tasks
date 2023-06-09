@@ -16,8 +16,8 @@ class DefensiveJsonEncoder(json.JSONEncoder):
             return repr(obj)
 
 
-class ScheduledTask(Model):
-    """Information of each execution."""
+class DocTask(Model):
+    """Stored information of a task execution."""
     name: CharField = CharField(max_length=80)
     scheduled_at: DateTimeField = DateTimeField(default=datetime.datetime.now)
     completed_at: DateTimeField = DateTimeField(null=True)
@@ -34,7 +34,7 @@ class ScheduledTask(Model):
 
     @classmethod
     async def schedule(cls, callable: Callable, **inputs):
-        """Creates a `ScheduledTask` instance to run the given function with given arguments.
+        """Creates a `DocTask` instance to run the given function with given arguments.
         The resulting `task` (actually an `asyncio.Future`) should return a JSON-serializable object
         as result -task document- to be stored; `inputs` should be JSON-serializable as well,
         and valid keyword arguments to `callable`.

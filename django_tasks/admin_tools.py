@@ -101,7 +101,7 @@ class AsyncAdminInstanceAction:
 
     async def schedule_task(self, coro_callable: Callable, **inputs):
         if self.store_result:
-            _, task = await models.ScheduledTask.schedule(coro_callable, **inputs)
+            _, task = await models.DocTask.schedule(coro_callable, **inputs)
             return task
         runner = task_runner.TaskRunner.get()
         task = await runner.schedule(coro_callable(**inputs))

@@ -7,7 +7,7 @@ from django.core.handlers.asgi import ASGIRequest
 from django_tasks import models
 from django_tasks.admin_tools import (
     SerializerModeladmin, AsyncAdminAction, AsyncAdminInstanceAction)
-from django_tasks.serializers import ScheduledTaskSerializer
+from django_tasks.serializers import DocTaskSerializer
 
 
 class AdminSite(admin.AdminSite):
@@ -29,7 +29,7 @@ async def delete_test(modeladmin: admin.ModelAdmin,
 @AsyncAdminInstanceAction(description='Test async database access')
 async def database_access_test(modeladmin: admin.ModelAdmin,
                                request: ASGIRequest,
-                               instance: models.ScheduledTask):
+                               instance: models.DocTask):
     logging.getLogger('django').info('Retrieved %s', instance)
     await asyncio.sleep(10)
 
@@ -38,15 +38,15 @@ async def database_access_test(modeladmin: admin.ModelAdmin,
                           store_result=True)
 async def store_database_access_test(modeladmin: admin.ModelAdmin,
                                      request: ASGIRequest,
-                                     instance: models.ScheduledTask):
+                                     instance: models.DocTask):
     await asyncio.sleep(10)
     return str(instance)
 
 
-@admin.register(models.ScheduledTask, site=site)
-@SerializerModeladmin(ScheduledTaskSerializer)
-class ScheduledTaskModelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'inputs', *ScheduledTaskSerializer.Meta.read_only_fields)
+@admin.register(models.DocTask, site=site)
+@SerializerModeladmin(DocTaskSerializer)
+class DocTaskModelAdmin(admin.ModelAdmin):
+    list_display = ('name', 'inputs', *DocTaskSerializer.Meta.read_only_fields)
     if settings.DEBUG:
         actions = [database_access_test, store_database_access_test, delete_test]
 

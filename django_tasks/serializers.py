@@ -8,9 +8,9 @@ from django_tasks import models
 from django_tasks import task_inspector
 
 
-class ScheduledTaskSerializer(serializers.ModelSerializer):
+class DocTaskSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.ScheduledTask
+        model = models.DocTask
         read_only_fields = ('scheduled_at', 'completed_at', 'document')
         fields = ('name', 'inputs', *read_only_fields)
 
@@ -28,9 +28,9 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def create(self, validated_data: dict[str, Any]) -> models.ScheduledTask:
+    def create(self, validated_data: dict[str, Any]) -> models.DocTask:
         return async_to_sync(self._schedule_task)(validated_data)
 
-    async def _schedule_task(self, validated_data: dict[str, Any]) -> models.ScheduledTask:
+    async def _schedule_task(self, validated_data: dict[str, Any]) -> models.DocTask:
         instance, _ = await self.Meta.model.schedule(self.callable, **validated_data['inputs'])
         return instance
