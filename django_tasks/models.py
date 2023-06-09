@@ -3,7 +3,7 @@ import json
 
 from typing import Callable
 
-from django.db.models import Model, CharField, PositiveBigIntegerField, DateTimeField, JSONField
+from django.db.models import Model, CharField, DateTimeField, JSONField
 
 from django_tasks.task_runner import TaskRunner
 
@@ -19,16 +19,14 @@ class DefensiveJsonEncoder(json.JSONEncoder):
 class ScheduledTask(Model):
     """Information of each execution."""
     name: CharField = CharField(max_length=80)
-    task_id: PositiveBigIntegerField = PositiveBigIntegerField()
     scheduled_at: DateTimeField = DateTimeField(default=datetime.datetime.now)
     completed_at: DateTimeField = DateTimeField(null=True)
     inputs: JSONField = JSONField(null=False, default=dict, encoder=DefensiveJsonEncoder)
     document: JSONField = JSONField(null=True)
 
     def __str__(self):
-        state_message = (f'Completed at {self.completed_at}. Took {self.duration}' if self.completed_at
-                         else f'Running for {self.duration}')
-        return f'Task {self.task_id}. {state_message}.'
+        return (f'Task completed at {self.completed_at}. Took {self.duration}' if self.completed_at
+                else f'Running for {self.duration}')
 
     @property
     def duration(self):
@@ -44,9 +42,8 @@ class ScheduledTask(Model):
         scheduled_task = cls(name=callable.__name__, inputs=inputs)
         runner = TaskRunner.get()
         task = await runner.schedule(callable(**inputs), scheduled_task.on_completion)
-        scheduled_task.task_id = id(task)
         await scheduled_task.asave()
-        return scheduled_task
+        return scheduled_task, task
 
     async def on_completion(self, task_info):
         self.completed_at = datetime.datetime.now()

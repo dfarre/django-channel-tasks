@@ -18,7 +18,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=80)),
-                ('task_id', models.PositiveBigIntegerField()),
                 ('scheduled_at', models.DateTimeField(default=datetime.datetime.now)),
                 ('completed_at', models.DateTimeField(null=True)),
                 ('inputs', models.JSONField(default=dict, encoder=django_tasks.models.DefensiveJsonEncoder)),

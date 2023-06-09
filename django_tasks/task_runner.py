@@ -77,7 +77,7 @@ class TaskRunner:
     @staticmethod
     def get_task_info(task: asyncio.Future) -> dict[str, Any]:
         """Extracts and returns the corresponding task info, with the current task status."""
-        task_info = {'task_id': id(task)}
+        task_info = {}
 
         if not task.done():
             task_info['status'] = 'Started'

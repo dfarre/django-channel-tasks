@@ -11,7 +11,7 @@ from django_tasks import task_inspector
 class ScheduledTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ScheduledTask
-        read_only_fields = ('scheduled_at', 'completed_at', 'document', 'task_id')
+        read_only_fields = ('scheduled_at', 'completed_at', 'document')
         fields = ('name', 'inputs', *read_only_fields)
 
     @property
@@ -32,5 +32,5 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
         return async_to_sync(self._schedule_task)(validated_data)
 
     async def _schedule_task(self, validated_data: dict[str, Any]) -> models.ScheduledTask:
-        instance = await self.Meta.model.schedule(self.callable, **validated_data['inputs'])
+        instance, _ = await self.Meta.model.schedule(self.callable, **validated_data['inputs'])
         return instance
