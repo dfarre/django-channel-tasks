@@ -1,7 +1,7 @@
 from django_tasks.settings.base import *  # noqa
 
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['localhost']
 
 INSTALLED_APPS.append('django.contrib.postgres')  # noqa
 

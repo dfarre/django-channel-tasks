@@ -1,6 +1,9 @@
 from django.core.asgi import get_asgi_application
 from django.urls import path
+
 from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from channels.security.websocket import AllowedHostsOriginValidator
 
 from django_tasks.consumers import TaskStatusConsumer
 
@@ -8,6 +11,8 @@ from django_tasks.consumers import TaskStatusConsumer
 application = ProtocolTypeRouter(
     {
         "http": get_asgi_application(),
-        "websocket": URLRouter([path("tasks/", TaskStatusConsumer.as_asgi())]),
+        "websocket": AllowedHostsOriginValidator(
+            AuthMiddlewareStack(URLRouter([path("tasks/", TaskStatusConsumer.as_asgi())]))
+        ),
     }
 )

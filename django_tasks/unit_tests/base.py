@@ -32,7 +32,8 @@ class AuthenticatedWSDjangoTestCase:
 
     @pytest_asyncio.fixture(autouse=True)
     async def setup_websocket_communicator(self, event_loop):
-        route = asgi.application.application_mapping['websocket'].routes[0]
+        route = asgi.application.application_mapping[
+            'websocket'].application.inner.inner.inner.routes[0]
         consumers = importlib.import_module(route.lookup_str.rsplit('.', 1)[0])
         self.communicator = WebsocketCommunicator(
             consumers.TaskStatusConsumer.as_asgi(), route.pattern.describe().strip("'"))
