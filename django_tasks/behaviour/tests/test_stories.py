@@ -101,7 +101,7 @@ class TestAFewTasksRun(base.BddTester):
         return response_json
 
     def the_user_creates_an_api_token(self):
-        response = self.client.post('/authtoken/token/add/', {'user': 1}, follow=True)
+        response = self.client.post('/authtoken/token/add/', {'user': self.user.pk}, follow=True)
         soup = self.assert_200(response)
         messages = self.get_all_admin_messages(soup)
 
