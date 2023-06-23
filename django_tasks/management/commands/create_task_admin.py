@@ -20,8 +20,12 @@ class Command(BaseCommand):
         group, _ = Group.objects.get_or_create(name='TaskAdmins')
         group.permissions.add(*Permission.objects.filter(
             content_type__in=ContentType.objects.filter(app_label='django_tasks')))
+        group.permissions.add(*Permission.objects.filter(
+            content_type__in=ContentType.objects.filter(app_label='authtoken'),
+            name='Can add Token'))
         user.groups.add(group)
         user.save()
         self.stdout.write(("Created user " if created else "Updated existing user ") +
-                          f"{user} with email {options['email']} and NEW password {password}, "
+                          f"{user} with email {options['email']} and NEW password, "
                           f"belonging to the {group} group.")
+        return password

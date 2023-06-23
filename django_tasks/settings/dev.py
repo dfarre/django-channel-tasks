@@ -15,7 +15,3 @@ DATABASES = {
         'USER': 'postgres',
     }
 }
-
-
-REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] += (  # noqa
-    'rest_framework.renderers.BrowsableAPIRenderer',)

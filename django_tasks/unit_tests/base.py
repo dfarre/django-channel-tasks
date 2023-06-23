@@ -5,33 +5,32 @@ import importlib
 import pytest
 import pytest_asyncio
 
+from rest_framework.test import APIClient
+
 from channels.testing import WebsocketCommunicator
-
-from django.core import management
-
-from django_tasks import asgi
 
 
 @pytest.mark.django_db
 class AuthenticatedWSDjangoTestCase:
-    username, password = 'Alice', 'Alice'
-    db_fixtures = ()
+    username, password = 'Alice', 'AlicePassWd'
 
     @pytest.fixture(autouse=True)
-    def load_db_fixtures(self):
-        if self.db_fixtures:
-            management.call_command('loaddata', *self.db_fixtures)
-
-    @pytest.fixture(autouse=True)
-    def user_login(self, django_user_model, client):
+    def setup_clients(self, django_user_model, client):
         self.user = django_user_model.objects.create(username=self.username)
         self.user.set_password(self.password)
         self.user.save()
+
         self.client = client
+        self.assert_login()
+
+        self.drf_client = APIClient()
+
+    def assert_login(self):
         assert self.client.login(username=self.username, password=self.password)
 
     @pytest_asyncio.fixture(autouse=True)
     async def setup_websocket_communicator(self, event_loop):
+        from django_tasks import asgi
         route = asgi.application.application_mapping[
             'websocket'].application.inner.inner.inner.routes[0]
         consumers = importlib.import_module(route.lookup_str.rsplit('.', 1)[0])
@@ -41,7 +40,7 @@ class AuthenticatedWSDjangoTestCase:
         connected, subprotocol = await self.communicator.connect()
         assert connected
 
-        self.collection_task = asyncio.wrap_future(
+        self.event_collection_task = asyncio.wrap_future(
             asyncio.run_coroutine_threadsafe(self.collect_events(), event_loop))
 
     async def collect_events(self):
@@ -49,7 +48,7 @@ class AuthenticatedWSDjangoTestCase:
         listen = True
         while listen:
             try:
-                event = await self.communicator.receive_json_from(timeout=2)
+                event = await self.communicator.receive_json_from(timeout=5)
             except asyncio.TimeoutError:
                 listen = False
             else:

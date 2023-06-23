@@ -10,6 +10,7 @@ build
 .coverage
 .mypy_cache
 .tox
+htmlcov
 
 db.sqlite3
 

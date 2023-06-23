@@ -4,6 +4,9 @@ import logging
 from django.contrib import admin
 from django.conf import settings
 from django.core.handlers.asgi import ASGIRequest
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.admin import TokenAdmin
+
 from django_tasks import models
 from django_tasks.admin_tools import (
     SerializerModeladmin, AsyncAdminAction, AsyncAdminInstanceAction)
@@ -13,10 +16,11 @@ from django_tasks.serializers import DocTaskSerializer
 class AdminSite(admin.AdminSite):
     site_title = 'Stored Tasks'
     site_header = 'Stored Tasks'
-    index_title = 'Tasks'
+    index_title = 'Index'
 
 
 site = AdminSite()
+site.register(Token, TokenAdmin)
 
 
 @AsyncAdminAction(description='Test async deletion')

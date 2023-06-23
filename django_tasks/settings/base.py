@@ -16,9 +16,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'rest_framework.authtoken',
+    'rest_framework',
     'django.contrib.messages',
     'django_tasks.apps.TasksConfig',
-    'rest_framework',
     'django_extensions',
     'django_filters',
 ]
@@ -79,7 +80,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "sesame.backends.ModelBackend",
 ]
 
 SESAME_MAX_AGE = 86400*5
