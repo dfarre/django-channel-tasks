@@ -41,8 +41,7 @@ class TestAFewTasksRun(base.BddTester):
         Given a tasks admin user is created with command
         And the user creates an API `token`
         When a `failed` and some `OK` tasks are posted
-        Then corresponding messages are broadcasted
-        And the different task results are correctly stored in DB
+        Then the different task results are correctly stored in DB
         """
 
     async def a_failed_a_cancelled_and_some_ok_tasks_are_scheduled(self):
@@ -55,6 +54,8 @@ class TestAFewTasksRun(base.BddTester):
 
     async def corresponding_messages_are_broadcasted(self):
         await self.event_collection_task
+        assert len(self.events['started']) == 6
+        assert len(self.events['cancelled']) == 1
         assert len(self.events['error']) == 1
         assert len(self.events['success']) == 4
 

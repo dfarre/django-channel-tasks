@@ -18,5 +18,4 @@ Scenarios:
     - Given a tasks admin user is created with command
     - And the user creates an API `token`
     - When a `failed` and some `OK` tasks are posted
-    - Then corresponding messages are broadcasted
-    - And the different task results are correctly stored in DB
+    - Then the different task results are correctly stored in DB
