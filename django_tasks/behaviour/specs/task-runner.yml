@@ -1,0 +1,14 @@
+Title: Task runner
+
+Story: |-
+  Several tasks may be scheduled to run concurrently, and their states are broadcasted.
+  This covers:
+   * The task runner
+   * The websocket broadcasting
+
+Scenarios:
+  Concurrent error and cancellation:
+    - When a `failed`, a `cancelled` and some `OK` tasks are scheduled
+    - Then completion times do not accumulate
+    - And corresponding messages are broadcasted
+    - And the different task statuses are correctly stored

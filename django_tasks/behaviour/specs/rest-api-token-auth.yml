@@ -1,0 +1,16 @@
+Title: REST API with token auth
+
+Story: |-
+  Staff users may obtain a token through Django admin site, and use it to schedule
+  concurrent tasks through REST API.
+  This covers:
+   * The task runner
+   * Admin site usage to create API tokens
+   * User creation with management command
+
+Scenarios:
+  Task execution POST with result storage:
+    - Given a tasks admin user is created with command
+    - And the user creates an API `token`
+    - When a `failed` and some `OK` tasks are posted
+    - Then the different task results are correctly stored in DB
