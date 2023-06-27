@@ -12,10 +12,10 @@ def teardown_module():
     Called by Pytest at teardown of the test module, employed here to
     log final scenario results
     """
-    base.AuthenticatedWSDjangoAdminTestCase.gherkin.log()
+    base.BddTester.gherkin.log()
 
 
-class TestRestApiWithTokenAuth(base.AuthenticatedWSDjangoAdminTestCase):
+class TestRestApiWithTokenAuth(base.BddTester):
     """
     Staff users may obtain a token through Django admin site, and use it to schedule
     concurrent tasks through REST API.
@@ -25,13 +25,14 @@ class TestRestApiWithTokenAuth(base.AuthenticatedWSDjangoAdminTestCase):
     * User creation with management command
     """
 
-    @base.AuthenticatedWSDjangoAdminTestCase.gherkin()
+    @base.BddTester.gherkin()
     def test_task_execution_post_with_result_storage(self):
         """
         Given a tasks admin user is created with command
         And the user creates an API `token`
         When a `failed` and some `OK` tasks are posted
         Then the different task results are correctly stored in DB
+        Then $(0) cancelled $(1) error $(4) success messages are broadcasted
         """
 
     def a_failed_and_some_ok_tasks_are_posted(self):
@@ -43,11 +44,13 @@ class TestRestApiWithTokenAuth(base.AuthenticatedWSDjangoAdminTestCase):
             ok_tasks.append(self.assert_post_task(name='sleep_test', inputs={'duration': dn}))
 
         failed_task = self.assert_post_task(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True})
-
         return failed_task, ok_tasks
 
     def the_different_task_results_are_correctly_stored_in_db(self):
-        pass
+        response = self.drf_client.get('/api/tasks/')
+        assert response.status_code == status.HTTP_200_OK
+        tasks = response.json()
+        assert all(t['completed_at'] is not None for t in tasks)
 
     def assert_post_task(self, **data):
         response = self.drf_client.post('/api/tasks/', data=data)
@@ -70,7 +73,7 @@ class TestRestApiWithTokenAuth(base.AuthenticatedWSDjangoAdminTestCase):
         self.assert_login()
 
 
-class TestTaskRunner(base.AuthenticatedWSDjangoAdminTestCase):
+class TestTaskRunner(base.BddTester):
     """
     Several tasks may be scheduled to run concurrently, and their states are broadcasted.
     This covers:
@@ -78,12 +81,12 @@ class TestTaskRunner(base.AuthenticatedWSDjangoAdminTestCase):
     * The websocket broadcasting
     """
 
-    @base.AuthenticatedWSDjangoAdminTestCase.gherkin()
+    @base.BddTester.gherkin()
     def test_concurrent_error_and_cancellation(self):
         """
         When a `failed`, a `cancelled` and some `OK` tasks are scheduled
         Then completion times do not accumulate
-        And corresponding messages are broadcasted
+        And $(1) cancelled $(1) error $(4) success messages are broadcasted
         And the different task statuses are correctly stored
         """
 
@@ -94,13 +97,6 @@ class TestTaskRunner(base.AuthenticatedWSDjangoAdminTestCase):
             *[self.runner.schedule(self.fake_task_coro_ok(d)) for d in self.task_durations])
 
         return failed_task, cancelled_task, ok_tasks
-
-    async def corresponding_messages_are_broadcasted(self):
-        await self.event_collection_task
-        assert len(self.events['started']) == 6
-        assert len(self.events['cancelled']) == 1
-        assert len(self.events['error']) == 1
-        assert len(self.events['success']) == 4
 
     async def completion_times_do_not_accumulate(self):
         initial_time = time.time()

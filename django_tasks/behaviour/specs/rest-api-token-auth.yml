@@ -14,3 +14,4 @@ Scenarios:
     - And the user creates an API `token`
     - When a `failed` and some `OK` tasks are posted
     - Then the different task results are correctly stored in DB
+    - And $(0) cancelled $(1) error $(4) success messages are broadcasted

@@ -10,5 +10,5 @@ Scenarios:
   Concurrent error and cancellation:
     - When a `failed`, a `cancelled` and some `OK` tasks are scheduled
     - Then completion times do not accumulate
-    - And corresponding messages are broadcasted
+    - And $(1) cancelled $(1) error $(4) success messages are broadcasted
     - And the different task statuses are correctly stored

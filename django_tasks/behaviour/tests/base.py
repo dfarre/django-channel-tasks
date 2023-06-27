@@ -17,7 +17,7 @@ from django_tasks.task_runner import TaskRunner
 
 
 @pytest.mark.django_db
-class AuthenticatedWSDjangoAdminTestCase(tester.BddTester):
+class BddTester(tester.BddTester):
     """
     The BddTester subclass of this tester package.
     It manages scenario runs. All test classes inherit from this one,
@@ -59,7 +59,7 @@ class AuthenticatedWSDjangoAdminTestCase(tester.BddTester):
             asyncio.run_coroutine_threadsafe(self.collect_events(), event_loop))
 
         yield
-        await self.event_collection_task
+        await self.communicator.disconnect()
 
     async def collect_events(self):
         self.events = collections.defaultdict(list)
@@ -71,8 +71,6 @@ class AuthenticatedWSDjangoAdminTestCase(tester.BddTester):
                 listen = False
             else:
                 self.events[event['status'].lower()].append(event)
-
-        await self.communicator.disconnect()
 
     async def fake_task_coro_ok(self, duration):
         await asyncio.sleep(duration)
@@ -93,3 +91,11 @@ class AuthenticatedWSDjangoAdminTestCase(tester.BddTester):
         assert response.status_code == 200
 
         return bs4.BeautifulSoup(response.content.decode(), features='html.parser')
+
+    async def cancelled_error_success_messages_are_broadcasted(self):
+        cancelled, error, success = map(int, self.param)
+        await self.event_collection_task
+        assert len(self.events['started']) == cancelled + error + success
+        assert len(self.events['cancelled']) == cancelled
+        assert len(self.events['error']) == error
+        assert len(self.events['success']) == success

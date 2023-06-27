@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import threading
-import time
 import traceback
 
 from typing import Any, Callable, Coroutine
@@ -33,10 +32,13 @@ class TaskRunner:
 
     def __init__(self):
         self.event_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.event_loop)
-        self.worker_thread = threading.Thread(target=self.event_loop.run_forever, daemon=True)
+        self.worker_thread = threading.Thread(target=self.run_loop_forever, daemon=True)
         self.__class__._instances.append(self)
         logging.getLogger('django').info('New task runner: %s.', self.event_loop)
+
+    def run_loop_forever(self):
+        asyncio.set_event_loop(self.event_loop)
+        self.event_loop.run_forever()
 
     def ensure_alive(self):
         """Ensures the worker thread is alive."""
