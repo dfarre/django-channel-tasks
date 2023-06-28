@@ -12,8 +12,8 @@ class Command(BaseCommand):
         parser.add_argument('email')
 
     def handle(self, *args, **options):
-        user, created = User.objects.update_or_create({'is_staff': True, 'email': options['email']},
-                                                      username=options['username'])
+        user, created = User.objects.update_or_create(
+            {'is_staff': True, 'email': options['email']}, username=options['username'])
         alphabet = string.ascii_letters + string.digits
         password = ''.join(secrets.choice(alphabet) for i in range(15))
         user.set_password(password)

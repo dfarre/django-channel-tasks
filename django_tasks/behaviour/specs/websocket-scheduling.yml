@@ -1,0 +1,11 @@
+Title: Websocket scheduling
+
+Story: |-
+  This covers:
+   * The task runner
+   * The tasks websocket API
+
+Scenarios:
+  Several tasks are scheduled with WS message:
+    - When a failed and some OK tasks are scheduled through WS
+    - Then $(0) cancelled $(1) error $(4) success messages are broadcasted

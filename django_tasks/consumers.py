@@ -1,3 +1,5 @@
+import asyncio
+
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from django_tasks import task_runner
@@ -25,7 +27,9 @@ class TaskStatusConsumer(AsyncJsonWebsocketConsumer):
 
     async def receive_json(self, content):
         """Pocesses task schedule requests."""
-        serializer = DocTaskSerializer(data=content)
+        serializer = DocTaskSerializer(data=content, many=True)
         serializer.is_valid(raise_exception=True)
         runner = task_runner.TaskRunner.get()
-        await runner.schedule(serializer.callable(**serializer.data['inputs']))
+        await asyncio.gather(*[
+            runner.schedule(serializer.child.get_coro_info(task).callable(**task['inputs']))
+            for task in serializer.data])

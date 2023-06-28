@@ -23,6 +23,7 @@ class TestRestApiWithTokenAuth(base.BddTester):
     * The task runner
     * Admin site usage to create API tokens
     * User creation with management command
+    * The tasks REST API
     """
 
     @base.BddTester.gherkin()
@@ -30,21 +31,21 @@ class TestRestApiWithTokenAuth(base.BddTester):
         """
         Given a tasks admin user is created with command
         And the user creates an API `token`
-        When a `failed` and some `OK` tasks are posted
+        When a failed and some OK `tasks` are posted
         Then the different task results are correctly stored in DB
-        Then $(0) cancelled $(1) error $(4) success messages are broadcasted
+        And $(0) cancelled $(1) error $(4) success messages are broadcasted
         """
 
     def a_failed_and_some_ok_tasks_are_posted(self):
         token_key = self.get_output('token')
         self.drf_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
 
-        ok_tasks = []
-        for dn in self.task_durations:
-            ok_tasks.append(self.assert_post_task(name='sleep_test', inputs={'duration': dn}))
+        task_data = [dict(name='sleep_test', inputs={'duration': dn}) for dn in self.task_durations]
+        task_data.append(dict(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True}))
+        response = self.drf_client.post('/api/tasks/schedule/', data=task_data)
+        assert response.status_code == status.HTTP_201_CREATED
 
-        failed_task = self.assert_post_task(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True})
-        return failed_task, ok_tasks
+        return response.json(),
 
     def the_different_task_results_are_correctly_stored_in_db(self):
         response = self.drf_client.get('/api/tasks/')
@@ -115,3 +116,23 @@ class TestTaskRunner(base.BddTester):
         await asyncio.sleep(0.01)
         cancelled_task_info = self.runner.get_task_info(self.get_output('cancelled'))
         assert cancelled_task_info['status'] == 'Cancelled'
+
+
+class TestWebsocketScheduling(base.BddTester):
+    """
+    This covers:
+    * The task runner
+    * The tasks websocket API
+    """
+
+    @base.BddTester.gherkin()
+    def test_several_tasks_are_scheduled_with_ws_message(self):
+        """
+        When a failed and some OK tasks are scheduled through WS
+        Then $(0) cancelled $(1) error $(4) success messages are broadcasted
+        """
+
+    async def a_failed_and_some_ok_tasks_are_scheduled_through_ws(self):
+        task_data = [dict(name='sleep_test', inputs={'duration': dn}) for dn in self.task_durations]
+        task_data.append(dict(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True}))
+        await self.communicator.send_json_to(task_data)
