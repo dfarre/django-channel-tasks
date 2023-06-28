@@ -27,13 +27,28 @@ class TestRestApiWithTokenAuth(base.BddTester):
     """
 
     @base.BddTester.gherkin()
-    def test_task_execution_post_with_result_storage(self):
+    def a_user_creates_an_api_token(self):
         """
         Given a tasks admin user is created with command
         And the user creates an API `token`
+        """
+
+    @base.BddTester.gherkin()
+    def test_many_tasks_execution_post_with_result_storage(self):
+        """
+        Given a user creates an API token
         When a failed and some OK `tasks` are posted
         Then the different task results are correctly stored in DB
         And $(0) cancelled $(1) error $(4) success messages are broadcasted
+        """
+
+    @base.BddTester.gherkin()
+    def test_single_task_execution_post_with_result_storage(self):
+        """
+        Given a user creates an API token
+        When a failed `task` is posted
+        Then the task result is correctly stored in DB
+        And $(0) cancelled $(1) error $(0) success messages are broadcasted
         """
 
     def a_failed_and_some_ok_tasks_are_posted(self):
@@ -53,14 +68,18 @@ class TestRestApiWithTokenAuth(base.BddTester):
         tasks = response.json()
         assert all(t['completed_at'] is not None for t in tasks)
 
-    def assert_post_task(self, **data):
+    def a_failed_task_is_posted(self, **data):
+        token_key = self.get_output('token')
+        self.drf_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
+        data = dict(name='sleep_test', inputs={'duration': 0.22, 'raise_error': True})
         response = self.drf_client.post('/api/tasks/', data=data)
+
         assert response.status_code == status.HTTP_201_CREATED
         response_json = response.json()
         del response_json['scheduled_at']
         assert response_json == {**data, 'completed_at': None, 'document': None}
 
-        return response_json
+        return response_json,
 
     def the_user_creates_an_api_token(self):
         response = self.client.post('/authtoken/token/add/', {'user': self.user.pk}, follow=True)
@@ -72,6 +91,13 @@ class TestRestApiWithTokenAuth(base.BddTester):
     def a_tasks_admin_user_is_created_with_command(self):
         self.password = call_command('create_task_admin', self.username, 'fake@gmail.com')
         self.assert_login()
+
+    def the_task_result_is_correctly_stored_in_db(self):
+        response = self.drf_client.get('/api/tasks/')
+        assert response.status_code == status.HTTP_200_OK
+        tasks = response.json()
+        assert len(tasks) == 1
+        assert tasks[0]['completed_at'] is not None
 
 
 class TestTaskRunner(base.BddTester):
