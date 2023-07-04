@@ -1,0 +1,11 @@
+Title: Async admin site actions
+
+Story: |-
+  This covers:
+   * The admin tools module
+
+Scenarios:
+  A database access async action runs ok:
+    - Given single task execution post with result storage
+    - When the user runs the database access test action
+    - Then the doc task is retrieved asynchronously

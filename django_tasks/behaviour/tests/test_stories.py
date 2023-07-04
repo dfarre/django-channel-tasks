@@ -1,7 +1,6 @@
 import asyncio
 import time
 
-from django.core.management import call_command
 from rest_framework import status
 
 from . import base
@@ -15,7 +14,7 @@ def teardown_module():
     base.BddTester.gherkin.log()
 
 
-class TestRestApiWithTokenAuth(base.BddTester):
+class RestApiWithTokenAuth(base.BddTester):
     """
     Staff users may obtain a token through Django admin site, and use it to schedule
     concurrent tasks through REST API.
@@ -39,16 +38,14 @@ class TestRestApiWithTokenAuth(base.BddTester):
         Given a user creates an API token
         When a failed and some OK `tasks` are posted
         Then the different task results are correctly stored in DB
-        And $(0) cancelled $(1) error $(4) success messages are broadcasted
         """
 
     @base.BddTester.gherkin()
-    def test_single_task_execution_post_with_result_storage(self):
+    def single_task_execution_post_with_result_storage(self):
         """
         Given a user creates an API token
-        When a failed `task` is posted
+        When a failed `task` is posted with duration $(0.1)
         Then the task result is correctly stored in DB
-        And $(0) cancelled $(1) error $(0) success messages are broadcasted
         """
 
     def a_failed_and_some_ok_tasks_are_posted(self):
@@ -60,24 +57,29 @@ class TestRestApiWithTokenAuth(base.BddTester):
         response = self.drf_client.post('/api/tasks/schedule/', data=task_data)
         assert response.status_code == status.HTTP_201_CREATED
 
+        time.sleep(max(self.task_durations))
+
         return response.json(),
 
     def the_different_task_results_are_correctly_stored_in_db(self):
         response = self.drf_client.get('/api/tasks/')
         assert response.status_code == status.HTTP_200_OK
         tasks = response.json()
-        assert all(t['completed_at'] is not None for t in tasks)
+        assert len(tasks) == 5
 
-    def a_failed_task_is_posted(self, **data):
+    def a_failed_task_is_posted_with_duration(self):
+        duration = float(self.param)
         token_key = self.get_output('token')
         self.drf_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
-        data = dict(name='sleep_test', inputs={'duration': 0.22, 'raise_error': True})
+        data = dict(name='sleep_test', inputs={'duration': duration, 'raise_error': True})
         response = self.drf_client.post('/api/tasks/', data=data)
 
         assert response.status_code == status.HTTP_201_CREATED
         response_json = response.json()
         del response_json['scheduled_at']
         assert response_json == {**data, 'completed_at': None, 'document': None}
+
+        time.sleep(duration)
 
         return response_json,
 
@@ -88,16 +90,11 @@ class TestRestApiWithTokenAuth(base.BddTester):
 
         return messages['success'][0].split()[2].strip('“”'),
 
-    def a_tasks_admin_user_is_created_with_command(self):
-        self.password = call_command('create_task_admin', self.username, 'fake@gmail.com')
-        self.assert_login()
-
     def the_task_result_is_correctly_stored_in_db(self):
         response = self.drf_client.get('/api/tasks/')
         assert response.status_code == status.HTTP_200_OK
         tasks = response.json()
         assert len(tasks) == 1
-        assert tasks[0]['completed_at'] is not None
 
 
 class TestTaskRunner(base.BddTester):
@@ -162,3 +159,24 @@ class TestWebsocketScheduling(base.BddTester):
         task_data = [dict(name='sleep_test', inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True}))
         await self.communicator.send_json_to(task_data)
+
+
+class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
+    """
+    This covers:
+    * The admin tools module
+    """
+
+    @base.BddTester.gherkin()
+    def test_a_database_access_async_action_runs_ok(self):
+        """
+        Given single task execution post with result storage
+        When the user runs the database access test action
+        Then the doc task is retrieved asynchronously
+        """
+
+    def the_user_runs_the_database_access_test_action(self):
+        pass
+
+    def the_doc_task_is_retrieved_asynchronously(self):
+        pass

@@ -6,8 +6,7 @@ import bs4
 import pytest
 import pytest_asyncio
 
-from rest_framework.test import APIClient
-
+from django.core.management import call_command
 from channels.testing import WebsocketCommunicator
 
 from bdd_coder import decorators
@@ -30,15 +29,13 @@ class BddTester(tester.BddTester):
     username, password = 'Alice', 'AlicePassWd'
 
     @pytest.fixture(autouse=True)
-    def setup_clients(self, django_user_model, client):
+    def setup_client(self, django_user_model, client):
         self.user = django_user_model.objects.create(username=self.username)
         self.user.set_password(self.password)
         self.user.save()
 
         self.client = client
         self.assert_login()
-
-        self.drf_client = APIClient()
 
     def assert_login(self):
         assert self.client.login(username=self.username, password=self.password)
@@ -91,6 +88,10 @@ class BddTester(tester.BddTester):
         assert response.status_code == 200
 
         return bs4.BeautifulSoup(response.content.decode(), features='html.parser')
+
+    def a_tasks_admin_user_is_created_with_command(self):
+        self.password = call_command('create_task_admin', self.username, 'fake@gmail.com')
+        self.assert_login()
 
     async def cancelled_error_success_messages_are_broadcasted(self):
         cancelled, error, success = map(int, self.param)
