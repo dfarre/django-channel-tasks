@@ -5,7 +5,8 @@ Story: |-
    * The admin tools module
 
 Scenarios:
-  A database access async action runs ok:
+  Database access async actions run ok:
     - Given single task execution post with result storage
-    - When the user runs the database access test action
-    - Then the doc task is retrieved asynchronously
+    - When the user runs the $(database_access_test) action
+    - And the user runs the $(store_database_access_test) action
+    - And the user runs the $(delete_test) action

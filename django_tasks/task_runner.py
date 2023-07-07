@@ -28,14 +28,14 @@ class TaskRunner:
 
         cls._instances[-1].ensure_alive()
 
-        logging.getLogger('django').info('Using task runner: %s.', cls._instances[-1])
+        logging.getLogger('django').debug('Using task runner: %s.', cls._instances[-1])
         return cls._instances[-1]
 
     def __init__(self):
         self.event_loop = asyncio.new_event_loop()
         self.worker_thread = threading.Thread(target=self.event_loop.run_forever, daemon=True)
         self.__class__._instances.append(self)
-        logging.getLogger('django').info('New task runner: %s.', self)
+        logging.getLogger('django').debug('New task runner: %s.', self)
 
     def __str__(self):
         return f'loop={self.event_loop}, worker={self.worker_thread}'

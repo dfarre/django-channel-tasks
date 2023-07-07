@@ -73,13 +73,10 @@ class RestApiWithTokenAuth(base.BddTester):
         self.drf_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
         data = dict(name='sleep_test', inputs={'duration': duration, 'raise_error': True})
         response = self.drf_client.post('/api/tasks/', data=data)
-
         assert response.status_code == status.HTTP_201_CREATED
         response_json = response.json()
         del response_json['scheduled_at']
         assert response_json == {**data, 'completed_at': None, 'document': None}
-
-        time.sleep(duration)
 
         return response_json,
 
@@ -171,12 +168,16 @@ class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
     def test_a_database_access_async_action_runs_ok(self):
         """
         Given single task execution post with result storage
-        When the user runs the database access test action
-        Then the doc task is retrieved asynchronously
+        When the user runs the $(database_access_test) action
+        And the user runs the $(store_database_access_test) action
+        And the user runs the $(delete_test) action
         """
 
-    def the_user_runs_the_database_access_test_action(self):
-        pass
+    def the_user_runs_the_action(self):
+        from django_tasks import models
+        response = self.client.post('/django_tasks/doctask/', {
+            'action': self.param,
+            '_selected_action': [doctask.pk for doctask in models.DocTask.objects.all()]},
+            follow=True)
 
-    def the_doc_task_is_retrieved_asynchronously(self):
-        pass
+        assert response.status_code == status.HTTP_200_OK

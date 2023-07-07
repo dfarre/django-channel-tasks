@@ -34,7 +34,7 @@ async def delete_test(modeladmin: admin.ModelAdmin,
 async def database_access_test(modeladmin: admin.ModelAdmin,
                                request: ASGIRequest,
                                instance: models.DocTask):
-    logging.getLogger('django').info('Retrieved %s', instance)
+    logging.getLogger('django').info('Retrieved %s', repr(instance))
     await asyncio.sleep(10)
 
 

@@ -1,5 +1,6 @@
 import asyncio
 import collections
+import ctypes
 import importlib
 
 import bs4
@@ -7,6 +8,7 @@ import pytest
 import pytest_asyncio
 
 from django.core.management import call_command
+from rest_framework.test import APIClient
 from channels.testing import WebsocketCommunicator
 
 from bdd_coder import decorators
@@ -29,13 +31,15 @@ class BddTester(tester.BddTester):
     username, password = 'Alice', 'AlicePassWd'
 
     @pytest.fixture(autouse=True)
-    def setup_client(self, django_user_model, client):
+    def setup_clients(self, django_user_model, client):
         self.user = django_user_model.objects.create(username=self.username)
         self.user.set_password(self.password)
         self.user.save()
 
         self.client = client
         self.assert_login()
+
+        self.drf_client = APIClient()
 
     def assert_login(self):
         assert self.client.login(username=self.username, password=self.password)
@@ -100,3 +104,7 @@ class BddTester(tester.BddTester):
         assert len(self.events['cancelled']) == cancelled
         assert len(self.events['error']) == error
         assert len(self.events['success']) == success
+
+
+def get_object(memory_id):
+    return ctypes.cast(memory_id, ctypes.py_object).value
