@@ -111,6 +111,14 @@ class TestTaskRunner(base.BddTester):
         And the different task statuses are correctly stored
         """
 
+    @base.BddTester.gherkin()
+    def test_concurrent_error_and_cancellation_with_storage(self):
+        """
+        When a `failed`, a `cancelled` and some `OK` doctasks are created
+        Then completion times do not accumulate
+        And all task results are correctly stored
+        """
+
     async def a_failed_a_cancelled_and_some_ok_tasks_are_scheduled(self):
         failed_task, cancelled_task, *ok_tasks = await asyncio.gather(
             self.runner.schedule(self.fake_task_coro_raise(0.1)),
@@ -136,6 +144,22 @@ class TestTaskRunner(base.BddTester):
         await asyncio.sleep(0.01)
         cancelled_task_info = self.runner.get_task_info(self.get_output('cancelled'))
         assert cancelled_task_info['status'] == 'Cancelled'
+
+    async def a_failed_a_cancelled_and_some_ok_doctasks_are_created(self):
+        from django_tasks import models
+
+        ok_tasks = []
+        for d in self.task_durations:
+            _, task = await models.DocTask.schedule(self.fake_task_coro_ok, duration=d)
+            ok_tasks.append(task)
+
+        _, failed_task = await models.DocTask.schedule(self.fake_task_coro_raise, duration=0.2)
+        _, cancelled_task = await models.DocTask.schedule(self.fake_task_coro_ok, duration=10)
+
+        return failed_task, cancelled_task, ok_tasks
+
+    def all_task_results_are_correctly_stored(self):
+        time.sleep(3)
 
 
 class TestWebsocketScheduling(base.BddTester):
@@ -165,7 +189,7 @@ class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
     """
 
     @base.BddTester.gherkin()
-    def test_a_database_access_async_action_runs_ok(self):
+    def test_database_access_async_actions_run_ok(self):
         """
         Given single task execution post with result storage
         When the user runs the $(database_access_test) action

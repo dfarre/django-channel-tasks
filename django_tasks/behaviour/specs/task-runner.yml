@@ -12,3 +12,7 @@ Scenarios:
     - Then completion times do not accumulate
     - And $(1) cancelled $(1) error $(4) success messages are broadcasted
     - And the different task statuses are correctly stored
+  Concurrent error and cancellation with storage:
+    - When a `failed`, a `cancelled` and some `OK` doctasks are created
+    - Then completion times do not accumulate
+    - And all task results are correctly stored
