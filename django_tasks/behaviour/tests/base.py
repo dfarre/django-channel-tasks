@@ -41,6 +41,11 @@ class BddTester(tester.BddTester):
 
         self.drf_client = APIClient()
 
+    @pytest.fixture(autouse=True)
+    def setup_models(self):
+        from django_tasks import models
+        self.models = models
+
     def assert_login(self):
         assert self.client.login(username=self.username, password=self.password)
 

@@ -116,6 +116,7 @@ class TestTaskRunner(base.BddTester):
         """
         When a `failed`, a `cancelled` and some `OK` doctasks are created
         Then completion times do not accumulate
+        And $(1) cancelled $(1) error $(4) success messages are broadcasted
         And all task results are correctly stored
         """
 
@@ -146,21 +147,23 @@ class TestTaskRunner(base.BddTester):
         assert cancelled_task_info['status'] == 'Cancelled'
 
     async def a_failed_a_cancelled_and_some_ok_doctasks_are_created(self):
-        from django_tasks import models
-
         ok_tasks = []
         for d in self.task_durations:
-            _, task = await models.DocTask.schedule(self.fake_task_coro_ok, duration=d)
+            _, task = await self.models.DocTask.schedule(self.fake_task_coro_ok, duration=d)
             ok_tasks.append(task)
 
-        _, failed_task = await models.DocTask.schedule(self.fake_task_coro_raise, duration=0.2)
-        _, cancelled_task = await models.DocTask.schedule(self.fake_task_coro_ok, duration=10)
+        _, failed_task = await self.models.DocTask.schedule(self.fake_task_coro_raise, duration=0.2)
+        _, cancelled_task = await self.models.DocTask.schedule(self.fake_task_coro_ok, duration=10)
 
         return failed_task, cancelled_task, ok_tasks
 
     def all_task_results_are_correctly_stored(self):
-        time.sleep(3)
+        doctasks = self.models.DocTask.objects.order_by('inputs__duration')
+        doctask_strings = [str(doctask) for doctask in doctasks]
 
+        assert all(s.startswith('Task completed at') for s in doctask_strings)
+        assert [dt.inputs['duration'] for dt in doctasks] == sorted((0.2, 10, *self.task_durations))
+        assert [dt.document for dt in doctasks] == []
 
 class TestWebsocketScheduling(base.BddTester):
     """
@@ -198,10 +201,9 @@ class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
         """
 
     def the_user_runs_the_action(self):
-        from django_tasks import models
         response = self.client.post('/django_tasks/doctask/', {
             'action': self.param,
-            '_selected_action': [doctask.pk for doctask in models.DocTask.objects.all()]},
+            '_selected_action': [doctask.pk for doctask in self.models.DocTask.objects.all()]},
             follow=True)
 
         assert response.status_code == status.HTTP_200_OK
