@@ -97,8 +97,10 @@ class RestApiWithTokenAuth(base.BddTester):
 class TestTaskRunner(base.BddTester):
     """
     Several tasks may be scheduled to run concurrently, and their states are broadcasted.
+    Task information may also be stored in database.
     This covers:
     * The task runner
+    * The DocTask model
     * The websocket broadcasting
     """
 
@@ -159,11 +161,19 @@ class TestTaskRunner(base.BddTester):
 
     def all_task_results_are_correctly_stored(self):
         doctasks = self.models.DocTask.objects.order_by('inputs__duration')
-        doctask_strings = [str(doctask) for doctask in doctasks]
 
-        assert all(s.startswith('Task completed at') for s in doctask_strings)
-        assert [dt.inputs['duration'] for dt in doctasks] == sorted((0.2, 10, *self.task_durations))
-        assert [dt.document for dt in doctasks] == []
+        assert list(doctasks.values_list('inputs__duration', flat=True)) == sorted((0.2, 10, *self.task_durations))
+        assert all(str(dt).startswith('Task completed at') for dt in doctasks)
+
+        documents = list(doctasks.values_list('document', flat=True))
+
+        assert all(sorted(doc) == ['memory-id', 'output', 'status']
+                   for doc in documents if doc['status'] == 'Success'), documents
+        assert all(sorted(doc) == ['exception-type', 'memory-id', 'status', 'traceback']
+                   for doc in documents if doc['status'] == 'Error'), documents
+        assert all(sorted(doc) == ['memory-id', 'status']
+                   for doc in documents if doc['status'] == 'Cancelled'), documents
+
 
 class TestWebsocketScheduling(base.BddTester):
     """

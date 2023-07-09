@@ -2,8 +2,10 @@ Title: Task runner
 
 Story: |-
   Several tasks may be scheduled to run concurrently, and their states are broadcasted.
+  Task information may also be stored in database.
   This covers:
    * The task runner
+   * The DocTask model
    * The websocket broadcasting
 
 Scenarios:
