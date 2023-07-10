@@ -1,3 +1,4 @@
+import asyncio
 from asgiref.sync import async_to_sync
 
 from typing import Callable, Optional, Any
@@ -6,6 +7,7 @@ from rest_framework import exceptions, serializers
 
 from django_tasks import models
 from django_tasks import task_inspector
+from django_tasks import task_runner
 
 
 class DocTaskSerializer(serializers.ModelSerializer):
@@ -14,15 +16,31 @@ class DocTaskSerializer(serializers.ModelSerializer):
         read_only_fields = ('scheduled_at', 'completed_at', 'document')
         fields = ('name', 'inputs', *read_only_fields)
 
-    @property
-    def callable(self) -> Optional[Callable]:
-        task_info = self.context.get('coro_info')
-        return task_info.callable if task_info else None
+    @classmethod
+    async def schedule_task_group(cls, json_content):
+        many_serializer = cls(data=json_content, many=True)
+        many_serializer.is_valid(raise_exception=True)
+        runner = task_runner.TaskRunner.get()
+        tasks = await asyncio.gather(*[
+            runner.schedule(many_serializer.child.get_coro_info(task).callable(**task['inputs']))
+            for task in many_serializer.data]
+        )
+        return many_serializer, tasks
 
-    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
-        self.context['coro_info'] = self.get_coro_info(attrs)
+    async def schedule_doctask(self, validated_data: dict[str, Any]):
+        instance, task = await self.Meta.model.schedule(
+            self.get_coro_info(validated_data).callable, **validated_data['inputs'])
+        return instance, task
 
-        return attrs
+    @classmethod
+    async def schedule_doctask_group(cls, json_content, *args, **kwargs):
+        many_serializer = cls(data=json_content, many=True, *args, **kwargs)
+        many_serializer.is_valid(raise_exception=True)
+        doctasks = await asyncio.gather(*[
+            cls.Meta.model.schedule(cls.get_coro_info(task_data).callable, **task_data['inputs'])
+            for task_data in many_serializer.data]
+        )
+        return many_serializer, doctasks
 
     @staticmethod
     def get_coro_info(attrs: dict[str, Any]) -> Optional[Callable]:
@@ -34,9 +52,11 @@ class DocTaskSerializer(serializers.ModelSerializer):
 
         return coro_info
 
-    def create(self, validated_data: dict[str, Any]) -> models.DocTask:
-        return async_to_sync(self._schedule_task)(validated_data)
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        self.context['coro_info'] = self.get_coro_info(attrs)
 
-    async def _schedule_task(self, validated_data: dict[str, Any]) -> models.DocTask:
-        instance, _ = await self.Meta.model.schedule(self.callable, **validated_data['inputs'])
+        return attrs
+
+    def create(self, validated_data: dict[str, Any]) -> models.DocTask:
+        instance, _ = async_to_sync(self.schedule_doctask)(validated_data)
         return instance
