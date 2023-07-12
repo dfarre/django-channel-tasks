@@ -16,8 +16,10 @@ Scenarios:
   Single task execution POST with result storage:
     - Given a user creates an API token
     - When a failed `task` is posted with duration $(0.1)
+    - Then $(0) cancelled $(1) error $(0) success messages are broadcasted
     - Then the task result is correctly stored in DB
   Many tasks execution POST with result storage:
     - Given a user creates an API token
     - When a failed and some OK `tasks` are posted
-    - Then the different task results are correctly stored in DB
+    - Then $(0) cancelled $(1) error $(4) success messages are broadcasted
+    - And the different task results are correctly stored in DB

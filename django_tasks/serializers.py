@@ -17,8 +17,8 @@ class DocTaskSerializer(serializers.ModelSerializer):
         fields = ('name', 'inputs', *read_only_fields)
 
     @classmethod
-    async def schedule_task_group(cls, json_content):
-        many_serializer = cls(data=json_content, many=True)
+    async def schedule_task_group(cls, json_content, *args, **kwargs):
+        many_serializer = cls(data=json_content, *args, many=True, **kwargs)
         many_serializer.is_valid(raise_exception=True)
         runner = task_runner.TaskRunner.get()
         tasks = await asyncio.gather(*[
@@ -27,18 +27,12 @@ class DocTaskSerializer(serializers.ModelSerializer):
         )
         return many_serializer, tasks
 
-    async def schedule_doctask(self, validated_data: dict[str, Any]):
-        instance, task = await self.Meta.model.schedule(
-            self.get_coro_info(validated_data).callable, **validated_data['inputs'])
-        return instance, task
-
     @classmethod
     async def schedule_doctask_group(cls, json_content, *args, **kwargs):
         many_serializer = cls(data=json_content, many=True, *args, **kwargs)
         many_serializer.is_valid(raise_exception=True)
         doctasks = await asyncio.gather(*[
-            cls.Meta.model.schedule(cls.get_coro_info(task_data).callable, **task_data['inputs'])
-            for task_data in many_serializer.data]
+            cls.Meta.model.schedule(task_data) for task_data in many_serializer.data]
         )
         return many_serializer, doctasks
 
@@ -58,5 +52,5 @@ class DocTaskSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data: dict[str, Any]) -> models.DocTask:
-        instance, _ = async_to_sync(self.schedule_doctask)(validated_data)
+        instance = async_to_sync(self.Meta.model.schedule)(validated_data)
         return instance

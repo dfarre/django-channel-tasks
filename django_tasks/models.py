@@ -1,11 +1,8 @@
 import datetime
 import json
 
-from typing import Callable
-
+from channels.layers import get_channel_layer
 from django.db.models import Model, CharField, DateTimeField, JSONField
-
-from django_tasks.task_runner import TaskRunner
 
 
 class DefensiveJsonEncoder(json.JSONEncoder):
@@ -33,17 +30,17 @@ class DocTask(Model):
         return (self.completed_at if self.completed_at else datetime.datetime.now()) - self.scheduled_at
 
     @classmethod
-    async def schedule(cls, callable: Callable, **inputs):
+    async def schedule(cls, json_data):
         """Creates a `DocTask` instance to run the given function with given arguments.
-        The resulting `task` (actually an `asyncio.Future`) should return a JSON-serializable object
-        as result -task document- to be stored; `inputs` should be JSON-serializable as well,
-        and valid keyword arguments to `callable`.
+        The resulting task (actually an `asyncio.Future`) should return a JSON-serializable object
+        as result -task document- to be stored; 'inputs' should be valid keyword arguments to `callable`.
         """
-        scheduled_task = cls(name=callable.__name__, inputs=inputs)
-        runner = TaskRunner.get()
-        task = await runner.schedule(callable(**inputs), scheduled_task.on_completion)
-        await scheduled_task.asave()
-        return scheduled_task, task
+        doctask = cls(name=json_data['name'], inputs=json_data['inputs'])
+        await doctask.asave()
+        json_data['doctask-id'] = doctask.pk
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send('tasks', {'type': 'task.schedule', 'content': json_data})
+        return doctask
 
     async def on_completion(self, task_info):
         self.completed_at = datetime.datetime.now()

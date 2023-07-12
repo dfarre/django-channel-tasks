@@ -37,7 +37,8 @@ class RestApiWithTokenAuth(base.BddTester):
         """
         Given a user creates an API token
         When a failed and some OK `tasks` are posted
-        Then the different task results are correctly stored in DB
+        Then $(0) cancelled $(1) error $(4) success messages are broadcasted
+        And the different task results are correctly stored in DB
         """
 
     @base.BddTester.gherkin()
@@ -45,6 +46,7 @@ class RestApiWithTokenAuth(base.BddTester):
         """
         Given a user creates an API token
         When a failed `task` is posted with duration $(0.1)
+        Then $(0) cancelled $(1) error $(0) success messages are broadcasted
         Then the task result is correctly stored in DB
         """
 
@@ -66,6 +68,7 @@ class RestApiWithTokenAuth(base.BddTester):
         assert response.status_code == status.HTTP_200_OK
         tasks = response.json()
         assert len(tasks) == 5
+        assert tasks == []
 
     def a_failed_task_is_posted_with_duration(self):
         duration = float(self.param)
@@ -114,11 +117,10 @@ class TestTaskRunner(base.BddTester):
         """
 
     @base.BddTester.gherkin()
-    def test_concurrent_error_and_cancellation_with_storage(self):
+    def test_concurrent_error_and_success_with_storage(self):
         """
-        When a `failed`, a `cancelled` and some `OK` doctasks are created
-        Then completion times do not accumulate
-        And $(1) cancelled $(1) error $(4) success messages are broadcasted
+        When a `failed` and some `OK` doctasks are created
+        Then $(0) cancelled $(1) error $(4) success messages are broadcasted
         And all task results are correctly stored
         """
 
@@ -148,21 +150,21 @@ class TestTaskRunner(base.BddTester):
         cancelled_task_info = self.runner.get_task_info(self.get_output('cancelled'))
         assert cancelled_task_info['status'] == 'Cancelled'
 
-    async def a_failed_a_cancelled_and_some_ok_doctasks_are_created(self):
-        ok_tasks = []
-        for d in self.task_durations:
-            _, task = await self.models.DocTask.schedule(self.fake_task_coro_ok, duration=d)
-            ok_tasks.append(task)
+    async def a_failed_and_some_ok_doctasks_are_created(self):
+        ok_doctasks = []
+        for dn in self.task_durations:
+            doctask = await self.models.DocTask.schedule(dict(name='sleep_test', inputs={'duration': dn}))
+            ok_doctasks.append(doctask)
 
-        _, failed_task = await self.models.DocTask.schedule(self.fake_task_coro_raise, duration=0.2)
-        _, cancelled_task = await self.models.DocTask.schedule(self.fake_task_coro_ok, duration=10)
+        failed_doctask = await self.models.DocTask.schedule(dict(
+            name='sleep_test', inputs={'duration': 0.2, 'raise_error': True}))
 
-        return failed_task, cancelled_task, ok_tasks
+        return failed_doctask, ok_doctasks
 
     def all_task_results_are_correctly_stored(self):
         doctasks = self.models.DocTask.objects.order_by('inputs__duration')
 
-        assert list(doctasks.values_list('inputs__duration', flat=True)) == sorted((0.2, 10, *self.task_durations))
+        assert list(doctasks.values_list('inputs__duration', flat=True)) == sorted((0.2, *self.task_durations))
         assert all(str(dt).startswith('Task completed at') for dt in doctasks)
 
         documents = list(doctasks.values_list('document', flat=True))

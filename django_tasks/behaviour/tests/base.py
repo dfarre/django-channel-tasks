@@ -1,6 +1,5 @@
 import asyncio
 import collections
-import ctypes
 import importlib
 
 import bs4
@@ -56,7 +55,7 @@ class BddTester(tester.BddTester):
             'websocket'].application.inner.inner.inner.routes[0]
         consumers = importlib.import_module(route.lookup_str.rsplit('.', 1)[0])
         self.communicator = WebsocketCommunicator(
-            consumers.TaskStatusConsumer.as_asgi(), route.pattern.describe().strip("'"))
+            consumers.TaskEventsConsumer.as_asgi(), route.pattern.describe().strip("'"))
 
         connected, subprotocol = await self.communicator.connect()
         assert connected
@@ -109,7 +108,3 @@ class BddTester(tester.BddTester):
         assert len(self.events['cancelled']) == cancelled
         assert len(self.events['error']) == error
         assert len(self.events['success']) == success
-
-
-def get_object(memory_id):
-    return ctypes.cast(memory_id, ctypes.py_object).value

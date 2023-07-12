@@ -35,21 +35,44 @@ MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
 ]
 
+DJANGO_LOG_LEVEL = 'DEBUG'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'thread-logname',
+        },
+        'console-debug': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {threadName} ({pathname}) {funcName}:L{lineno} ★ {message}',
+            'style': '{',
+        },
+        'thread-logname': {
+            'format': '{levelname} {asctime} ({threadName}) {name} ★ {message}',
+            'style': '{',
         },
     },
     'loggers': {
         'django': {
-            'level': 'DEBUG',
+            'level': DJANGO_LOG_LEVEL,
+            'handlers': ['console-debug'],
         },
         'django.request': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': DJANGO_LOG_LEVEL,
+            'propagate': False,
+        },
+        'django.channels': {
+            'handlers': ['console'],
+            'level': DJANGO_LOG_LEVEL,
             'propagate': False,
         },
     },
