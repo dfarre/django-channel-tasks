@@ -35,7 +35,7 @@ MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
 ]
 
-DJANGO_LOG_LEVEL = 'DEBUG'
+DJANGO_LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
 
 LOGGING = {
     'version': 1,
