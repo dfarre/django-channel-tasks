@@ -26,7 +26,7 @@ application = ProtocolTypeRouter(
     {
         "http": URLRouter([
             urls.re_path(r'^api/', URLRouter(TasksRestConsumer.get_urls(drf_router))),
-            urls.re_path(r'', asgi_app),
+            urls.re_path(r'^', asgi_app),
         ]),
         'websocket': AllowedHostsOriginValidator(AuthMiddlewareStack(
             URLRouter([urls.path('tasks/', TaskEventsConsumer.as_asgi())])

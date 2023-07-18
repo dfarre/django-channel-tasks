@@ -1,10 +1,12 @@
-import logging
 import traceback
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
 from channels.routing import URLRouter
+
 from django import urls
+from django.conf import settings
+
 from rest_framework import status
 from rest_framework.test import APIRequestFactory
 
@@ -12,15 +14,13 @@ from rest_framework.test import APIRequestFactory
 class DrfConsumer(AsyncHttpConsumer):
     content_type = 'application/json'
 
-    @classmethod
-    def as_asgi(cls, drf_url, *args, **kwargs):
-        consumer = super().as_asgi(*args, **kwargs)
-        consumer.drf_url = drf_url
-        return consumer
+    def __init__(self, *args, **kwargs):
+        self.drf_url = kwargs.pop('drf_url')
+        super().__init__(*args, **kwargs)
 
     @classmethod
-    def get_urls(cls, drf_router, *args, **kwargs):
-        return [urls.re_path(str(drf_url.pattern), cls.as_asgi(drf_url)) for drf_url in drf_router.urls]
+    def get_urls(cls, drf_router):
+        return [urls.re_path(str(url.pattern), cls.as_asgi(drf_url=url)) for url in drf_router.urls]
 
     @property
     def args(self):
@@ -44,8 +44,6 @@ class DrfConsumer(AsyncHttpConsumer):
         return self.drf_url.callback(self.make_drf_request(request_body), *self.args, **self.kwargs)
 
     async def handle(self, body: bytes):
-        logging.getLogger('django').info('Handling scope %s with %s', self.scope, self.drf_url)
-
         try:
             drf_response = await self.view_coroutine(body)
             drf_response.render()
@@ -55,7 +53,8 @@ class DrfConsumer(AsyncHttpConsumer):
             ])
         except Exception as exc:
             await self.send_response(
-                status.HTTP_500_INTERNAL_SERVER_ERROR, ''.join(traceback.format_exception(exc)).encode()
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                ''.join(traceback.format_exception(exc)).encode() if settings.DEBUG else b''
             )
 
     async def process_drf_response(self, drf_response):
