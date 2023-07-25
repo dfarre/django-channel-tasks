@@ -52,19 +52,19 @@ class RestApiWithTokenAuth(base.BddTester):
 
     def a_failed_and_some_ok_tasks_are_posted(self):
         token_key = self.get_output('token')
-        self.drf_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
+        self.api_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
 
         task_data = [dict(name='sleep_test', inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True}))
-        response = self.drf_client.post('/api/tasks/schedule/', data=task_data)
-        assert response.status_code == status.HTTP_201_CREATED
+        response = self.api_client.post('/api/tasks/schedule/', data=task_data, follow=True)
+        assert response.status_code == status.HTTP_201_CREATED, response.content.decode()
 
         time.sleep(max(self.task_durations))
 
         return response.json(),
 
     def the_different_task_results_are_correctly_stored_in_db(self):
-        response = self.drf_client.get('/api/tasks/')
+        response = self.api_client.get('/api/tasks', follow=True)
         assert response.status_code == status.HTTP_200_OK
         tasks = response.json()
         assert len(tasks) == 5
@@ -73,10 +73,10 @@ class RestApiWithTokenAuth(base.BddTester):
     def a_failed_task_is_posted_with_duration(self):
         duration = float(self.param)
         token_key = self.get_output('token')
-        self.drf_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
+        self.api_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
         data = dict(name='sleep_test', inputs={'duration': duration, 'raise_error': True})
-        response = self.drf_client.post('/api/tasks/', data=data)
-        assert response.status_code == status.HTTP_201_CREATED
+        response = self.api_client.post('/api/tasks', data=data, follow=True)
+        assert response.status_code == status.HTTP_201_CREATED, response.content.decode()
         response_json = response.json()
         del response_json['scheduled_at']
         assert response_json == {**data, 'completed_at': None, 'document': None}
@@ -91,7 +91,7 @@ class RestApiWithTokenAuth(base.BddTester):
         return messages['success'][0].split()[2].strip('“”'),
 
     def the_task_result_is_correctly_stored_in_db(self):
-        response = self.drf_client.get('/api/tasks/')
+        response = self.api_client.get('/api/tasks', follow=True)
         assert response.status_code == status.HTTP_200_OK
         tasks = response.json()
         assert len(tasks) == 1
@@ -103,7 +103,6 @@ class TestTaskRunner(base.BddTester):
     Task information may also be stored in database.
     This covers:
     * The task runner
-    * The DocTask model
     * The websocket broadcasting
     """
 
@@ -114,14 +113,6 @@ class TestTaskRunner(base.BddTester):
         Then completion times do not accumulate
         And $(1) cancelled $(1) error $(4) success messages are broadcasted
         And the different task statuses are correctly stored
-        """
-
-    @base.BddTester.gherkin()
-    def test_concurrent_error_and_success_with_storage(self):
-        """
-        When a `failed` and some `OK` doctasks are created
-        Then $(0) cancelled $(1) error $(4) success messages are broadcasted
-        And all task results are correctly stored
         """
 
     async def a_failed_a_cancelled_and_some_ok_tasks_are_scheduled(self):
@@ -149,32 +140,6 @@ class TestTaskRunner(base.BddTester):
         await asyncio.sleep(0.01)
         cancelled_task_info = self.runner.get_task_info(self.get_output('cancelled'))
         assert cancelled_task_info['status'] == 'Cancelled'
-
-    async def a_failed_and_some_ok_doctasks_are_created(self):
-        ok_doctasks = []
-        for dn in self.task_durations:
-            doctask = await self.models.DocTask.schedule(dict(name='sleep_test', inputs={'duration': dn}))
-            ok_doctasks.append(doctask)
-
-        failed_doctask = await self.models.DocTask.schedule(dict(
-            name='sleep_test', inputs={'duration': 0.2, 'raise_error': True}))
-
-        return failed_doctask, ok_doctasks
-
-    def all_task_results_are_correctly_stored(self):
-        doctasks = self.models.DocTask.objects.order_by('inputs__duration')
-
-        assert list(doctasks.values_list('inputs__duration', flat=True)) == sorted((0.2, *self.task_durations))
-        assert all(str(dt).startswith('Task completed at') for dt in doctasks)
-
-        documents = list(doctasks.values_list('document', flat=True))
-
-        assert all(sorted(doc) == ['memory-id', 'output', 'status']
-                   for doc in documents if doc['status'] == 'Success'), documents
-        assert all(sorted(doc) == ['exception-type', 'memory-id', 'status', 'traceback']
-                   for doc in documents if doc['status'] == 'Error'), documents
-        assert all(sorted(doc) == ['memory-id', 'status']
-                   for doc in documents if doc['status'] == 'Cancelled'), documents
 
 
 class TestWebsocketScheduling(base.BddTester):

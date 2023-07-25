@@ -38,7 +38,13 @@ class BddTester(tester.BddTester):
         self.client = client
         self.assert_login()
 
-        self.drf_client = APIClient()
+        self.api_client = APIClient()
+
+    def assert_rest_api_call(self, method, api_path, expected_http_code, **kwargs):
+        kwargs.setdefault('follow', True)
+        response = getattr(self.api_client, method.lower())(f'/api/{api_path}', **kwargs)
+        assert response.status_code == expected_http_code, response.content.decode()
+        return response
 
     @pytest.fixture(autouse=True)
     def setup_models(self):

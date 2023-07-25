@@ -2,7 +2,6 @@ import traceback
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
-from channels.routing import URLRouter
 
 from django import urls
 from django.conf import settings

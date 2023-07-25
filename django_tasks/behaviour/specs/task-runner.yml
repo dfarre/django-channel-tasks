@@ -5,7 +5,6 @@ Story: |-
   Task information may also be stored in database.
   This covers:
    * The task runner
-   * The DocTask model
    * The websocket broadcasting
 
 Scenarios:
@@ -14,7 +13,3 @@ Scenarios:
     - Then completion times do not accumulate
     - And $(1) cancelled $(1) error $(4) success messages are broadcasted
     - And the different task statuses are correctly stored
-  Concurrent error and success with storage:
-    - When a `failed` and some `OK` doctasks are created
-    - Then $(0) cancelled $(1) error $(4) success messages are broadcasted
-    - And all task results are correctly stored

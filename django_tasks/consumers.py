@@ -12,8 +12,6 @@ from django_tasks.task_runner import TaskRunner
 
 
 class TasksRestConsumer(DrfConsumer):
-    groups = ['tasks']
-
     model = DocTaskSerializer.Meta.model
     doctask_index = collections.defaultdict(dict)
 
@@ -40,26 +38,18 @@ class TasksRestConsumer(DrfConsumer):
         """Schedules a single task."""
         callable = DocTaskSerializer.get_coro_info(data).callable
         runner = TaskRunner.get()
-        task = await runner.schedule(callable(**data['inputs']))
+        task = await runner.schedule(callable(**data['inputs']), self.store_doctask_result)
         self.doctask_index[id(task)].update({'future': task, 'id': data['id']})
+        logging.getLogger('django').info('Scheduled task %s.', data)
 
-    async def store_doctask_result(self, memory_id):
+    async def store_doctask_result(self, task_info):
+        memory_id = task_info['memory-id']
         doctask = await database_sync_to_async(self.retrieve_doctask)(memory_id)
 
         if doctask:
             await doctask.on_completion(TaskRunner.get_task_info(self.doctask_index[memory_id]['future']))
             del self.doctask_index[memory_id]
-
-    async def task_success(self, event):
-        await self.store_doctask_result(event['content']['memory-id'])
-
-    async def task_cancelled(self, event):
-        """Echoes the task.cancelled document."""
-        await self.store_doctask_result(event['content']['memory-id'])
-
-    async def task_error(self, event):
-        """Echoes the task.error document."""
-        await self.store_doctask_result(event['content']['memory-id'])
+            logging.getLogger('django').info('Stored doctask %s.', doctask)
 
 
 class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
