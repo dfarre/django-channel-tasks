@@ -50,33 +50,25 @@ class RestApiWithTokenAuth(base.BddTester):
         Then the task result is correctly stored in DB
         """
 
-    def a_failed_and_some_ok_tasks_are_posted(self):
-        token_key = self.get_output('token')
-        self.api_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
-
+    async def a_failed_and_some_ok_tasks_are_posted(self):
         task_data = [dict(name='sleep_test', inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True}))
-        response = self.api_client.post('/api/tasks/schedule/', data=task_data, follow=True)
-        assert response.status_code == status.HTTP_201_CREATED, response.content.decode()
-
+        response = await self.assert_rest_api_call(
+            'POST', 'tasks/schedule', status.HTTP_201_CREATED, json_data=task_data)
         time.sleep(max(self.task_durations))
 
         return response.json(),
 
-    def the_different_task_results_are_correctly_stored_in_db(self):
-        response = self.api_client.get('/api/tasks', follow=True)
-        assert response.status_code == status.HTTP_200_OK
+    async def the_different_task_results_are_correctly_stored_in_db(self):
+        response = await self.assert_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) == 5
         assert tasks == []
 
-    def a_failed_task_is_posted_with_duration(self):
+    async def a_failed_task_is_posted_with_duration(self):
         duration = float(self.param)
-        token_key = self.get_output('token')
-        self.api_client.credentials(HTTP_AUTHORIZATION='Token ' + token_key)
         data = dict(name='sleep_test', inputs={'duration': duration, 'raise_error': True})
-        response = self.api_client.post('/api/tasks', data=data, follow=True)
-        assert response.status_code == status.HTTP_201_CREATED, response.content.decode()
+        response = await self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, json_data=data)
         response_json = response.json()
         del response_json['scheduled_at']
         assert response_json == {**data, 'completed_at': None, 'document': None}
@@ -90,9 +82,8 @@ class RestApiWithTokenAuth(base.BddTester):
 
         return messages['success'][0].split()[2].strip('“”'),
 
-    def the_task_result_is_correctly_stored_in_db(self):
-        response = self.api_client.get('/api/tasks', follow=True)
-        assert response.status_code == status.HTTP_200_OK
+    async def the_task_result_is_correctly_stored_in_db(self):
+        response = await self.assert_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) == 1
 

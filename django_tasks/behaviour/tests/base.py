@@ -1,14 +1,15 @@
 import asyncio
 import collections
 import importlib
+import json
 
 import bs4
 import pytest
 import pytest_asyncio
 
-from django.core.management import call_command
-from rest_framework.test import APIClient
 from channels.testing import WebsocketCommunicator
+from django.core.management import call_command
+from django.test.client import AsyncClient
 
 from bdd_coder import decorators
 from bdd_coder import tester
@@ -38,11 +39,16 @@ class BddTester(tester.BddTester):
         self.client = client
         self.assert_login()
 
-        self.api_client = APIClient()
+        self.api_client = AsyncClient()
 
-    def assert_rest_api_call(self, method, api_path, expected_http_code, **kwargs):
-        kwargs.setdefault('follow', True)
-        response = getattr(self.api_client, method.lower())(f'/api/{api_path}', **kwargs)
+    async def assert_rest_api_call(self, method, api_path, expected_http_code, **kwargs):
+        kwargs.setdefault('HTTP_AUTHORIZATION', 'Token ' + self.get_output('token'))
+
+        if 'json_data' in kwargs:
+            kwargs['content_type'] = 'application/json'
+            kwargs['data'] = json.dumps(kwargs.pop('json_data'))
+
+        response = await getattr(self.api_client, method.lower())(f'/api/{api_path}', **kwargs)
         assert response.status_code == expected_http_code, response.content.decode()
         return response
 
