@@ -21,8 +21,9 @@ class DocTask(Model):
     document: JSONField = JSONField(null=True)
 
     def __str__(self):
-        return (f'Task completed at {self.completed_at}. Took {self.duration}' if self.completed_at
-                else f'Running for {self.duration}')
+        return f'Doc-task {self.pk}, ' + (
+            f'completed at {self.completed_at}, took {self.duration}' if self.completed_at
+            else f'running for {self.duration}')
 
     @property
     def duration(self):

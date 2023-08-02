@@ -49,7 +49,7 @@ class TasksRestConsumer(DrfConsumer):
         if doctask:
             await doctask.on_completion(TaskRunner.get_task_info(self.doctask_index[memory_id]['future']))
             del self.doctask_index[memory_id]
-            logging.getLogger('django').info('Stored doctask %s.', doctask)
+            logging.getLogger('django').info('Stored %s.', repr(doctask))
 
 
 class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
