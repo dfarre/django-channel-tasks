@@ -2,62 +2,12 @@ import functools
 from asgiref.sync import async_to_sync
 from typing import Callable, Type
 
-from django import forms
 from django.contrib import admin
 from django.contrib import messages
-from django.core import exceptions
+from channels.layers import get_channel_layer
 
-from rest_framework import serializers
-
-from django_tasks import models
 from django_tasks import task_runner
-
-
-class SerializerForm(forms.ModelForm):
-    """A model form that employs a DRF serializer."""
-    serializer_class: Type[serializers.ModelSerializer]
-    serializer: serializers.ModelSerializer
-
-    @classmethod
-    def construct_modelform(cls, serializer_class: Type[serializers.ModelSerializer]):
-        """Use this method to generate model forms consistently."""
-        cls.serializer_class = serializer_class
-        cls._meta.model = cls.serializer_class.Meta.model
-        cls._meta.fields = cls.serializer_class.Meta.fields
-
-        return cls
-
-    def clean(self):
-        """Validates using the DRF serializer and writes the errors to `self`, if any."""
-        self.serializer = self.serializer_class(data=self.data)
-
-        if not self.serializer.is_valid():
-            for field, errors in self.serializer.errors.items():
-                self.add_error(field, exceptions.ValidationError(errors))
-
-        return self.serializer.data
-
-    def save(self, commit=True):
-        self.instance = self.serializer.create(self.cleaned_data)
-
-        return self.instance
-
-    def save_m2m(self):
-        # FIX-ME
-        pass
-
-
-class SerializerModeladmin:
-    """Class decorator that initializes a `ModelAdmin` subclass with a given serializer type."""
-
-    def __init__(self, serializer_class: Type[serializers.ModelSerializer]):
-        self.serializer_class = serializer_class
-
-    def __call__(self, modeladmin: Type[admin.ModelAdmin]) -> Type[admin.ModelAdmin]:
-        modeladmin.form = SerializerForm.construct_modelform(self.serializer_class)
-        modeladmin.readonly_fields = self.serializer_class.Meta.read_only_fields
-
-        return modeladmin
+from django_tasks.doctask_scheduler import DocTaskScheduler
 
 
 TASK_STATUS_MESSAGE_LEVEL = {
@@ -74,8 +24,8 @@ class AsyncAdminAction:
         @functools.wraps(coro_callable)
         @async_to_sync
         async def action_callable(modeladmin, request, queryset):
-            runner = task_runner.TaskRunner.get()
-            await runner.schedule(coro_callable(modeladmin, request, queryset))
+            inputs = dict(modeladmin=modeladmin, request=request, queryset=queryset)
+            await DocTaskScheduler.schedule_task(callable=coro_callable, data={'inputs': inputs})
 
         return action_callable
 
@@ -99,14 +49,6 @@ class AsyncAdminInstanceAction:
         self.kwargs = kwargs
         self.store_result = store_result
 
-    async def schedule_task(self, coro_callable: Callable, **inputs):
-        if self.store_result:
-            _, task = await models.DocTask.schedule(coro_callable, **inputs)
-            return task
-        runner = task_runner.TaskRunner.get()
-        task = await runner.schedule(coro_callable(**inputs))
-        return task
-
     def __call__(self, coro_callable: Callable) -> Callable:
         @admin.action(**self.kwargs)
         @functools.wraps(coro_callable)
@@ -114,9 +56,11 @@ class AsyncAdminInstanceAction:
         async def action_coro_callable(modeladmin, request, queryset):
             tasks = []
             async for instance in queryset.all():
-                task = await self.schedule_task(
-                    coro_callable,
-                    modeladmin=modeladmin, request=request, instance=instance)
+                inputs = dict(modeladmin=modeladmin, request=request, instance=instance)
+                schedule_method = (
+                    DocTaskScheduler.schedule_doctask if self.store_result else DocTaskScheduler.schedule_task
+                )
+                task = await schedule_method(callable=coro_callable, data={'inputs': inputs})
                 tasks.append(task)
             return tasks
 
