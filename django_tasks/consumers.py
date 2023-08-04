@@ -6,7 +6,6 @@ from rest_framework import status
 from django_tasks.drf_consumer import DrfConsumer
 from django_tasks.doctask_scheduler import DocTaskScheduler
 from django_tasks.serializers import DocTaskSerializer
-from django_tasks.task_runner import TaskRunner
 
 
 class TasksRestConsumer(DrfConsumer, DocTaskScheduler):

@@ -28,7 +28,7 @@ class RestApiWithTokenAuth(base.BddTester):
     @base.BddTester.gherkin()
     def a_user_creates_an_api_token(self):
         """
-        Given a tasks admin user is created with command
+        Given a tasks admin `user` is created with command
         And the user creates an API `token`
         """
 
@@ -75,10 +75,12 @@ class RestApiWithTokenAuth(base.BddTester):
 
         return response_json,
 
-    def the_user_creates_an_api_token(self):
-        response = self.client.post('/authtoken/token/add/', {'user': self.user.pk}, follow=True)
-        soup = self.assert_200(response)
+    async def the_user_creates_an_api_token(self):
+        response = await self.admin_client.post('/authtoken/token/add/', {'user': self.get_output('user').pk})
+        redirected_response = await self.assert_admin_redirection(response)
+        soup = self.get_soup(redirected_response)
         messages = self.get_all_admin_messages(soup)
+        assert len(messages['success']) == 1, soup
 
         return messages['success'][0].split()[2].strip('“”'),
 
@@ -168,10 +170,9 @@ class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
         And the user runs the $(delete_test) action
         """
 
-    def the_user_runs_the_action(self):
-        response = self.client.post('/django_tasks/doctask/', {
+    async def the_user_runs_the_action(self):
+        response = await self.admin_client.post('/django_tasks/doctask/', {
             'action': self.param,
-            '_selected_action': [doctask.pk for doctask in self.models.DocTask.objects.all()]},
-            follow=True)
+            '_selected_action': [doctask.pk for doctask in self.models.DocTask.objects.all()]})
 
         assert response.status_code == status.HTTP_200_OK

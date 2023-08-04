@@ -10,6 +10,7 @@ import pytest_asyncio
 from channels.testing import WebsocketCommunicator
 from django.core.management import call_command
 from django.test.client import AsyncClient
+from rest_framework import status
 
 from bdd_coder import decorators
 from bdd_coder import tester
@@ -28,37 +29,27 @@ class BddTester(tester.BddTester):
     runner = TaskRunner.get()
 
     task_durations = [0.995, 0.95, 0.94, 0.8]
-    username, password = 'Alice', 'AlicePassWd'
+    credentials = dict(username='Alice', password='AlicePassWd')
 
     @pytest.fixture(autouse=True)
-    def setup_clients(self, django_user_model, client):
-        self.user = django_user_model.objects.create(username=self.username)
-        self.user.set_password(self.password)
-        self.user.save()
-
-        self.client = client
-        self.assert_login()
-
+    def setup_clients(self):
+        self.admin_client = AsyncClient()
         self.api_client = AsyncClient()
-
-    async def assert_rest_api_call(self, method, api_path, expected_http_code, **kwargs):
-        kwargs.setdefault('HTTP_AUTHORIZATION', 'Token ' + self.get_output('token'))
-
-        if 'json_data' in kwargs:
-            kwargs['content_type'] = 'application/json'
-            kwargs['data'] = json.dumps(kwargs.pop('json_data'))
-
-        response = await getattr(self.api_client, method.lower())(f'/api/{api_path}', **kwargs)
-        assert response.status_code == expected_http_code, response.content.decode()
-        return response
 
     @pytest.fixture(autouse=True)
     def setup_models(self):
         from django_tasks import models
         self.models = models
 
-    def assert_login(self):
-        assert self.client.login(username=self.username, password=self.password)
+    async def assert_rest_api_call(self, method, api_path, expected_http_code, **kwargs):
+        if 'json_data' in kwargs:
+            kwargs['content_type'] = 'application/json'
+            kwargs['data'] = json.dumps(kwargs.pop('json_data'))
+
+        kwargs.setdefault('HTTP_AUTHORIZATION', 'Token ' + self.get_output('token'))
+        response = await getattr(self.api_client, method.lower())(f'/api/{api_path}', **kwargs)
+        assert response.status_code == expected_http_code, response.content.decode()
+        return response
 
     @pytest_asyncio.fixture(autouse=True)
     async def setup_websocket_communicator(self, event_loop):
@@ -104,14 +95,26 @@ class BddTester(tester.BddTester):
     def get_admin_messages(soup, message_class):
         return [li.contents[0] for li in soup.find_all('li', {'class': message_class})]
 
-    def assert_200(self, response):
-        assert response.status_code == 200
-
+    @staticmethod
+    def get_soup(response):
         return bs4.BeautifulSoup(response.content.decode(), features='html.parser')
 
-    def a_tasks_admin_user_is_created_with_command(self):
-        self.password = call_command('create_task_admin', self.username, 'fake@gmail.com')
+    def a_tasks_admin_user_is_created_with_command(self, django_user_model):
+        self.credentials['password'] = call_command(
+            'create_task_admin', self.credentials['username'], 'fake@gmail.com')
         self.assert_login()
+        user = django_user_model.objects.get(username=self.credentials['username'])
+        return user,
+
+    def assert_login(self):
+        accepted = self.admin_client.login(**self.credentials)
+        assert accepted, self.credentials
+
+    async def assert_admin_redirection(self, response):
+        assert response.status_code == status.HTTP_302_FOUND
+        redirected_response = await self.admin_client.get(response.headers['Location'])
+        assert redirected_response.status_code == status.HTTP_200_OK
+        return redirected_response
 
     async def cancelled_error_success_messages_are_broadcasted(self):
         cancelled, error, success = map(int, self.param)

@@ -1,12 +1,10 @@
 import functools
 from asgiref.sync import async_to_sync
-from typing import Callable, Type
+from typing import Callable
 
 from django.contrib import admin
 from django.contrib import messages
-from channels.layers import get_channel_layer
 
-from django_tasks import task_runner
 from django_tasks.doctask_scheduler import DocTaskScheduler
 
 

@@ -63,6 +63,7 @@ class TaskRunner:
                        *coro_callbacks: Callable[[dict[str, Any]], Coroutine]) -> asyncio.Future:
         task = self.run_coroutine(coroutine)
         await self.broadcast_task(task)
+
         task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(tk)))
 
         for coro_callback in coro_callbacks:
