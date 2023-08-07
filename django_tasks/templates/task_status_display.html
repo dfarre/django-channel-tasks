@@ -14,13 +14,17 @@
     };
 
     admin_ws.onmessage = function (msg_event) {
-        console.log('WebSocket received: ' + JSON.stringify(msg_event, ['type', 'data']));
+        console.log('WebSocket message received: ' + msg_event.data);
         const msg = JSON.parse(msg_event.data);
         const group = msg.type.split('.')[0];
         if (group == 'task') {
-            // location.reload();
-            document.getElementById(`task-msg-{msg.content.pk}`).innerHTML = JSON.stringify(msg.content);
-            // location.reload();
+            const status_element_id = 'task-msg-' + String(msg.content.pk);
+            const status_element = document.getElementById(status_element_id);
+            if (status_element) {
+                status_element.innerHTML = JSON.stringify(msg.content);
+            } else {
+                console.log('Element ' + status_element_id + ' not found');
+            }
         }
     }
 </script>
