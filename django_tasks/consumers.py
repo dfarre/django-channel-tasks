@@ -1,5 +1,6 @@
 import asyncio
 
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from rest_framework import status
 
@@ -22,20 +23,29 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
 
     async def task_started(self, event):
         """Echoes the task.started document."""
+        await self.add_doctask_pk(event['content'])
         await self.send_json(content=event)
 
     async def task_success(self, event):
         """Echoes the task.success document."""
+        await self.add_doctask_pk(event['content'])
         await self.send_json(content=event)
 
     async def task_cancelled(self, event):
         """Echoes the task.cancelled document."""
+        await self.add_doctask_pk(event['content'])
         await self.send_json(content=event)
 
     async def task_error(self, event):
         """Echoes the task.error document."""
+        await self.add_doctask_pk(event['content'])
         await self.send_json(content=event)
 
     async def receive_json(self, content):
         """Pocesses task schedule websocket requests."""
         await DocTaskSerializer.schedule_task_group(content)
+
+    async def add_doctask_pk(self, event_content):
+        doctask = await database_sync_to_async(DocTaskScheduler.retrieve_doctask)(event_content['memory-id'])
+        if doctask:
+            event_content['pk'] = doctask.pk

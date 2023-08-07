@@ -1,5 +1,3 @@
-<div id="task-msg-{{doctask.pk}}"></div>
-
 <script>
     var admin_ws = admin_ws || new WebSocket('ws://' + window.location.host + '/tasks/');
 
@@ -15,11 +13,15 @@
         console.error('WebSocket error at /tasks/:', event);
     };
 
-    admin_ws.onmessage = function (event) {
-        console.log('WebSocket received: ' + JSON.stringify(event.content));
-        const group = event.type.split(".")[0];
-        if (group == 'tasks') {
-            document.getElementById('task-msg-' + "{{doctask.pk}}").innerHTML = JSON.stringify(event.content);
+    admin_ws.onmessage = function (msg_event) {
+        console.log('WebSocket received: ' + JSON.stringify(msg_event, ['type', 'data']));
+        const msg = JSON.parse(msg_event.data);
+        const group = msg.type.split('.')[0];
+        if (group == 'task') {
+            // location.reload();
+            document.getElementById(`task-msg-{msg.content.pk}`).innerHTML = JSON.stringify(msg.content);
+            // location.reload();
         }
     }
 </script>
+{% extends "admin/change_list.html" %}
