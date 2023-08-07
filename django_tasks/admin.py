@@ -51,13 +51,9 @@ async def store_database_access_test(modeladmin: admin.ModelAdmin,
 @admin.register(models.DocTask, site=site)
 class DocTaskModelAdmin(admin.ModelAdmin):
     change_list_template = 'task_status_display.html'
-    list_display = ('name', 'status_message', 'inputs', *DocTaskSerializer.Meta.read_only_fields)
+    list_display = ('name', 'inputs', 'duration', *DocTaskSerializer.Meta.read_only_fields)
     if settings.DEBUG:
         actions = [database_access_test, store_database_access_test, delete_test]
-
-    @admin.display
-    def status_message(self, doctask):
-        return mark_safe(f'<div id="task-msg-{doctask.pk}"></div>')
 
     def has_change_permission(self, request, obj=None):
         return False

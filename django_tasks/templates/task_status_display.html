@@ -1,8 +1,19 @@
 <script>
+    function replaceById(elementId, mutate) {
+        const container = document.getElementById(elementId);
+        if (container) {
+            const content = container.innerHTML;
+            container.innerHTML = mutate(content);
+        } else {
+            console.log('Element ' + elementId + ' not found.');
+        }
+
+    }
+
     var admin_ws = admin_ws || new WebSocket('ws://' + window.location.host + '/tasks/');
 
     admin_ws.onopen = function (event) {
-        console.log('WebSocket connection opened at /tasks/');
+        console.log('WebSocket connection opened at /tasks/.');
     };
 
     admin_ws.onclose = function (event) {
@@ -18,14 +29,9 @@
         const msg = JSON.parse(msg_event.data);
         const group = msg.type.split('.')[0];
         if (group == 'task') {
-            const status_element_id = 'task-msg-' + String(msg.content.pk);
-            const status_element = document.getElementById(status_element_id);
-            if (status_element) {
-                status_element.innerHTML = JSON.stringify(msg.content);
-            } else {
-                console.log('Element ' + status_element_id + ' not found');
-            }
+            location.reload();
         }
     }
 </script>
+
 {% extends "admin/change_list.html" %}

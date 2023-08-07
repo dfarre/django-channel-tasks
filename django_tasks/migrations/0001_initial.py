@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('scheduled_at', models.DateTimeField(default=datetime.datetime.now)),
                 ('completed_at', models.DateTimeField(null=True)),
                 ('inputs', models.JSONField(default=dict, encoder=django_tasks.models.DefensiveJsonEncoder)),
-                ('document', models.JSONField(null=True)),
+                ('document', models.JSONField(default=list, encoder=django_tasks.models.DefensiveJsonEncoder)),
             ],
         ),
     ]

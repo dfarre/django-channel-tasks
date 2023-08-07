@@ -17,8 +17,8 @@ class DocTask(Model):
     name: CharField = CharField(max_length=80)
     scheduled_at: DateTimeField = DateTimeField(default=datetime.datetime.now)
     completed_at: DateTimeField = DateTimeField(null=True)
-    inputs: JSONField = JSONField(null=False, default=dict, encoder=DefensiveJsonEncoder)
-    document: JSONField = JSONField(null=True)
+    inputs: JSONField = JSONField(default=dict, encoder=DefensiveJsonEncoder)
+    document: JSONField = JSONField(default=list, encoder=DefensiveJsonEncoder)
 
     def __str__(self):
         return f'Doc-task {self.pk}, ' + (
@@ -31,5 +31,6 @@ class DocTask(Model):
 
     async def on_completion(self, task_info):
         self.completed_at = datetime.datetime.now()
-        self.document = task_info
+        task_info.pop('memory-id')
+        self.document.append(task_info)
         await self.asave()
