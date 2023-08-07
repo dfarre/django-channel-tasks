@@ -17,30 +17,24 @@ class TasksRestConsumer(DrfConsumer, DocTaskScheduler):
                 await asyncio.gather(*[self.schedule_doctask(data) for data in drf_response.data])
 
 
-class TaskEventsConsumer(AsyncJsonWebsocketConsumer, DocTaskScheduler):
+class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
     groups = ['tasks']
 
     async def task_started(self, event):
         """Echoes the task.started document."""
-        await self.send_json(content=event["content"])
+        await self.send_json(content=event)
 
     async def task_success(self, event):
         """Echoes the task.success document."""
-        await self.send_json(content=event['content'])
+        await self.send_json(content=event)
 
     async def task_cancelled(self, event):
         """Echoes the task.cancelled document."""
-        await self.send_json(content=event['content'])
+        await self.send_json(content=event)
 
     async def task_error(self, event):
         """Echoes the task.error document."""
-        await self.send_json(content=event['content'])
-
-    async def task_schedule(self, event):
-        if event['content'].pop('store_result', False):
-            await self.schedule_doctask(event['content'])
-        else:
-            await self.schedule_task(event['content'])
+        await self.send_json(content=event)
 
     async def receive_json(self, content):
         """Pocesses task schedule websocket requests."""

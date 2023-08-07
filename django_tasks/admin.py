@@ -4,6 +4,9 @@ import logging
 from django.contrib import admin
 from django.conf import settings
 from django.core.handlers.asgi import ASGIRequest
+from django.template import loader
+from django.utils.safestring import mark_safe
+
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.admin import TokenAdmin
 
@@ -48,9 +51,13 @@ async def store_database_access_test(modeladmin: admin.ModelAdmin,
 
 @admin.register(models.DocTask, site=site)
 class DocTaskModelAdmin(admin.ModelAdmin):
-    list_display = ('name', 'inputs', *DocTaskSerializer.Meta.read_only_fields)
+    list_display = ('name', 'status', 'inputs', *DocTaskSerializer.Meta.read_only_fields)
     if settings.DEBUG:
         actions = [database_access_test, store_database_access_test, delete_test]
+
+    @admin.display
+    def status(self, doctask):
+        return mark_safe(loader.render_to_string('task_status_display.html', dict(doctask=doctask)))
 
     def has_change_permission(self, request, obj=None):
         return False
