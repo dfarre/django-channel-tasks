@@ -10,7 +10,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
-        'channels', 'channels-redis', 'daphne', 'tzdata', 'psycopg2-binary'],
+        'django-bootstrap-v5', 'channels', 'channels-redis', 'daphne', 'tzdata', 'psycopg2-binary'],
     extras_require={'dev': ['ipdb', 'ipython'],
                     'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]'],
                     'test': tests_require},
