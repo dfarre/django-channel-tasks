@@ -31,6 +31,5 @@ class DocTask(Model):
 
     async def on_completion(self, task_info):
         self.completed_at = datetime.datetime.now()
-        task_info.pop('memory-id')
         self.document.append(task_info)
         await self.asave()

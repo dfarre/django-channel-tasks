@@ -43,7 +43,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer, DocTaskScheduler):
         await DocTaskSerializer.schedule_task_group(content)
 
     async def handle_doctask(self, event_content):
-        doctask = await database_sync_to_async(self.retrieve_doctask)(event_content.pop('memory-id'))
+        doctask = await database_sync_to_async(self.retrieve_doctask)(event_content['memory-id'])
         if doctask:
             doctask.document.append(event_content)
             await doctask.asave()
