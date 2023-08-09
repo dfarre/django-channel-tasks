@@ -61,10 +61,11 @@ class TaskRunner:
     async def schedule(self,
                        coroutine: Coroutine,
                        *coro_callbacks: Callable[[dict[str, Any]], Coroutine]) -> asyncio.Future:
+        task_name = coroutine.__name__
         task = self.run_coroutine(coroutine)
-        await self.broadcast_task(task)
+        await self.broadcast_task(task_name, task)
 
-        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(tk)))
+        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(task_name, tk)))
 
         for coro_callback in coro_callbacks:
             task.add_done_callback(lambda tk: self.run_on_task_info(coro_callback, tk))
@@ -72,11 +73,12 @@ class TaskRunner:
         return task
 
     @classmethod
-    async def broadcast_task(cls, task: asyncio.Future):
+    async def broadcast_task(cls, name: str, task: asyncio.Future):
         """
         Sends the task info to the 'tasks' group of consumers, specifying a message type per task status.
         """
         task_info = cls.get_task_info(task)
+        task_info['name'] = name
         message_type = f"task.{task_info['status'].lower()}"
         channel_layer = get_channel_layer()
         await channel_layer.group_send("tasks", {'type': message_type, 'content': task_info})
