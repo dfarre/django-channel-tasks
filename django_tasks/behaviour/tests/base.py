@@ -78,7 +78,7 @@ class BddTester(tester.BddTester):
             except asyncio.TimeoutError:
                 listen = False
             else:
-                self.events[event['status'].lower()].append(event)
+                self.events[event['content']['status'].lower()].append(event)
 
     async def fake_task_coro_ok(self, duration):
         await asyncio.sleep(duration)
