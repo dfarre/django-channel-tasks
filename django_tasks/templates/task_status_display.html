@@ -24,12 +24,25 @@
         if (group == 'task') { addTaskAlert(msg.content); };
     };
 
-    function addTaskAlert(alert) {
-        var alerts_display = document.getElementById('task-alerts-display');
-        var msg_type = alert.status.toLowerCase();
-        var alert_template = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
-        alert_template.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alert, null, 2);
-        alerts_display.appendChild(alert_template)
+    function addTaskAlert(alertData) {
+        const taskId = alertData['memory-id'];
+        delete alertData['memory-id'];
+        var alert_group = document.getElementById(taskId);
+
+        if (!alert_group) {
+            var alert_group = document.getElementById('alert-group-template').cloneNode(true).firstElementChild;
+            alert_group.setAttribute('id', taskId);
+        }
+
+        alert_group.getElementsByClassName('card-header')[0].innerHTML = `${alertData.name} - ${taskId}`;
+        delete alertData['name'];
+
+        var msg_type = alertData.status.toLowerCase();
+        var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
+        alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData, null, 4);
+
+        alert_group.getElementsByClassName('card-footer')[0].appendChild(alert);
+        document.getElementById('task-alerts-display').appendChild(alert_group);
     };
 </script>
 {% load bootstrap5 %}
@@ -37,7 +50,7 @@
 {% bootstrap_javascript %}
 {% endblock %}
 
-{% block content %}
-{% include "task_alerts.html" %}
+{% block messages %}
 {{ block.super }}
+{% include "task_alerts.html" %}
 {% endblock %}
