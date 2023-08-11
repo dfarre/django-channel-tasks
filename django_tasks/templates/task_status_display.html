@@ -47,7 +47,16 @@
         }
 
         alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
+        alert_group.getElementsByClassName('last-updated')[0].textContent = currentDateFormatted();
         document.getElementById('task-alerts-display').appendChild(alert_group);
+    };
+
+    function currentDateFormatted() {
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        return `${yyyy}/${mm}/${dd} at ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
     };
 </script>
 {% load bootstrap5 %}

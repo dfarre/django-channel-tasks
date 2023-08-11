@@ -20,21 +20,26 @@
 <span hidden id="success-alert-template">
 <div class="alert alert-success d-inline-flex align-items-center mx-auto" role="alert">
     <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
-    Success.&nbsp;&nbsp;<code></code>&nbsp;&nbsp;&nbsp;
+    Success. &nbsp;&nbsp; <code></code>
 </div>
 </span>
 
 <span hidden id="error-alert-template">
 <div class="alert alert-danger d-inline-flex align-items-center mx-auto" role="alert">
     <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Error:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-    Error:&nbsp;&nbsp;&nbsp;<pre></pre>&nbsp;&nbsp;&nbsp;
+    Error: &nbsp;&nbsp;&nbsp; <pre></pre>
 </div>
 </span>
 
 <span hidden id="alert-group-template">
   <div class="card d-inline-flex">
-    <h6 class="card-title mx-auto">&#x24D8; Task &nbsp;<small class="task-name"></small></h6>
-    <div class="task-alerts"></div>
+    <h6 class="card-header d-inline-flex">
+      &#x24D8; Task &nbsp; <small class="task-name"></small>
+    </h6>
+    <div class="task-alerts d-inline-flex p-1"></div>
+    <div class="card-footer d-inline-flex">
+      <small> Last updated &nbsp;<span class="last-updated"></span></small>
+    </div>
   </div>
 </span>
 
