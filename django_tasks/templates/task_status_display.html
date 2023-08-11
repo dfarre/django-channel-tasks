@@ -34,14 +34,19 @@
             alert_group.setAttribute('id', taskId);
         }
 
-        alert_group.getElementsByClassName('card-header')[0].innerHTML = `${alertData.name} - ${taskId}`;
+        alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.name}_${taskId}`;
         delete alertData['name'];
 
         var msg_type = alertData.status.toLowerCase();
         var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
-        alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData, null, 4);
+        if (msg_type == 'success') {
+            alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
+        }
+        if (msg_type == 'error') {
+            alert.getElementsByTagName('pre')[0].innerHTML = alertData.traceback.join('');
+        }
 
-        alert_group.getElementsByClassName('card-footer')[0].appendChild(alert);
+        alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
         document.getElementById('task-alerts-display').appendChild(alert_group);
     };
 </script>
