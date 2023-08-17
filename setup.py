@@ -1,12 +1,33 @@
+import configparser
 import setuptools
+
+
+ini = configparser.ConfigParser()
+ini.read('version.ini')
+
+
+with open('README.md') as readme:
+    long_description = readme.read()
 
 
 tests_require = ['pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio', 'beautifulsoup4',
                  'bdd-coder==2.2.3.dev2']
 
 setuptools.setup(
-    name='django-tasks',
-    version='0.1',
+    name=ini['version']['name'],
+    version=ini['version']['value'],
+    author='Daniel Farré Manzorro',
+    author_email='d.farre.m@gmail.com',
+    description='Running background tasks trhough REST API and websocket, with channels-redis',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    url='https://bitbucket.org/coleopter/django-tasks',
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.9',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Intended Audience :: Developers'],
     packages=setuptools.find_packages(),
     install_requires=[
         'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
