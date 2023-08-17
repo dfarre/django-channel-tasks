@@ -8,7 +8,7 @@ RUN sed -i '/C.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 RUN mkdir /code
 WORKDIR /code
-ADD setup.py /code/
+ADD setup.py MANIFEST.in README.md version.ini /code/
 RUN pip3 install --upgrade pip
 RUN pip3 install -e .[dev,test]
 RUN pip3 install tox
