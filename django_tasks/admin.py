@@ -1,6 +1,7 @@
-from django.core.handlers.asgi import ASGIRequest
 from django.contrib import admin
 from django.conf import settings
+from django.db.models import QuerySet
+from django.http import HttpRequest
 
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.admin import TokenAdmin
@@ -21,12 +22,12 @@ site.register(Token, TokenAdmin)
 
 
 @AdminTaskAction('doctask_access_test', description='Test async database access')
-def doctask_access_test(modeladmin: admin.ModelAdmin, request: ASGIRequest, queryset):
+def doctask_access_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet):
     pass
 
 
 @AdminTaskAction('doctask_deletion_test', description='Test async database DELETE')
-def doctask_deletion_test(modeladmin: admin.ModelAdmin, request: ASGIRequest, queryset):
+def doctask_deletion_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet):
     pass
 
 

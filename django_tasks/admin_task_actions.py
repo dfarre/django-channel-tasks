@@ -1,10 +1,13 @@
 import functools
 import json
 
+from typing import Any, Callable
+
 import websocket
 
 from django.contrib import admin, messages
-from django.core.handlers.asgi import ASGIRequest
+from django.db.models import QuerySet
+from django.http import HttpRequest
 
 
 class AdminTaskAction:
@@ -14,10 +17,10 @@ class AdminTaskAction:
         self.task_name = task_name
         self.kwargs = kwargs
 
-    def __call__(self, post_schedule_callable):
+    def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
-        def action_callable(modeladmin: admin.ModelAdmin, request: ASGIRequest, queryset):
+        def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
             ws_response = self.websocket_task_schedule(
                 request, self.task_name, instance_ids=list(queryset.values_list('pk', flat=True))
             )
@@ -26,7 +29,7 @@ class AdminTaskAction:
 
         return action_callable
 
-    def websocket_task_schedule(self, http_request, task_name, **inputs):
+    def websocket_task_schedule(self, http_request: HttpRequest, task_name: str, **inputs):
         ws = websocket.WebSocket()
         ws.connect(f'ws://{http_request.get_host()}/tasks/', header=self.header)
         ws.send(json.dumps([dict(name=task_name, inputs=inputs)], indent=4))
