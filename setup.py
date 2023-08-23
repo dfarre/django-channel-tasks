@@ -34,7 +34,8 @@ setuptools.setup(
         'django-bootstrap-v5', 'channels', 'channels-redis', 'daphne', 'tzdata', 'psycopg2-binary',
         'websocket-client'],
     extras_require={'dev': ['ipdb', 'ipython'],
-                    'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]'],
+                    'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]',
+                             'types-beautifulsoup4'],
                     'test': tests_require},
     tests_require=tests_require
 )

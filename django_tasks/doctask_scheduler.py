@@ -1,5 +1,8 @@
+import asyncio
 import collections
 import logging
+
+from typing import Any
 
 from channels.db import database_sync_to_async
 from django_tasks.serializers import DocTaskSerializer
@@ -7,7 +10,7 @@ from django_tasks.task_runner import TaskRunner
 
 
 class DocTaskScheduler:
-    doctask_index = collections.defaultdict(dict)
+    doctask_index: dict[int, dict[str, Any]] = collections.defaultdict(dict)
     model = DocTaskSerializer.Meta.model
 
     @classmethod
@@ -43,7 +46,7 @@ class DocTaskScheduler:
         return task
 
     @staticmethod
-    async def schedule_task(data={}, callable=None):
+    async def schedule_task(data={}, callable=None) -> asyncio.Future:
         """Schedules a single task without storage."""
         callable = callable or DocTaskSerializer.get_coro_info(data).callable
         runner = TaskRunner.get()

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 
-from typing import Callable, Optional, Any
+from typing import Any
 
 from rest_framework import exceptions, serializers
 
@@ -10,6 +12,8 @@ from django_tasks import task_runner
 
 
 class DocTaskSerializer(serializers.ModelSerializer):
+    child: DocTaskSerializer
+
     class Meta:
         model = models.DocTask
         read_only_fields = ('id', 'scheduled_at', 'completed_at', 'document')
@@ -17,7 +21,8 @@ class DocTaskSerializer(serializers.ModelSerializer):
 
     @classmethod
     async def schedule_task_group(cls, json_content, *args, **kwargs):
-        many_serializer = cls(data=json_content, *args, many=True, **kwargs)
+        kwargs.update(dict(many=True, data=json_content))
+        many_serializer = cls(*args, **kwargs)
         many_serializer.is_valid(raise_exception=True)
         runner = task_runner.TaskRunner.get()
         tasks = await asyncio.gather(*[
@@ -28,14 +33,15 @@ class DocTaskSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_doctask_group(cls, json_content, *args, **kwargs):
-        many_serializer = cls(data=json_content, many=True, *args, **kwargs)
+        kwargs.update(dict(many=True, data=json_content))
+        many_serializer = cls(*args, **kwargs)
         many_serializer.is_valid(raise_exception=True)
         doctasks = many_serializer.save()
 
         return many_serializer, doctasks
 
     @staticmethod
-    def get_coro_info(attrs: dict[str, Any]) -> Optional[Callable]:
+    def get_coro_info(attrs: dict[str, Any]) -> task_inspector.TaskCoroInfo:
         coro_info = task_inspector.TaskCoroInfo(attrs['name'], **attrs['inputs'])
         errors = coro_info.task_call_errors
 

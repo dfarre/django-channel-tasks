@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import threading
@@ -8,18 +10,14 @@ from typing import Any, Callable, Coroutine
 from channels.layers import get_channel_layer
 
 
-class TaskRunnerUsageError(Exception):
-    """To be raised on bad uses of the `TaskRunner` class."""
-
-
 class TaskRunner:
     """
     Class in charge of in-memory handling of `asyncio` background tasks, with a worker thread per instance.
     """
-    _instances: list = []
+    _instances: list[TaskRunner] = []
 
     @classmethod
-    def get(cls):
+    def get(cls) -> TaskRunner:
         """
         Returns the last instance created, a new one if necessary, and ensures that its worker thread is alive.
         """
@@ -86,7 +84,7 @@ class TaskRunner:
     @staticmethod
     def get_task_info(task: asyncio.Future) -> dict[str, Any]:
         """Extracts and returns the corresponding task info, with the current task status."""
-        task_info = {'memory-id': id(task)}
+        task_info: dict[str, Any] = {'memory-id': id(task)}
 
         if not task.done():
             task_info['status'] = 'Started'

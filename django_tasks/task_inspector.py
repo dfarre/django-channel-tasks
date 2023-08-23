@@ -30,11 +30,9 @@ class TaskCoroInfo:
             return None
 
     @property
-    def parameter_keys(self) -> Optional[tuple[set[str], set[str]]]:
+    def parameter_keys(self) -> tuple[set[str], set[str]]:
         callable = self.callable
-
-        if callable is None:
-            return
+        assert callable is not None
 
         params = inspect.signature(callable).parameters
         required_keys = set(k for k, v in params.items() if v.default == inspect._empty)
@@ -43,7 +41,7 @@ class TaskCoroInfo:
         return required_keys, optional_keys
 
     @property
-    def task_call_errors(self):
+    def task_call_errors(self) -> dict[str, list[str]]:
         errors = collections.defaultdict(list)
 
         if self.callable is None:

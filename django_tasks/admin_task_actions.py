@@ -8,7 +8,7 @@ from django.core.handlers.asgi import ASGIRequest
 
 
 class AdminTaskAction:
-    header = {'Content-Type': 'application/json'}
+    header: dict[str, str] = {'Content-Type': 'application/json'}
 
     def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
