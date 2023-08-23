@@ -1,5 +1,6 @@
-from django.core.asgi import get_asgi_application
 from django import urls
+from django.conf import settings
+from django.core.asgi import get_asgi_application
 
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
@@ -17,17 +18,20 @@ class OptionalSlashRouter(routers.SimpleRouter):
         self.trailing_slash = '/?'
 
 
-asgi_app = get_asgi_application()
+http_paths = []
 
-drf_router = OptionalSlashRouter()
-drf_router.register('tasks', TaskViewSet)
+
+if settings.DJANGO_TASKS.get('expose_doctask_api') is True:
+    drf_router = OptionalSlashRouter()
+    drf_router.register('tasks', TaskViewSet)
+    http_paths.append(urls.re_path(r'^api/', URLRouter(TasksRestConsumer.get_urls(drf_router))))
+
+
+http_paths.append(urls.re_path(r'^', get_asgi_application()))
 
 application = ProtocolTypeRouter(
     {
-        "http": URLRouter([
-            urls.re_path(r'^api/', URLRouter(TasksRestConsumer.get_urls(drf_router))),
-            urls.re_path(r'^', asgi_app),
-        ]),
+        "http": URLRouter(http_paths),
         'websocket': AllowedHostsOriginValidator(AuthMiddlewareStack(
             URLRouter([urls.path('tasks/', TaskEventsConsumer.as_asgi())])
         )),

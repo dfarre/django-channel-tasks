@@ -162,6 +162,7 @@ CHANNEL_LAYERS = {
     },
 }
 
-DJANGO_TASKS = {
-    'coroutine_modules': ['django_tasks.tasks'],
-}
+DJANGO_TASKS = dict(
+    coroutine_modules=['django_tasks.tasks'],
+    expose_doctask_api=True,
+)
