@@ -36,7 +36,7 @@ class DocTaskScheduler:
             logging.getLogger('django').info('Stored %s.', repr(doctask))
 
     @classmethod
-    async def schedule_doctask(cls, data={}, callable=None):
+    async def schedule_doctask(cls, data={}, callable=None) -> asyncio.Future:
         """Schedules a single task, and stores results in DB."""
         callable = callable or DocTaskSerializer.get_coro_info(data).callable
         runner = TaskRunner.get()

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 
 from typing import Any
@@ -12,8 +10,6 @@ from django_tasks import task_runner
 
 
 class DocTaskSerializer(serializers.ModelSerializer):
-    child: DocTaskSerializer
-
     class Meta:
         model = models.DocTask
         read_only_fields = ('id', 'scheduled_at', 'completed_at', 'document')
