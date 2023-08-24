@@ -28,12 +28,10 @@ if settings.DJANGO_TASKS.get('expose_doctask_api') is True:
 
 
 http_paths.append(urls.re_path(r'^', get_asgi_application()))
-
-application = ProtocolTypeRouter(
-    {
-        "http": URLRouter(http_paths),
-        'websocket': AllowedHostsOriginValidator(AuthMiddlewareStack(
-            URLRouter([urls.path('tasks/', TaskEventsConsumer.as_asgi())])
-        )),
-    }
-)
+url_routers = {
+    'http': URLRouter(http_paths),
+    'websocket': AllowedHostsOriginValidator(AuthMiddlewareStack(URLRouter([
+        urls.path('tasks/', TaskEventsConsumer.as_asgi()),
+    ]))),
+}
+application = ProtocolTypeRouter(url_routers)
