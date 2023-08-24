@@ -3,7 +3,7 @@ FROM ubuntu:latest
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get -y update
-RUN apt-get -y install git python3-pip python3-dev postgresql-client locales
+RUN apt-get -y install git python3-pip python3-dev python3-venv postgresql-client locales
 RUN sed -i '/C.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 RUN mkdir /code
