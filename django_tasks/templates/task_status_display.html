@@ -3,7 +3,7 @@
 {% block extrahead %}
 {{ block.super }}
 <script>
-    var admin_ws = admin_ws || new WebSocket('ws://' + window.location.host + '/tasks/');
+    var admin_ws = admin_ws || new WebSocket('ws://' + window.location.host + '{{ proxy_route }}/tasks/');
 
     admin_ws.onopen = function (event) {
         console.log('WebSocket connection opened:', event);

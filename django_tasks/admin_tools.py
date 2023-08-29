@@ -1,13 +1,18 @@
 import functools
 import json
+import os
 
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import websocket
 
+from django.conf import settings
 from django.contrib import admin, messages
 from django.db.models import QuerySet
 from django.http import HttpRequest
+
+
+PROXY_ROUTE = settings.DJANGO_TASKS.get('proxy_route', '')
 
 
 class AdminTaskAction:
@@ -31,8 +36,27 @@ class AdminTaskAction:
 
     def websocket_task_schedule(self, http_request: HttpRequest, task_name: str, **inputs):
         ws = websocket.WebSocket()
-        ws.connect(f'ws://{http_request.get_host()}/tasks/', header=self.header)
+        ws_path = os.path.join(http_request.get_host(), PROXY_ROUTE, 'tasks')
+        ws.connect(f'ws://{ws_path}/', header=self.header)
         ws.send(json.dumps([dict(name=task_name, inputs=inputs)], indent=4))
         ws_response = ws.recv()
         ws.close()
         return ws_response
+
+
+class ExtraContextModelAdmin(admin.ModelAdmin):
+    def changelist_view(self, request: HttpRequest, extra_context: Optional[dict] = None):
+        extra_context = extra_context or {}
+        self.add_changelist_extra_context(request, extra_context)
+
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def add_changelist_extra_context(self, request: HttpRequest, extra_context: dict):
+        raise NotImplementedError
+
+
+class StatusDisplayModelAdmin(ExtraContextModelAdmin):
+    change_list_template = 'task_status_display.html'
+
+    def add_changelist_extra_context(self, request: HttpRequest, extra_context: dict):
+        extra_context['proxy_route'] = PROXY_ROUTE

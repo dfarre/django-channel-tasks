@@ -163,5 +163,5 @@ CHANNEL_LAYERS = dict(default={
 })
 
 DJANGO_TASKS = dict(
-    coroutine_modules=['django_tasks.tasks'], expose_doctask_api=True,
+    coroutine_modules=['django_tasks.tasks'], expose_doctask_api=True, proxy_route='',
 )

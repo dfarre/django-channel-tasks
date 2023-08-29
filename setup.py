@@ -18,7 +18,7 @@ setuptools.setup(
     version=ini['version']['value'],
     author='Daniel Farré Manzorro',
     author_email='d.farre.m@gmail.com',
-    description='Running background tasks trhough REST API and websocket, with channels-redis',
+    description='Running background tasks through REST API and websocket, with channels-redis',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://bitbucket.org/coleopter/django-tasks',
