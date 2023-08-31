@@ -6,12 +6,12 @@ from typing import Callable, Any
 
 
 class TaskCoroInfo:
-    _safe_coroutine_modules: list[str] = []
+    _safe_coroutine_modules: set[str] = set()
 
     @classmethod
     def mark_as_safe(cls, callable: Callable):
         assert inspect.iscoroutinefunction(callable)
-        cls._safe_coroutine_modules.append(inspect.getmodule(callable).__spec__.name)
+        cls._safe_coroutine_modules.add(inspect.getmodule(callable).__spec__.name)
         return callable
 
     def __init__(self, dotted_path: str, **inputs: dict[str, Any]):
