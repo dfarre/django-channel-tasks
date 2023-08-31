@@ -39,10 +39,9 @@ class DocTaskSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_coro_info(attrs: dict[str, Any]) -> task_inspector.TaskCoroInfo:
         coro_info = task_inspector.TaskCoroInfo(attrs['name'], **attrs['inputs'])
-        errors = coro_info.task_call_errors
 
-        if errors:
-            raise exceptions.ValidationError(errors)
+        if coro_info.errors:
+            raise exceptions.ValidationError(coro_info.errors)
 
         return coro_info
 

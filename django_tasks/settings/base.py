@@ -9,7 +9,7 @@ SECRET_KEY = 'cg2fbx3f)_9znm3$($suorm*0fyuv#wr586195!q^pv0%ct7c5'
 
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = ['localhost']
 
 INSTALLED_APPS: list[str] = [
     'daphne',
@@ -104,7 +104,7 @@ ASGI_APPLICATION = 'django_tasks.asgi.application'
 DATABASES: dict[str, Any] = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.path.join(BASE_DIR, 'channel-tasks.sqlite3'),
     }
 }
 
@@ -163,5 +163,5 @@ CHANNEL_LAYERS = dict(default={
 })
 
 DJANGO_TASKS = dict(
-    coroutine_modules=['django_tasks.tasks'], expose_doctask_api=True, proxy_route='',
+    expose_doctask_api=False, proxy_route=os.getenv('CHANNEL_TASKS_ROUTE', ''),
 )

@@ -2,61 +2,59 @@ import collections
 import inspect
 import importlib
 
-from typing import Callable, Optional, Any
-
-from django.conf import settings
+from typing import Callable, Any
 
 
 class TaskCoroInfo:
-    def __init__(self, name: str, **inputs: dict[str, Any]):
-        self.name = name.strip()
+    _safe_coroutine_modules: list[str] = []
+
+    @classmethod
+    def mark_as_safe(cls, callable: Callable):
+        assert inspect.iscoroutinefunction(callable)
+        cls._safe_coroutine_modules.append(inspect.getmodule(callable).__spec__.name)
+        return callable
+
+    def __init__(self, dotted_path: str, **inputs: dict[str, Any]):
+        self.dotted_path = dotted_path.strip()
         self.inputs = inputs
+        self.module_path, self.name, self.callable = '', '', None
+        self.errors: dict[str, list[str]] = collections.defaultdict(list)
+        self.check()
 
-    @property
-    def callable(self) -> Optional[Callable]:
-        module_names = settings.DJANGO_TASKS.get('coroutine_modules', [])
+    def check(self):
+        if '.' in self.dotted_path:
+            self.module_path, self.name = self.dotted_path.rsplit('.', 1)
 
-        for module_name in module_names:
-            try:
-                module = importlib.import_module(module_name)
-            except ImportError:
-                continue
-            else:
-                callable = getattr(module, self.name, None)
+        if self.module_path in self._safe_coroutine_modules:
+            self.check_coroutine()
 
-                if inspect.iscoroutinefunction(callable):
-                    return callable
+        if self.callable:
+            self.check_inputs()
         else:
-            return None
+            self.errors['name'].append(f"Coroutine '{self.dotted_path}' not found.")
 
-    @property
-    def parameter_keys(self) -> tuple[set[str], set[str]]:
-        callable = self.callable
-        assert callable is not None
+    def check_coroutine(self):
+        try:
+            module = importlib.import_module(self.module_path)
+        except ImportError:
+            module = None
 
-        params = inspect.signature(callable).parameters
+        self.callable = getattr(module, self.name, None)
+
+        if not inspect.iscoroutinefunction(self.callable):
+            self.callable = None
+
+    def check_inputs(self):
+        params = inspect.signature(self.callable).parameters
         required_keys = set(k for k, v in params.items() if v.default == inspect._empty)
         optional_keys = set(k for k, v in params.items() if v.default != inspect._empty)
 
-        return required_keys, optional_keys
-
-    @property
-    def task_call_errors(self) -> dict[str, list[str]]:
-        errors = collections.defaultdict(list)
-
-        if self.callable is None:
-            errors['name'].append(f"Coroutine '{self.name}' not found.")
-            return errors
-
-        required_keys, optional_keys = self.parameter_keys
         input_keys = set(self.inputs)
         missing_keys = required_keys - input_keys
         unknown_keys = input_keys - required_keys - optional_keys
 
         if missing_keys:
-            errors['inputs'].append(f'Missing required parameters {missing_keys}.')
+            self.errors['inputs'].append(f'Missing required parameters {missing_keys}.')
 
         if unknown_keys:
-            errors['inputs'].append(f'Unknown parameters {unknown_keys}.')
-
-        return errors
+            self.errors['inputs'].append(f'Unknown parameters {unknown_keys}.')

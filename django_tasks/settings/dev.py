@@ -1,8 +1,6 @@
 from django_tasks.settings.base import *  # noqa
 
 
-ALLOWED_HOSTS = ['localhost']
-
 INSTALLED_APPS.append('django.contrib.postgres')  # noqa
 
 DATABASES = {
@@ -15,3 +13,5 @@ DATABASES = {
         'USER': 'postgres',
     }
 }
+
+DJANGO_TASKS = dict(expose_doctask_api=True, proxy_route='')
