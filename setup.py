@@ -29,6 +29,7 @@ setuptools.setup(
         'Operating System :: OS Independent',
         'Intended Audience :: Developers'],
     packages=setuptools.find_packages(),
+    package_data={'django_tasks': ['templates/*']},
     install_requires=[
         'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
         'django-bootstrap-v5', 'channels', 'channels-redis', 'daphne', 'tzdata', 'psycopg2-binary',
