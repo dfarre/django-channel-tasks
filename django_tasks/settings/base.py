@@ -99,7 +99,7 @@ TEMPLATES: list[dict[str, Any]] = [
     },
 ]
 
-ASGI_APPLICATION = 'django_tasks.asgi.application'
+ASGI_APPLICATION = 'django_tasks.ws_asgi.application'
 
 DATABASES: dict[str, Any] = {
     'default': {
