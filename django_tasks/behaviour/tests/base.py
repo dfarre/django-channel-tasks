@@ -54,8 +54,7 @@ class BddTester(tester.BddTester):
     @pytest_asyncio.fixture(autouse=True)
     async def setup_websocket_communicator(self, event_loop):
         from django_tasks import asgi
-        route = asgi.application.application_mapping[
-            'websocket'].application.inner.inner.inner.routes[0]
+        route = asgi.application.application_mapping['websocket'].application.routes[0]
         consumers = importlib.import_module(route.lookup_str.rsplit('.', 1)[0])
         self.communicator = WebsocketCommunicator(
             consumers.TaskEventsConsumer.as_asgi(), route.pattern.describe().strip("'"))

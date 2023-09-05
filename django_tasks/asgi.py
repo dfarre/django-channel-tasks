@@ -3,7 +3,6 @@ from django.conf import settings
 from django.core.asgi import get_asgi_application
 
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
 from channels.security.websocket import AllowedHostsOriginValidator
 
 from rest_framework import routers
@@ -30,8 +29,8 @@ if settings.DJANGO_TASKS.get('expose_doctask_api') is True:
 http_paths.append(urls.re_path(r'^', get_asgi_application()))
 url_routers = {
     'http': URLRouter(http_paths),
-    'websocket': AllowedHostsOriginValidator(AuthMiddlewareStack(URLRouter([
-        urls.path('tasks/', TaskEventsConsumer.as_asgi()),
-    ]))),
+    'websocket': AllowedHostsOriginValidator(
+        URLRouter([urls.path('tasks/', TaskEventsConsumer.as_asgi())])
+    ),
 }
 application = ProtocolTypeRouter(url_routers)

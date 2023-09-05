@@ -6,4 +6,4 @@ class TasksConfig(apps.AppConfig):
     verbose_name = 'Documenting Tasks'
 
     def ready(self):
-        from django_tasks import tasks
+        from django_tasks import tasks  # noqa

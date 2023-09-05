@@ -59,4 +59,4 @@ class StatusDisplayModelAdmin(ExtraContextModelAdmin):
     change_list_template = 'task_status_display.html'
 
     def add_changelist_extra_context(self, request: HttpRequest, extra_context: dict):
-        extra_context['proxy_route'] = PROXY_ROUTE
+        extra_context['websocket_uri'] = os.path.join('/', PROXY_ROUTE, 'tasks/')

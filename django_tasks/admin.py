@@ -21,12 +21,12 @@ site = AdminSite()
 site.register(Token, TokenAdmin)
 
 
-@AdminTaskAction('doctask_access_test', description='Test async database access')
+@AdminTaskAction('django_tasks.tasks.doctask_access_test', description='Test async database access')
 def doctask_access_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet):
     pass
 
 
-@AdminTaskAction('doctask_deletion_test', description='Test async database DELETE')
+@AdminTaskAction('django_tasks.tasks.doctask_deletion_test', description='Test async database DELETE')
 def doctask_deletion_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet):
     pass
 
