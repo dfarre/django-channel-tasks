@@ -15,7 +15,7 @@ class NginxAccelRedirectView(views.View):
 
     @classmethod
     def get_proxy_url_path(cls, **kwargs):
-        return cls.get_url_path(settings.DJANGO_TASKS['proxy_route'].strip('/'), **kwargs)
+        return cls.get_url_path(settings.CHANNEL_TASKS.proxy_route.strip('/'), **kwargs)
 
     def get(self, request, path, *args, **kwargs):
         response = http.HttpResponse()
