@@ -13,5 +13,3 @@ DATABASES = {
         'USER': 'postgres',
     }
 }
-
-DJANGO_TASKS = dict(expose_doctask_api=True, proxy_route='')

@@ -12,7 +12,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 
 
-PROXY_ROUTE = settings.DJANGO_TASKS.get('proxy_route', '')
+PROXY_ROUTE = settings.CHANNEL_TASKS.proxy_route
 
 
 class AdminTaskAction:

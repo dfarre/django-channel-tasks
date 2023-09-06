@@ -2,6 +2,10 @@ import os
 
 from typing import Any
 
+from django_tasks.settings import SettingsIni
+
+
+CHANNEL_TASKS = SettingsIni()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -9,7 +13,7 @@ SECRET_KEY = 'cg2fbx3f)_9znm3$($suorm*0fyuv#wr586195!q^pv0%ct7c5'
 
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = ['localhost']
+ALLOWED_HOSTS: list[str] = CHANNEL_TASKS.allowed_hosts
 
 INSTALLED_APPS: list[str] = [
     'daphne',
@@ -161,7 +165,3 @@ CHANNEL_LAYERS = dict(default={
         "hosts": [("redis", 6379)],
     },
 })
-
-DJANGO_TASKS = dict(
-    expose_doctask_api=False, proxy_route=os.getenv('CHANNEL_TASKS_ROUTE', ''),
-)

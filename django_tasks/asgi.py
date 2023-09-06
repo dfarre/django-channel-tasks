@@ -20,7 +20,7 @@ class OptionalSlashRouter(routers.SimpleRouter):
 http_paths = []
 
 
-if settings.DJANGO_TASKS.get('expose_doctask_api') is True:
+if settings.CHANNEL_TASKS.expose_doctask_api is True:
     drf_router = OptionalSlashRouter()
     drf_router.register('tasks', TaskViewSet)
     http_paths.append(urls.re_path(r'^api/', URLRouter(TasksRestConsumer.get_urls(drf_router))))
