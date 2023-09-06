@@ -10,8 +10,9 @@ class NginxAccelRedirectView(views.View):
 
     @classmethod
     def get_url_path(cls, location: str, **kwargs):
-        return urls.path(
-            os.path.join(location, '<path:path>'), login_required(cls.as_view(location=location)), **kwargs)
+        return urls.path(os.path.join(location, '<path:path>').lstrip('/'),
+                         login_required(cls.as_view(location=location)),
+                         **kwargs)
 
     @classmethod
     def get_proxy_url_path(cls, **kwargs):
