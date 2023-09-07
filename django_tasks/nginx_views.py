@@ -6,6 +6,13 @@ from django.contrib.auth.decorators import login_required
 
 
 class NginxAccelRedirectView(views.View):
+    #: These headers are cleared-out so that Nginx can serve their own
+    nginx_headers = ['Content-Type',
+                     'Content-Disposition',
+                     'Accept-Ranges',
+                     'Set-Cookie',
+                     'Cache-Control',
+                     'Expires']
     location = ''
 
     @classmethod
@@ -20,8 +27,12 @@ class NginxAccelRedirectView(views.View):
 
     def get(self, request, path, *args, **kwargs):
         response = http.HttpResponse()
-        del response['Content-Type']  # TODO: Why this line?
+
+        for ignored_header in self.nginx_headers:
+            del response[ignored_header]
+
         response['X-Accel-Redirect'] = os.path.join('/internal', self.location, path)
+
         return response
 
 
