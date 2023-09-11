@@ -30,13 +30,14 @@ setuptools.setup(
         'Intended Audience :: Developers'],
     packages=setuptools.find_packages(),
     package_data={'django_tasks': ['templates/*', 'settings/channel-task-defaults.ini']},
+    entry_points={'console_scripts': ['channel-tasks-admin=django_tasks.entrypoint:manage_channel_tasks']},
     install_requires=[
         'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
         'django-bootstrap-v5', 'channels', 'channels-redis', 'daphne', 'tzdata', 'psycopg2-binary',
         'websocket-client'],
     extras_require={'dev': ['ipdb', 'ipython'],
                     'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]',
-                             'types-beautifulsoup4'],
+                             'types-beautifulsoup4', 'types-setuptools'],
                     'test': tests_require},
     tests_require=tests_require
 )
