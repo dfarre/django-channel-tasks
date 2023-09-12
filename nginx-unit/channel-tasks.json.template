@@ -1,0 +1,31 @@
+{
+    "listeners": {
+        "*:$ASGI_PORT": {
+            "pass": "routes"
+        }
+    },
+    "routes": [
+        {
+            "match": {
+                "uri": "$STATIC_SHARED_URI*"
+            },
+
+            "action": {
+                "share": "$STATIC_SHARED_ROOT$uri"
+            }
+        },
+        {
+            "action": {
+                "pass": "applications/djangochannels"
+            }
+        }
+    ],
+    "applications": {
+        "djangochannels": {
+            "type": "python 3",
+            "home": "$PYTHON_HOME",
+            "path": "$ASGI_PATH",
+            "module": "django_tasks.ws_asgi"
+        }
+    }
+}

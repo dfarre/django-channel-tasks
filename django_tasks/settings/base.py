@@ -14,7 +14,6 @@ DEBUG = True
 ALLOWED_HOSTS: list[str] = []
 
 INSTALLED_APPS: list[str] = [
-    'daphne',
     'bootstrap5',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -165,4 +164,3 @@ CHANNEL_LAYERS = dict(default={
 })
 
 CHANNEL_TASKS = SettingsIni()
-CHANNEL_TASKS.apply()

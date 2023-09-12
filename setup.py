@@ -33,7 +33,7 @@ setuptools.setup(
     entry_points={'console_scripts': ['channel-tasks-admin=django_tasks.entrypoint:manage_channel_tasks']},
     install_requires=[
         'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
-        'django-bootstrap-v5', 'channels', 'channels-redis', 'daphne', 'tzdata', 'psycopg2-binary',
+        'django-bootstrap-v5', 'channels', 'channels-redis', 'tzdata', 'psycopg2-binary',
         'websocket-client'],
     extras_require={'dev': ['ipdb', 'ipython'],
                     'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]',

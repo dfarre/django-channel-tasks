@@ -1,5 +1,4 @@
 import configparser
-import inspect
 import os
 import pkg_resources
 
@@ -27,5 +26,5 @@ class SettingsIni:
         section, key = 'asgi', 'expose-doctask-api'
         return self.ini[section].getboolean(key, False) if self.ini.has_section(section) else False
 
-    def apply(self):
-        print(inspect.currentframe().f_back.f_code.co_name)
+    def apply(self, settings):
+        pass

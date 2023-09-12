@@ -1,3 +1,7 @@
+import django
+
+django.setup()
+
 from django import urls
 from django.conf import settings
 from django.core.asgi import get_asgi_application
