@@ -26,5 +26,18 @@ class SettingsIni:
         section, key = 'asgi', 'expose-doctask-api'
         return self.ini[section].getboolean(key, False) if self.ini.has_section(section) else False
 
+    def set_databases(self, settings):
+        if not self.ini.has_section('database'):
+            return
+
+        default = dict(self.ini['database'])
+
+        if 'install-apps' in default:
+            install_apps = [s.strip() for s in default.pop('install-apps').strip().splitlines()]
+            settings.INSTALLED_APPS.extend(install_apps)
+
+        settings.DATABASES = dict(default={k.upper(): v for k, v in default.items()})
+
     def apply(self, settings):
-        pass
+        settings.ALLOWED_HOSTS = self.allowed_hosts
+        self.set_databases(settings)

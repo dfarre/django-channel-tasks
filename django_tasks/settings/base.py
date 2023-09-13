@@ -1,4 +1,5 @@
 import os
+import sys
 
 from typing import Any
 
@@ -164,3 +165,4 @@ CHANNEL_LAYERS = dict(default={
 })
 
 CHANNEL_TASKS = SettingsIni()
+CHANNEL_TASKS.apply(sys.modules[__name__])
