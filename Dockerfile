@@ -14,4 +14,4 @@ ADD . .
 ENV PYTHON_HOME=/usr/local ASGI_PATH=/www STATIC_SHARED_ROOT=/www/django_tasks STATIC_SHARED_URI=/static/ ASGI_PORT=8001
 
 RUN envsubst '\$PYTHON_HOME \$ASGI_PATH \$STATIC_SHARED_ROOT \$STATIC_SHARED_URI \$ASGI_PORT' \
- < nginx-unit/channel-tasks.json.template > /docker-entrypoint.d/channel-tasks.json
+ < nginx-unit/channel-tasks-unit.json.template > /docker-entrypoint.d/channel-tasks-unit.json

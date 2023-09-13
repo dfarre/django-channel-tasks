@@ -11,10 +11,12 @@ services:
       - db
     environment:
       - DJANGO_LOG_LEVEL=DEBUG
+      - TASK_ADMIN_USER=taskadmin
+      - TASK_ADMIN_EMAIL=d.farre.m@gmail.com
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
       - LANGUAGE=C:en
-    command: sh -c "./nginx-unit/setup.sh && exec /usr/local/bin/docker-entrypoint.sh unitd --no-daemon"
+    command: sh -c "./nginx-unit/setup-channel-tasks.sh && exec /usr/local/bin/docker-entrypoint.sh unitd --no-daemon"
   db:
     image: postgres:latest
     environment:

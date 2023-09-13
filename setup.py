@@ -30,10 +30,12 @@ setuptools.setup(
         'Intended Audience :: Developers'],
     packages=setuptools.find_packages(),
     package_data={'django_tasks': ['templates/*', 'settings/channel-task-defaults.ini']},
+    data_files=[('./conf', ['nginx-unit/channel-tasks-unit.json.template']),
+                ('./bin', ['nginx-unit/setup-channel-tasks.sh'])],
     entry_points={'console_scripts': ['channel-tasks-admin=django_tasks.entrypoint:manage_channel_tasks']},
     install_requires=[
         'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
-        'django-bootstrap-v5', 'channels', 'channels-redis', 'tzdata', 'psycopg2-binary',
+        'django-bootstrap-v5', 'channels', 'channels-redis', 'tzdata', 'psycopg2',
         'websocket-client'],
     extras_require={'dev': ['ipdb', 'ipython'],
                     'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]',
