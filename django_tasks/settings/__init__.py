@@ -10,21 +10,31 @@ class SettingsIni:
         self.ini = configparser.ConfigParser()
         self.ini.read(pkg_resources.resource_filename(self.package_name, self.ini_rel_path))
 
+    def get_array(self, section, key, default):
+        return ([line.strip() for line in self.ini[section][key].splitlines()]
+                if self.ini.has_option(section, key) else default)
+
+    def get_boolean(self, section, key, default):
+        return self.ini[section].getboolean(key, default) if self.ini.has_section(section) else default
+
+    def get_text(self, section, key, default):
+        return self.ini[section][key].strip() if self.ini.has_option(section, key) else default
+
     @property
     def allowed_hosts(self):
-        section, key = 'security', 'allowed-hosts'
-        return ([line.strip() for line in self.ini[section][key].splitlines()]
-                if self.ini.has_option(section, key) else ['localhost'])
+        return self.get_array('security', 'allowed-hosts', ['localhost'])
+
+    @property
+    def debug(self):
+        return self.get_boolean('security', 'debug', False)
 
     @property
     def proxy_route(self):
-        section, key = 'security', 'proxy-route'
-        return self.ini[section][key].strip() if self.ini.has_option(section, key) else ''
+        return self.get_text('security', 'proxy-route', '')
 
     @property
     def expose_doctask_api(self):
-        section, key = 'asgi', 'expose-doctask-api'
-        return self.ini[section].getboolean(key, False) if self.ini.has_section(section) else False
+        return self.get_boolean('asgi', 'expose-doctask-api', False)
 
     def set_databases(self, settings):
         if not self.ini.has_section('database'):
@@ -40,4 +50,5 @@ class SettingsIni:
 
     def apply(self, settings):
         settings.ALLOWED_HOSTS = self.allowed_hosts
+        settings.DEBUG = self.debug
         self.set_databases(settings)
