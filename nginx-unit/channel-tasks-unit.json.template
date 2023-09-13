@@ -1,17 +1,20 @@
 {
     "listeners": {
-        "*:$ASGI_PORT": {
-            "pass": "routes"
+        "$CHANNEL_TASKS_LISTENER_ADDRESS": {
+            "pass": "routes",
+            "forwarded": {
+                "client_ip": "X-Forwarded-For",
+                "source": ["$CHANNEL_TASKS_LISTENER_ADDRESS"]
+            }
         }
     },
     "routes": [
         {
             "match": {
-                "uri": "$STATIC_SHARED_URI*"
+                "uri": "$CHANNEL_TASKS_STATIC_URI*"
             },
-
             "action": {
-                "share": "$STATIC_SHARED_ROOT$uri"
+                "share": "$CHANNEL_TASKS_STATIC_ROOT$uri"
             }
         },
         {
@@ -23,8 +26,8 @@
     "applications": {
         "djangochannels": {
             "type": "python 3",
-            "home": "$PYTHON_HOME",
-            "path": "$ASGI_PATH",
+            "home": "$CHANNEL_TASKS_PYTHON_HOME",
+            "path": "$CHANNEL_TASKS_ASGI_PATH",
             "module": "django_tasks.ws_asgi"
         }
     }

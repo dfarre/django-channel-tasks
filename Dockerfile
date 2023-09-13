@@ -11,7 +11,11 @@ RUN python3 -m pip install -e .[dev,test]
 RUN python3 -m pip install tox
 ADD . .
 
-ENV PYTHON_HOME=/usr/local ASGI_PATH=/www STATIC_SHARED_ROOT=/www/django_tasks STATIC_SHARED_URI=/static/ ASGI_PORT=8001
+ENV CHANNEL_TASKS_PYTHON_HOME=/usr/local \
+ CHANNEL_TASKS_STATIC_ROOT=/www/django_tasks \
+ CHANNEL_TASKS_STATIC_URI=/static/ \
+ CHANNEL_TASKS_ASGI_PATH=/www \
+ CHANNEL_TASKS_LISTENER_ADDRESS=*:8001
 
-RUN envsubst '\$PYTHON_HOME \$ASGI_PATH \$STATIC_SHARED_ROOT \$STATIC_SHARED_URI \$ASGI_PORT' \
+RUN envsubst '\$CHANNEL_TASKS_PYTHON_HOME \$CHANNEL_TASKS_ASGI_PATH \$CHANNEL_TASKS_STATIC_ROOT \$CHANNEL_TASKS_STATIC_URI \$CHANNEL_TASKS_LISTENER_ADDRESS' \
  < nginx-unit/channel-tasks-unit.json.template > /docker-entrypoint.d/channel-tasks-unit.json
