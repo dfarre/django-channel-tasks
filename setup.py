@@ -30,8 +30,8 @@ setuptools.setup(
         'Intended Audience :: Developers'],
     packages=setuptools.find_packages(),
     package_data={'django_tasks': ['templates/*', 'settings/channel-task-defaults.ini']},
-    data_files=[('./conf', ['nginx-unit/channel-tasks-unit.json.template']),
-                ('./bin', ['nginx-unit/setup-channel-tasks.sh'])],
+    data_files=[('./conf', ['nginx-unit/channel-tasks-unit.json.template', 'nginx-unit/channel-tasks.service.template']),
+                ('./bin', ['nginx-unit/setup-channel-tasks.sh', 'nginx-unit/restart-channel-tasks.sh'])],
     entry_points={'console_scripts': ['channel-tasks-admin=django_tasks.entrypoint:manage_channel_tasks']},
     install_requires=[
         'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',

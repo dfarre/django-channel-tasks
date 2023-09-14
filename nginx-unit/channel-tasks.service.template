@@ -1,0 +1,11 @@
+[Unit]
+Description=channel-tasks
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+ExecStart=${CHANNEL_TASKS_BIN_DIR}/restart-channel-tasks.sh
+
+[Install]
+WantedBy=multi-user.target

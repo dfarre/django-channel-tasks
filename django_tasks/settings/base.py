@@ -40,7 +40,7 @@ MIDDLEWARE: list[str] = [
     'request_logging.middleware.LoggingMiddleware',
 ]
 
-DJANGO_LOG_LEVEL = os.getenv('DJANGO_LOG_LEVEL', 'INFO')
+DJANGO_LOG_LEVEL = os.getenv('CHANNEL_TASKS_LOG_LEVEL', 'INFO')
 
 LOGGING = dict(
     version=1,

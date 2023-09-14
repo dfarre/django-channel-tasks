@@ -2,21 +2,24 @@ version: '3'
 
 services:
   api:
-    build: .
-    volumes:
-      - ./:/www
+    build:
+      context: .
+      args:
+        CHANNEL_TASKS_PACKAGE: $CHANNEL_TASKS_PACKAGE
     ports:
       - 8001:8001
     depends_on:
       - db
     environment:
-      - DJANGO_LOG_LEVEL=DEBUG
-      - TASK_ADMIN_USER=taskadmin
-      - TASK_ADMIN_EMAIL=d.farre.m@gmail.com
+      - TASK_ADMIN_USER
+      - TASK_ADMIN_EMAIL
+      - CHANNEL_TASKS_LOG_LEVEL
+      - CHANNEL_TASKS_DOCKER_HOME
+      - CHANNEL_TASKS_BIN_DIR
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
       - LANGUAGE=C:en
-    command: sh -c "./nginx-unit/setup-channel-tasks.sh && exec /usr/local/bin/docker-entrypoint.sh unitd --no-daemon"
+    command: sh -c "$CHANNEL_TASKS_BIN_DIR/setup-channel-tasks.sh && exec /usr/local/bin/docker-entrypoint.sh unitd --no-daemon"
   db:
     image: postgres:latest
     environment:
