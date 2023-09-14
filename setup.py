@@ -30,7 +30,9 @@ setuptools.setup(
         'Intended Audience :: Developers'],
     packages=setuptools.find_packages(),
     package_data={'django_tasks': ['templates/*', 'settings/channel-task-defaults.ini']},
-    data_files=[('./conf', ['nginx-unit/channel-tasks-unit.json.template', 'nginx-unit/channel-tasks.service.template']),
+    data_files=[('./conf', ['docker-compose.yml', 'Dockerfile']),
+                ('./conf/nginx-unit', ['nginx-unit/channel-tasks-unit.json.template',
+                                       'nginx-unit/channel-tasks.service.template']),
                 ('./bin', ['nginx-unit/setup-channel-tasks.sh', 'nginx-unit/restart-channel-tasks.sh'])],
     entry_points={'console_scripts': ['channel-tasks-admin=django_tasks.entrypoint:manage_channel_tasks']},
     install_requires=[
@@ -41,5 +43,5 @@ setuptools.setup(
                     'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]',
                              'types-beautifulsoup4', 'types-setuptools'],
                     'test': tests_require},
-    tests_require=tests_require
+    tests_require=tests_require,
 )
