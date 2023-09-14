@@ -27,6 +27,7 @@ INSTALLED_APPS: list[str] = [
     'django_tasks.apps.TasksConfig',
     'django_extensions',
     'django_filters',
+    'django.contrib.postgres',
 ]
 
 MIDDLEWARE: list[str] = [
@@ -105,8 +106,12 @@ ASGI_APPLICATION = 'django_tasks.ws_asgi.application'
 
 DATABASES: dict[str, Any] = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'channel-tasks.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'db',
+        'PORT': 5433,
     }
 }
 
