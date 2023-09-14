@@ -6,6 +6,8 @@ services:
       context: .
       args:
         CHANNEL_TASKS_PACKAGE: $CHANNEL_TASKS_PACKAGE
+    volumes:
+      - $CHANNEL_TASKS_DOCKER_HOME:/www
     ports:
       - 8001:8001
     depends_on:
@@ -14,8 +16,8 @@ services:
       - TASK_ADMIN_USER
       - TASK_ADMIN_EMAIL
       - CHANNEL_TASKS_LOG_LEVEL
-      - CHANNEL_TASKS_DOCKER_HOME
       - CHANNEL_TASKS_BIN_DIR
+      - CHANNEL_TASKS_INI_PATH
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
       - LANGUAGE=C:en

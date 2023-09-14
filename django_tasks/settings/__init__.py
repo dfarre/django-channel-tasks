@@ -1,14 +1,13 @@
 import configparser
 import os
-import pkg_resources
 
 
 class SettingsIni:
     def __init__(self):
-        self.package_name = os.getenv('CHANNEL_TASKS_MAIN_MODULE', 'django_tasks')
-        self.ini_rel_path = os.getenv('CHANNEL_TASKS_INI_REL_PATH', 'settings/channel-task-defaults.ini')
+        ini_key = 'CHANNEL_TASKS_INI_PATH'
+        assert ini_key in os.environ, f'Settings are to be specified with the {ini_key} envvar.'
         self.ini = configparser.ConfigParser()
-        self.ini.read(pkg_resources.resource_filename(self.package_name, self.ini_rel_path))
+        self.ini.read(os.environ[ini_key])
 
     def get_array(self, section, key, default):
         return ([line.strip() for line in self.ini[section][key].splitlines()]
