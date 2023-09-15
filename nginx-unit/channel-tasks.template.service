@@ -6,6 +6,7 @@ Type=simple
 Restart=always
 RestartSec=5s
 ExecStart=${CHANNEL_TASKS_BIN_DIR}/restart-channel-tasks.sh
+Environment="CHANNEL_TASKS_DOCKER_HOME=${CHANNEL_TASKS_DOCKER_HOME}"
 
 [Install]
 WantedBy=multi-user.target
