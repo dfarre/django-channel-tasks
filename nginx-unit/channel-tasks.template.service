@@ -7,6 +7,11 @@ Restart=always
 RestartSec=5s
 ExecStart=${CHANNEL_TASKS_BIN_DIR}/restart-channel-tasks.sh
 Environment="CHANNEL_TASKS_DOCKER_HOME=${CHANNEL_TASKS_DOCKER_HOME}"
+Environment="CHANNEL_TASKS_LOG_LEVEL=${CHANNEL_TASKS_LOG_LEVEL}"
+Environment="CHANNEL_TASKS_BIN_DIR=${CHANNEL_TASKS_BIN_DIR}"
+Environment="CHANNEL_TASKS_INI_PATH=${CHANNEL_TASKS_INI_PATH}"
+Environment="TASK_ADMIN_USER=${TASK_ADMIN_USER}"
+Environment="TASK_ADMIN_EMAIL=${TASK_ADMIN_EMAIL}"
 
 [Install]
 WantedBy=multi-user.target
