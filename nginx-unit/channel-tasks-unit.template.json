@@ -28,7 +28,10 @@
             "type": "python 3",
             "home": "$CHANNEL_TASKS_PYTHON_HOME",
             "path": "$CHANNEL_TASKS_ASGI_PATH",
-            "module": "django_tasks.ws_asgi"
+            "module": "django_tasks.ws_asgi",
+            "environment": {
+                "CHANNEL_TASKS_INI_PATH": "$CHANNEL_TASKS_INI_PATH"
+            }
         }
     }
 }

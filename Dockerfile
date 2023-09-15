@@ -20,4 +20,4 @@ ENV CHANNEL_TASKS_PYTHON_HOME=/usr/local \
  CHANNEL_TASKS_LISTENER_ADDRESS=*:8001
 
 RUN envsubst '\$CHANNEL_TASKS_PYTHON_HOME \$CHANNEL_TASKS_ASGI_PATH \$CHANNEL_TASKS_STATIC_ROOT \$CHANNEL_TASKS_STATIC_URI \$CHANNEL_TASKS_LISTENER_ADDRESS' \
- < nginx-unit/channel-tasks-unit.json.template > /docker-entrypoint.d/channel-tasks-unit.json
+ < nginx-unit/channel-tasks-unit.template.json > /docker-entrypoint.d/channel-tasks-unit.json

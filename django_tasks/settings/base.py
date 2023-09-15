@@ -1,18 +1,18 @@
 import os
-import sys
 
 from typing import Any
 
 from django_tasks.settings import SettingsIni
 
+CHANNEL_TASKS = SettingsIni()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = 'cg2fbx3f)_9znm3$($suorm*0fyuv#wr586195!q^pv0%ct7c5'
 
-DEBUG = True
+DEBUG = CHANNEL_TASKS.debug
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = CHANNEL_TASKS.allowed_hosts
 
 INSTALLED_APPS: list[str] = [
     'bootstrap5',
@@ -41,7 +41,7 @@ MIDDLEWARE: list[str] = [
     'request_logging.middleware.LoggingMiddleware',
 ]
 
-DJANGO_LOG_LEVEL = os.getenv('CHANNEL_TASKS_LOG_LEVEL', 'INFO')
+DJANGO_LOG_LEVEL = CHANNEL_TASKS.log_level
 
 LOGGING = dict(
     version=1,
@@ -168,6 +168,3 @@ CHANNEL_LAYERS = dict(default={
         "hosts": [("redis", 6379)],
     },
 })
-
-CHANNEL_TASKS = SettingsIni()
-CHANNEL_TASKS.apply(sys.modules[__name__])

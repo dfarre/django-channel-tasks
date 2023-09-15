@@ -32,22 +32,9 @@ class SettingsIni:
         return self.get_text('security', 'proxy-route', '')
 
     @property
+    def log_level(self):
+        return self.get_text('logging', 'log-level', 'INFO')
+
+    @property
     def expose_doctask_api(self):
         return self.get_boolean('asgi', 'expose-doctask-api', False)
-
-    def set_databases(self, settings):
-        if not self.ini.has_section('database'):
-            return
-
-        default = dict(self.ini['database'])
-
-        if 'install-apps' in default:
-            install_apps = [s.strip() for s in default.pop('install-apps').strip().splitlines()]
-            settings.INSTALLED_APPS.extend(install_apps)
-
-        settings.DATABASES = dict(default={k.upper(): v for k, v in default.items()})
-
-    def apply(self, settings):
-        settings.ALLOWED_HOSTS = self.allowed_hosts
-        settings.DEBUG = self.debug
-        self.set_databases(settings)
