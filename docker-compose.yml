@@ -5,6 +5,7 @@ services:
     build:
       context: .
       args:
+        DOCKER_ARCH_PREFIX: $DOCKER_ARCH_PREFIX
         CHANNEL_TASKS_PACKAGE: $CHANNEL_TASKS_PACKAGE
     volumes:
       - $CHANNEL_TASKS_DOCKER_HOME:/www
