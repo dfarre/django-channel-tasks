@@ -10,7 +10,7 @@ services:
     volumes:
       - $CHANNEL_TASKS_DOCKER_HOME:/www
     ports:
-      - 8001:8001
+      - $CHANNEL_TASKS_PORT:8001
     depends_on:
       - db
     environment:
