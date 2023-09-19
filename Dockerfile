@@ -1,5 +1,4 @@
-ARG DOCKER_ARCH_PREFIX
-FROM ${DOCKER_ARCH_PREFIX}unit:1.31.0-python3.11
+FROM unit:1.31.0-python3.11
 
 RUN apt-get -y update
 RUN apt-get -y install git python3-pip python3-dev python3-venv postgresql-client locales gettext
