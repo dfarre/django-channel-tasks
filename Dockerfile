@@ -5,14 +5,12 @@ RUN apt-get -y install git python3-pip python3-dev python3-venv postgresql-clien
 RUN sed -i '/C.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 WORKDIR /www
-ADD setup.py MANIFEST.in README.md version.ini .
+ADD . .
 
 ARG CHANNEL_TASKS_PACKAGE
 RUN python3 -m pip install --upgrade pip &&\
     python3 -m pip install $CHANNEL_TASKS_PACKAGE &&\
     python3 -m pip install tox
-
-ADD . .
 
 ENV CHANNEL_TASKS_PYTHON_HOME=/usr/local \
  CHANNEL_TASKS_STATIC_ROOT=/www/django_tasks \
