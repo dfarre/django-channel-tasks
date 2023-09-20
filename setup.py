@@ -30,7 +30,7 @@ setuptools.setup(
         'Intended Audience :: Developers'],
     packages=setuptools.find_packages(),
     package_data={'django_tasks': ['templates/*', 'settings/channel-task-defaults.ini']},
-    data_files=[('./docker-home', ['docker-compose.yml', 'Dockerfile', 'setup-channel-tasks.sh',
+    data_files=[('./channel-tasks-docker', ['docker-compose.yml', 'Dockerfile', 'setup-channel-tasks.sh',
                                    'channel-tasks-unit.template.json']),
                 ('./services', ['service/channel-tasks.template.service']),
                 ('./bin', ['service/restart-channel-tasks.sh'])],
