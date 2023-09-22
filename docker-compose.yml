@@ -15,11 +15,10 @@ services:
     environment:
       - TASK_ADMIN_USER
       - TASK_ADMIN_EMAIL
-      - CHANNEL_TASKS_INI_PATH=channel-tasks.ini
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
       - LANGUAGE=C:en
-    command: sh -c "./setup-channel-tasks.sh && exec /usr/local/bin/docker-entrypoint.sh unitd --no-daemon"
+    command: sh -c "./setup-channel-tasks-docker.sh && exec /usr/local/bin/docker-entrypoint.sh unitd --no-daemon"
   db:
     image: postgres:latest
     environment:

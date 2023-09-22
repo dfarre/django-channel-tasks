@@ -5,9 +5,10 @@ Description=channel-tasks
 Type=simple
 Restart=always
 RestartSec=5s
-ExecStart=${CHANNEL_TASKS_HOME}/bin/restart-channel-tasks-docker.sh
-Requires=docker.service
-Environment="CHANNEL_TASKS_DOCKER_HOME=${CHANNEL_TASKS_DOCKER_HOME}"
+ExecStart=${CHANNEL_TASKS_HOME}/bin/restart-channel-tasks.sh
+Requires=redis.service
+Environment="CHANNEL_TASKS_HOME=${CHANNEL_TASKS_HOME}"
+Environment="CHANNEL_TASKS_INI_PATH=${CHANNEL_TASKS_INI_PATH}"
 Environment="CHANNEL_TASKS_PORT=${CHANNEL_TASKS_PORT}"
 Environment="CHANNEL_TASKS_PACKAGE=${CHANNEL_TASKS_PACKAGE}"
 Environment="TASK_ADMIN_USER=${TASK_ADMIN_USER}"

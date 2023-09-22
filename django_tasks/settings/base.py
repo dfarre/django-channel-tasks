@@ -27,8 +27,7 @@ INSTALLED_APPS: list[str] = [
     'django_tasks.apps.TasksConfig',
     'django_extensions',
     'django_filters',
-    'django.contrib.postgres',
-]
+] + CHANNEL_TASKS.install_apps
 
 MIDDLEWARE: list[str] = [
     'django.middleware.security.SecurityMiddleware',
@@ -104,16 +103,7 @@ TEMPLATES: list[dict[str, Any]] = [
 
 ASGI_APPLICATION = 'django_tasks.ws_asgi.application'
 
-DATABASES: dict[str, Any] = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'db',
-        'PORT': 5433,
-    }
-}
+DATABASES: dict[str, Any] = CHANNEL_TASKS.databases
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -135,8 +125,6 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS: list[str] = [
     "django.contrib.auth.backends.ModelBackend",
 ]
-
-SESAME_MAX_AGE = 86400*5
 
 LANGUAGE_CODE = 'en-us'
 

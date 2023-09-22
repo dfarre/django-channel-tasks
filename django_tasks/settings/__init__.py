@@ -3,14 +3,15 @@ import os
 
 
 class SettingsIni:
+    ini_key = 'CHANNEL_TASKS_INI_PATH'
+
     def __init__(self):
-        ini_key = 'CHANNEL_TASKS_INI_PATH'
-        assert ini_key in os.environ, f'Settings are to be specified with the {ini_key} envvar.'
+        assert self.ini_key in os.environ, f'Settings are to be specified with the {ini_key} envvar.'
         self.ini = configparser.ConfigParser()
-        self.ini.read(os.environ[ini_key])
+        self.ini.read(os.environ[self.ini_key])
 
     def get_array(self, section, key, default):
-        return ([line.strip() for line in self.ini[section][key].splitlines()]
+        return ([line.strip() for line in self.ini[section][key].splitlines() if line.strip()]
                 if self.ini.has_option(section, key) else default)
 
     def get_boolean(self, section, key, default):
@@ -22,6 +23,10 @@ class SettingsIni:
     @property
     def allowed_hosts(self):
         return self.get_array('security', 'allowed-hosts', ['localhost'])
+
+    @property
+    def install_apps(self):
+        return self.get_array('apps', 'install-apps', [])
 
     @property
     def debug(self):
@@ -38,3 +43,15 @@ class SettingsIni:
     @property
     def expose_doctask_api(self):
         return self.get_boolean('asgi', 'expose-doctask-api', False)
+
+    @property
+    def databases(self):
+        if not self.ini.has_section('database'):
+            return {
+                'default': {
+                    'ENGINE': 'django.db.backends.sqlite3',
+                    'NAME': 'channel-tasks.sqlite3',
+                }
+            }
+
+        return dict(default={k.upper(): v for k, v in dict(self.ini['database']).items()})
