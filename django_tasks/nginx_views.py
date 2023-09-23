@@ -17,7 +17,7 @@ class NginxAccelRedirectView(views.View):
     @classmethod
     def get_url_path(cls, location: str, **kwargs):
         assert location, 'A prefix is required'
-        return urls.path(os.path.join(location, '<path:path>').lstrip('/'),
+        return urls.path(os.path.join(location, '<path:path>').strip('/'),
                          login_required(cls.as_view(location=location)),
                          **kwargs)
 
