@@ -30,7 +30,7 @@ class NginxAccelRedirectView(views.View):
 
         response['X-Accel-Redirect'] = os.path.join(f"/_{self.location.strip('/')}", path)
 
-        logging.getLogger('django').info('Returning %s with headers %s', response, dict(response))
+        logging.getLogger('django').info('Returning %s with headers %s', response, response.headers)
         return response
 
 
