@@ -1,3 +1,4 @@
+import logging
 import os
 
 from django import http, urls, views
@@ -27,8 +28,9 @@ class NginxAccelRedirectView(views.View):
         for ignored_header in self.nginx_headers:
             del response[ignored_header]
 
-        response['X-Accel-Redirect'] = os.path.join('/internal', self.location, path)
+        response['X-Accel-Redirect'] = os.path.join(f"/_{self.location.strip('/')}", path)
 
+        logging.getLogger('django').info('Returning %s with headers %s', response, dict(response))
         return response
 
 
