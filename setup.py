@@ -37,7 +37,7 @@ setuptools.setup(
                 ('./services', ['services/channel-tasks-docker.template.service',
                                 'services/channel-tasks.template.service']),
                 ('./bin', ['services/restart-channel-tasks-docker.sh',
-                           'services/restart-channel-tasks.sh'])],
+                           'services/setup-channel-tasks.sh'])],
     entry_points={'console_scripts': ['channel-tasks-admin=django_tasks.entrypoint:manage_channel_tasks']},
     install_requires=[
         'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
