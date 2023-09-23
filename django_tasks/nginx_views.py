@@ -1,4 +1,3 @@
-import logging
 import os
 
 from django import http, urls, views
