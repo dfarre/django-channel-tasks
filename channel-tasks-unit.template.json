@@ -25,7 +25,7 @@
     ],
     "applications": {
         "djangochannels": {
-            "type": "python 3",
+            "type": "python $CHANNEL_TASKS_PYTHON_VERSION",
             "home": "$CHANNEL_TASKS_PYTHON_HOME",
             "path": "$CHANNEL_TASKS_ASGI_PATH",
             "module": "django_tasks.ws_asgi",
