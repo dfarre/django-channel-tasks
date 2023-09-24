@@ -37,7 +37,8 @@ class AdminTaskAction:
     def websocket_task_schedule(self, http_request: HttpRequest, task_name: str, **inputs):
         ws = websocket.WebSocket()
         ws_path = os.path.join(http_request.get_host(), PROXY_ROUTE, 'tasks')
-        ws.connect(f'ws://{ws_path}/', header=self.header)
+        protocol = 'wss' if http_request.is_secure() else 'ws'
+        ws.connect(f'{protocol}://{ws_path}/', header=self.header)
         ws.send(json.dumps([dict(name=task_name, inputs=inputs)], indent=4))
         ws_response = ws.recv()
         ws.close()
