@@ -54,4 +54,7 @@ class SettingsIni:
                 }
             }
 
-        return dict(default={k.upper(): v for k, v in dict(self.ini['database']).items()})
+        default = {k.upper(): v for k, v in dict(self.ini['database']).items()}
+        default.setdefault('PASSWORD', os.getenv('CHANNEL_TASKS_DB_PASSWORD', ''))
+
+        return {'default': default}

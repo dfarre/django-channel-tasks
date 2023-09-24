@@ -6,13 +6,12 @@ Type=oneshot
 RemainAfterExit=yes
 Restart=on-failure
 ExecStart=${CHANNEL_TASKS_HOME}/bin/setup-channel-tasks.sh
-Requires=redis.service
-Requires=unit.service
 Environment="CHANNEL_TASKS_HOME=${CHANNEL_TASKS_HOME}"
 Environment="CHANNEL_TASKS_INI_PATH=${CHANNEL_TASKS_INI_PATH}"
 Environment="CHANNEL_TASKS_PORT=${CHANNEL_TASKS_PORT}"
 Environment="CHANNEL_TASKS_STATIC_ROOT=${CHANNEL_TASKS_STATIC_ROOT}"
 Environment="CHANNEL_TASKS_STATIC_URI=${CHANNEL_TASKS_STATIC_URI}"
+Environment="CHANNEL_TASKS_DB_PASSWORD=${CHANNEL_TASKS_DB_PASSWORD}"
 Environment="TASK_ADMIN_USER=${TASK_ADMIN_USER}"
 Environment="TASK_ADMIN_EMAIL=${TASK_ADMIN_EMAIL}"
 

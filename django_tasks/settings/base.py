@@ -1,3 +1,4 @@
+import logging
 import os
 
 from typing import Any
@@ -41,7 +42,7 @@ MIDDLEWARE: list[str] = [
 ]
 
 DJANGO_LOG_LEVEL = CHANNEL_TASKS.log_level
-
+REQUEST_LOGGING_DATA_LOG_LEVEL = logging.INFO
 LOGGING = dict(
     version=1,
     disable_existing_loggers=False,

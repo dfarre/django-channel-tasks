@@ -13,6 +13,7 @@ services:
     depends_on:
       - db
     environment:
+      - CHANNEL_TASKS_DB_PASSWORD
       - TASK_ADMIN_USER
       - TASK_ADMIN_EMAIL
       - LC_ALL=C.UTF-8
