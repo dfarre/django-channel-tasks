@@ -16,11 +16,13 @@ PROXY_ROUTE = settings.CHANNEL_TASKS.proxy_route
 
 
 class AdminTaskAction:
-    header: dict[str, str] = {'Content-Type': 'application/json'}
+    default_headers: dict[str, str] = {'Content-Type': 'application/json'}
+    pass_headers: set[str] = {'Cookie'}
 
     def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
         self.kwargs = kwargs
+        self.header = {**self.default_headers}
 
     def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
         @admin.action(**self.kwargs)
@@ -35,14 +37,17 @@ class AdminTaskAction:
         return action_callable
 
     def websocket_task_schedule(self, http_request: HttpRequest, task_name: str, **inputs):
-        ws = websocket.WebSocket()
-        ws_path = os.path.join(http_request.get_host(), PROXY_ROUTE, 'tasks')
         protocol = 'wss' if http_request.is_secure() else 'ws'
-        ws.connect(f'{protocol}://{ws_path}/', header=self.header)
+        path = os.path.join(http_request.get_host(), PROXY_ROUTE, 'tasks')
+        self.header.update({
+            k: http_request.headers[k] for k in self.pass_headers & set(http_request.headers)}
+        )
+        ws = websocket.WebSocket()
+        ws.connect(f'{protocol}://{path}/', header=self.header)
         ws.send(json.dumps([dict(name=task_name, inputs=inputs)], indent=4))
-        ws_response = ws.recv()
+        response = ws.recv()
         ws.close()
-        return ws_response
+        return response
 
 
 class ExtraContextModelAdmin(admin.ModelAdmin):
