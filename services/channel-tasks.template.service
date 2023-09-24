@@ -4,6 +4,7 @@ Description=channel-tasks
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+Restart=on-failure
 ExecStart=${CHANNEL_TASKS_HOME}/bin/setup-channel-tasks.sh
 Requires=redis.service
 Requires=unit.service
