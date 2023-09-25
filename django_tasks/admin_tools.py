@@ -18,6 +18,7 @@ PROXY_ROUTE = settings.CHANNEL_TASKS.proxy_route
 class AdminTaskAction:
     default_headers: dict[str, str] = {'Content-Type': 'application/json'}
     pass_headers: set[str] = {'Cookie'}
+    timeout = 8
 
     def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
@@ -43,10 +44,15 @@ class AdminTaskAction:
             k: http_request.headers[k] for k in self.pass_headers & set(http_request.headers)}
         )
         ws = websocket.WebSocket()
-        ws.connect(f'{protocol}://{path}/', header=self.header)
+        ws.connect(
+            f'{protocol}://{path}/', header=self.header, timeout=self.timeout,
+            http_proxy_host=settings.CHANNEL_TASKS.proxy_host,
+            http_proxy_port=settings.CHANNEL_TASKS.proxy_port,
+            proxy_type=settings.CHANNEL_TASKS.proxy_type,
+        )
         ws.send(json.dumps([dict(name=task_name, inputs=inputs)], indent=4))
         response = ws.recv()
-        ws.close()
+
         return response
 
 

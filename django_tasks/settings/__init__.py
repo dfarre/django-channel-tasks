@@ -17,6 +17,9 @@ class SettingsIni:
     def get_boolean(self, section, key, default):
         return self.ini[section].getboolean(key, default) if self.ini.has_section(section) else default
 
+    def get_int(self, section, key, default):
+        return self.ini[section].getint(key, default) if self.ini.has_section(section) else default
+
     def get_text(self, section, key, default):
         return self.ini[section][key].strip() if self.ini.has_option(section, key) else default
 
@@ -35,6 +38,18 @@ class SettingsIni:
     @property
     def proxy_route(self):
         return self.get_text('security', 'proxy-route', '')
+
+    @property
+    def proxy_host(self):
+        return self.get_int('security', 'proxy-host', '127.0.0.1')
+
+    @property
+    def proxy_port(self):
+        return self.get_int('security', 'proxy-port', 8001)
+
+    @property
+    def proxy_type(self):
+        return self.get_int('security', 'proxy-type', 'http')
 
     @property
     def log_level(self):
