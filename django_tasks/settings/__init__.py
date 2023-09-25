@@ -41,7 +41,7 @@ class SettingsIni:
 
     @property
     def proxy_host(self):
-        return self.get_int('security', 'proxy-host', '127.0.0.1')
+        return self.get_text('security', 'proxy-host', '127.0.0.1')
 
     @property
     def proxy_port(self):
@@ -49,7 +49,7 @@ class SettingsIni:
 
     @property
     def proxy_type(self):
-        return self.get_int('security', 'proxy-type', 'http')
+        return self.get_text('security', 'proxy-type', 'http')
 
     @property
     def log_level(self):
