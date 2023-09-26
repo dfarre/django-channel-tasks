@@ -22,6 +22,7 @@ class AdminTaskAction:
     def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
         self.kwargs = kwargs
+
     def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
@@ -42,9 +43,6 @@ class AdminTaskAction:
         ws.connect(
             f'ws{secure}://{address}/', header=self.header, timeout=self.timeout,
             origin=origin, cookie=http_request.headers.get('Cookie'),
-            http_proxy_host=settings.CHANNEL_TASKS.proxy_host,
-            http_proxy_port=settings.CHANNEL_TASKS.proxy_port,
-            proxy_type=settings.CHANNEL_TASKS.proxy_type,
         )
         ws.send(json.dumps([dict(name=task_name, inputs=inputs)], indent=4))
         response = ws.recv()
