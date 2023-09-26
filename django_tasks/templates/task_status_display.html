@@ -3,8 +3,9 @@
 {% block extrahead %}
 {{ block.super }}
 <script>
-    var protocol = ((location.protocol === 'https:') ? 'wss' : 'ws');
-    var admin_ws = admin_ws || new WebSocket(`${protocol}://${window.location.host}{{ websocket_uri }}`);
+    var admin_ws = admin_ws || new WebSocket(
+        `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.host}{{ websocket_uri }}`
+    );
 
     admin_ws.onopen = function (event) {
         console.log('WebSocket connection opened:', event);

@@ -16,15 +16,12 @@ PROXY_ROUTE = settings.CHANNEL_TASKS.proxy_route
 
 
 class AdminTaskAction:
-    default_headers: dict[str, str] = {'Content-Type': 'application/json'}
-    pass_headers: set[str] = {'Cookie'}
-    timeout = 8
+    header: dict[str, str] = {'Content-Type': 'application/json'}
+    timeout = 20
 
     def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
         self.kwargs = kwargs
-        self.header = {**self.default_headers}
-
     def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
@@ -38,14 +35,13 @@ class AdminTaskAction:
         return action_callable
 
     def websocket_task_schedule(self, http_request: HttpRequest, task_name: str, **inputs):
-        protocol = 'wss' if http_request.is_secure() else 'ws'
-        path = os.path.join(http_request.get_host(), PROXY_ROUTE, 'tasks')
-        self.header.update({
-            k: http_request.headers[k] for k in self.pass_headers & set(http_request.headers)}
-        )
+        secure = 's' if http_request.is_secure() else ''
+        origin = f'http{secure}://{http_request.get_host()}'
+        address = os.path.join(http_request.get_host(), PROXY_ROUTE, 'tasks')
         ws = websocket.WebSocket()
         ws.connect(
-            f'{protocol}://{path}/', header=self.header, timeout=self.timeout,
+            f'ws{secure}://{address}/', header=self.header, timeout=self.timeout,
+            origin=origin, cookie=http_request.headers.get('Cookie'),
             http_proxy_host=settings.CHANNEL_TASKS.proxy_host,
             http_proxy_port=settings.CHANNEL_TASKS.proxy_port,
             proxy_type=settings.CHANNEL_TASKS.proxy_type,
