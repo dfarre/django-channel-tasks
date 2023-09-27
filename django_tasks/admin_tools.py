@@ -27,10 +27,13 @@ class AdminTaskAction:
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
-            ws_response = self.websocket_task_schedule(
+            self.websocket_task_schedule(
                 request, self.task_name, instance_ids=list(queryset.values_list('pk', flat=True))
             )
-            modeladmin.message_user(request, ws_response, messages.INFO)
+            modeladmin.message_user(
+                request,
+                f"Requested to '{self.task_name}', this page will notify you when done.",
+                messages.INFO)
             return post_schedule_callable(modeladmin, request, queryset)
 
         return action_callable
@@ -45,9 +48,6 @@ class AdminTaskAction:
             origin=origin, cookie=http_request.headers.get('Cookie'),
         )
         ws.send(json.dumps([dict(name=task_name, inputs=inputs)], indent=4))
-        response = ws.recv()
-
-        return response
 
 
 class ExtraContextModelAdmin(admin.ModelAdmin):
