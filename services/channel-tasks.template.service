@@ -6,6 +6,7 @@ Type=oneshot
 RemainAfterExit=yes
 Restart=on-failure
 ExecStart=${CHANNEL_TASKS_HOME}/bin/setup-channel-tasks.sh
+Environment="DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}"
 Environment="CHANNEL_TASKS_HOME=${CHANNEL_TASKS_HOME}"
 Environment="CHANNEL_TASKS_INI_PATH=${CHANNEL_TASKS_INI_PATH}"
 Environment="CHANNEL_TASKS_PORT=${CHANNEL_TASKS_PORT}"

@@ -7,6 +7,7 @@ Restart=always
 RestartSec=5s
 ExecStart=${CHANNEL_TASKS_HOME}/bin/restart-channel-tasks-docker.sh
 Requires=docker.service
+Environment="DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}"
 Environment="CHANNEL_TASKS_DOCKER_HOME=${CHANNEL_TASKS_DOCKER_HOME}"
 Environment="CHANNEL_TASKS_PORT=${CHANNEL_TASKS_PORT}"
 Environment="CHANNEL_TASKS_PACKAGE=${CHANNEL_TASKS_PACKAGE}"
