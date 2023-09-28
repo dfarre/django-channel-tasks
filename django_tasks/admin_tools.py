@@ -30,9 +30,10 @@ class AdminTaskAction:
             self.websocket_task_schedule(
                 request, self.task_name, instance_ids=list(queryset.values_list('pk', flat=True))
             )
+            objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             modeladmin.message_user(
                 request,
-                f"Requested to '{self.task_name}', this page will notify you when done.",
+                f"Requested to run '{self.task_name}' on {objects_repr}, this page will notify you when done.",
                 messages.INFO)
             return post_schedule_callable(modeladmin, request, queryset)
 
