@@ -66,3 +66,22 @@ class SettingsIni:
         default.setdefault('PASSWORD', os.getenv('CHANNEL_TASKS_DB_PASSWORD', ''))
 
         return {'default': default}
+
+    @property
+    def channel_layers(self):
+        return {
+            'default': {
+                'BACKEND': 'channels_redis.core.RedisChannelLayer',
+                'CONFIG': {
+                    'hosts': [(self.redis_host, self.redis_port)],
+                },
+            },
+        }
+
+    @property
+    def redis_host(self):
+        return self.get_text('redis', 'host', '127.0.0.1')
+
+    @property
+    def redis_port(self):
+        return self.get_int('redis', 'port', 6379)

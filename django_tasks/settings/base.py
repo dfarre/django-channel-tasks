@@ -30,6 +30,8 @@ INSTALLED_APPS: list[str] = [
     'django_filters',
 ] + CHANNEL_TASKS.install_apps
 
+CHANNEL_LAYERS = CHANNEL_TASKS.channel_layers
+
 DJANGO_LOG_LEVEL = CHANNEL_TASKS.log_level
 REQUEST_LOGGING_DATA_LOG_LEVEL = logging.INFO
 LOGGING = dict(
@@ -148,10 +150,3 @@ REST_FRAMEWORK = dict(
     ),
     TEST_REQUEST_DEFAULT_FORMAT='json',
 )
-
-CHANNEL_LAYERS = dict(default={
-    "BACKEND": "channels_redis.core.RedisChannelLayer",
-    "CONFIG": {
-        "hosts": [("redis", 6379)],
-    },
-})
