@@ -4,11 +4,16 @@ import os
 
 class SettingsIni:
     ini_key = 'CHANNEL_TASKS_INI_PATH'
+    secret_key_key = 'DJANGO_SECRET_KEY'
 
     def __init__(self):
-        assert self.ini_key in os.environ, f'Settings are to be specified with the {ini_key} envvar.'
+        ini_path = os.getenv(self.ini_key, '')
+        assert os.path.isfile(ini_path), f'Channel-tasks settings file at {self.ini_key}={ini_path} not found.'
         self.ini = configparser.ConfigParser()
-        self.ini.read(os.environ[self.ini_key])
+        self.ini.read(ini_path)
+
+        assert self.secret_key_key in os.environ, f'Expected a Django secret key in {self.secret_key_key} envvar.'
+        self.secret_key = os.environ[self.secret_key_key]
 
     def get_array(self, section, key, default):
         return ([line.strip() for line in self.ini[section][key].splitlines() if line.strip()]

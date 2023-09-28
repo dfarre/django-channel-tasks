@@ -5,15 +5,15 @@ from typing import Any
 
 from django_tasks.settings import SettingsIni
 
+
 CHANNEL_TASKS = SettingsIni()
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-SECRET_KEY = 'cg2fbx3f)_9znm3$($suorm*0fyuv#wr586195!q^pv0%ct7c5'
-
 DEBUG = CHANNEL_TASKS.debug
-
+SECRET_KEY = CHANNEL_TASKS.secret_key
 ALLOWED_HOSTS: list[str] = CHANNEL_TASKS.allowed_hosts
+
+DATABASES: dict[str, Any] = CHANNEL_TASKS.databases
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 INSTALLED_APPS: list[str] = [
     'bootstrap5',
@@ -29,17 +29,6 @@ INSTALLED_APPS: list[str] = [
     'django_extensions',
     'django_filters',
 ] + CHANNEL_TASKS.install_apps
-
-MIDDLEWARE: list[str] = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'request_logging.middleware.LoggingMiddleware',
-]
 
 DJANGO_LOG_LEVEL = CHANNEL_TASKS.log_level
 REQUEST_LOGGING_DATA_LOG_LEVEL = logging.INFO
@@ -84,6 +73,17 @@ LOGGING = dict(
     },
 )
 
+MIDDLEWARE: list[str] = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'request_logging.middleware.LoggingMiddleware',
+]
+
 ROOT_URLCONF = 'django_tasks.urls'
 
 TEMPLATES: list[dict[str, Any]] = [
@@ -103,10 +103,6 @@ TEMPLATES: list[dict[str, Any]] = [
 ]
 
 ASGI_APPLICATION = 'django_tasks.ws_asgi.application'
-
-DATABASES: dict[str, Any] = CHANNEL_TASKS.databases
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -130,6 +126,8 @@ AUTHENTICATION_BACKENDS: list[str] = [
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Madrid'
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')

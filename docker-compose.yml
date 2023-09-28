@@ -5,7 +5,9 @@ services:
     build:
       context: .
       args:
+        DJANGO_SECRET_KEY: $DJANGO_SECRET_KEY
         CHANNEL_TASKS_PACKAGE: $CHANNEL_TASKS_PACKAGE
+        CHANNEL_TASKS_DB_PASSWORD: $CHANNEL_TASKS_DB_PASSWORD
     volumes:
       - $CHANNEL_TASKS_DOCKER_HOME:/www
     ports:
@@ -13,7 +15,6 @@ services:
     depends_on:
       - db
     environment:
-      - CHANNEL_TASKS_DB_PASSWORD
       - TASK_ADMIN_USER
       - TASK_ADMIN_EMAIL
       - LC_ALL=C.UTF-8
