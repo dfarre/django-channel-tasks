@@ -45,6 +45,10 @@ class SettingsIni:
         return self.get_text('security', 'server-name', 'localhost')
 
     @property
+    def certs_base_dir(self):
+        return self.get_text('security', 'certs-dir', '')
+
+    @property
     def proxy_route(self):
         return self.get_text('security', 'proxy-route', '')
 
