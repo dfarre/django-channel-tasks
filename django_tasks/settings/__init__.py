@@ -30,7 +30,7 @@ class SettingsIni:
 
     @property
     def allowed_hosts(self):
-        return self.get_array('security', 'allowed-hosts', ['localhost'])
+        return [self.server_name]
 
     @property
     def install_apps(self):
@@ -39,6 +39,10 @@ class SettingsIni:
     @property
     def debug(self):
         return self.get_boolean('security', 'debug', False)
+
+    @property
+    def server_name(self):
+        return self.get_text('security', 'server-name', 'localhost')
 
     @property
     def proxy_route(self):
