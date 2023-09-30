@@ -1,5 +1,7 @@
 import functools
+import json
 import os
+import websocket
 
 from typing import Any, Callable, Optional
 
@@ -8,22 +10,24 @@ from django.contrib import admin, messages
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from django_tasks.websocket_client import WebsocketClientWrapper
-
 
 class AdminTaskAction:
-    def __init__(self, task_name: str, **kwargs):
+    def __init__(self, task_name: str, connect_timeout: float = 90, **kwargs):
         self.task_name = task_name
+        self.connect_timeout = connect_timeout
         self.kwargs = kwargs
-        self.client_wrapper = WebsocketClientWrapper()
+        self.client = websocket.WebSocket()
 
     def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
-            self.client_wrapper.schedule_task(
-                request, self.task_name, instance_ids=list(queryset.values_list('pk', flat=True))
+            self.client.connect(
+                'ws://127.0.0.1/tasks/', header={'Content-Type': 'application/json'}, timeout=self.connect_timeout,
             )
+            self.client.send(json.dumps([
+                dict(name=self.task_name, inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
+            ]))
             objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             modeladmin.message_user(
                 request,
