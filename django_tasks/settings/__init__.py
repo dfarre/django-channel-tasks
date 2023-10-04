@@ -49,6 +49,10 @@ class SettingsIni:
         return self.get_text('security', 'proxy-route', '')
 
     @property
+    def local_port(self):
+        return self.get_int('security', 'local-port', 8001)
+
+    @property
     def log_level(self):
         return self.get_text('logging', 'log-level', 'INFO')
 

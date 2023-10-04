@@ -22,8 +22,12 @@ class AdminTaskAction:
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
+            local_route = ('tasks' if not settings.CHANNEL_TASKS.proxy_route
+                           else f'{settings.CHANNEL_TASKS.proxy_route}-local/tasks')
             self.client.connect(
-                'ws://127.0.0.1/tasks/', header={'Content-Type': 'application/json'}, timeout=self.connect_timeout,
+                f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/',
+                header={'Content-Type': 'application/json'},
+                timeout=self.connect_timeout,
             )
             self.client.send(json.dumps([
                 dict(name=self.task_name, inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
