@@ -1,5 +1,7 @@
 import functools
+import inspect
 import json
+import logging
 import os
 import websocket
 
@@ -9,6 +11,21 @@ from django.conf import settings
 from django.contrib import admin, messages
 from django.db.models import QuerySet
 from django.http import HttpRequest
+
+from django_tasks import models
+
+
+def register_task(callable: Callable):
+    """To be employed as a mark decorator."""
+    assert inspect.iscoroutinefunction(callable), 'The function must be a coroutine'
+
+    instance, created = models.RegisteredTask.objects.get_or_create(
+        dotted_path=f'{inspect.getmodule(callable).__spec__.name}.{callable.__name__}'
+    )
+    msg = 'Registered new task %s' if created else 'Task %s already registered'
+    logging.getLogger('django').info(msg, instance)
+
+    return callable
 
 
 class AdminTaskAction:
@@ -30,12 +47,13 @@ class AdminTaskAction:
                 timeout=self.connect_timeout,
             )
             self.client.send(json.dumps([
-                dict(name=self.task_name, inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
+                dict(registered_task=self.task_name,
+                     inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
             ]))
             objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             modeladmin.message_user(
                 request,
-                f"Requested to run '{self.task_name}' on {objects_repr}, this page will notify you when done.",
+                f"Requested to run '{self.task_name}' on {objects_repr}, this page will notify you of updates.",
                 messages.INFO)
             return post_schedule_callable(modeladmin, request, queryset)
 

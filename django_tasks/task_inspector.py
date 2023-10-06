@@ -2,31 +2,25 @@ import collections
 import inspect
 import importlib
 
-from typing import Callable, Any
+from typing import Any
+
+from rest_framework import exceptions
 
 
 class TaskCoroInfo:
-    _safe_coroutine_modules: set[str] = set()
-
-    @classmethod
-    def mark_as_safe(cls, callable: Callable):
-        assert inspect.iscoroutinefunction(callable)
-        cls._safe_coroutine_modules.add(inspect.getmodule(callable).__spec__.name)
-        return callable
-
     def __init__(self, dotted_path: str, **inputs: dict[str, Any]):
         self.dotted_path = dotted_path.strip()
         self.inputs = inputs
         self.module_path, self.name, self.callable = '', '', None
+
+        if '.' in self.dotted_path:
+            self.module_path, self.name = self.dotted_path.rsplit('.', 1)
+
         self.errors: dict[str, list[str]] = collections.defaultdict(list)
         self.check()
 
     def check(self):
-        if '.' in self.dotted_path:
-            self.module_path, self.name = self.dotted_path.rsplit('.', 1)
-
-        if self.module_path in self._safe_coroutine_modules:
-            self.check_coroutine()
+        self.check_coroutine()
 
         if self.callable:
             self.check_inputs()
@@ -58,3 +52,12 @@ class TaskCoroInfo:
 
         if unknown_keys:
             self.errors['inputs'].append(f'Unknown parameters {unknown_keys}.')
+
+
+def get_coro_info(dotted_path: str, **inputs: dict[str, Any]) -> TaskCoroInfo:
+    coro_info = TaskCoroInfo(dotted_path, **inputs)
+
+    if coro_info.errors:
+        raise exceptions.ValidationError(coro_info.errors)
+
+    return coro_info

@@ -76,7 +76,7 @@ class TaskRunner:
         Sends the task info to the 'tasks' group of consumers, specifying a message type per task status.
         """
         task_info = cls.get_task_info(task)
-        task_info['name'] = name
+        task_info['registered_task'] = name
         message_type = f"task.{task_info['status'].lower()}"
         channel_layer = get_channel_layer()
         await channel_layer.group_send("tasks", {'type': message_type, 'content': task_info})

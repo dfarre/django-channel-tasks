@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from django.db.models import Model, CharField, DateTimeField, JSONField
+from django.db.models import Model, CharField, DateTimeField, JSONField, ForeignKey, CASCADE
 
 
 class DefensiveJsonEncoder(json.JSONEncoder):
@@ -12,9 +12,17 @@ class DefensiveJsonEncoder(json.JSONEncoder):
             return repr(obj)
 
 
+class RegisteredTask(Model):
+    """Specifies a trusted coroutine function to run as task."""
+    dotted_path: CharField = CharField(max_length=80, unique=True)
+
+    def __str__(self):
+        return self.dotted_path
+
+
 class DocTask(Model):
     """Stored information of a task execution."""
-    name: CharField = CharField(max_length=80)
+    registered_task: ForeignKey = ForeignKey(RegisteredTask, on_delete=CASCADE)
     scheduled_at: DateTimeField = DateTimeField(default=datetime.datetime.now)
     completed_at: DateTimeField = DateTimeField(null=True)
     inputs: JSONField = JSONField(default=dict, encoder=DefensiveJsonEncoder)

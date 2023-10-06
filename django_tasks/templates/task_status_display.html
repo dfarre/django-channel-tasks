@@ -36,8 +36,8 @@
             alert_group.setAttribute('id', taskId);
         }
 
-        alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.name}_${taskId}`;
-        delete alertData['name'];
+        alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${taskId}`;
+        delete alertData['registered_task'];
 
         var msg_type = alertData.status.toLowerCase();
         var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
@@ -46,6 +46,9 @@
         }
         if (msg_type == 'error') {
             alert.getElementsByTagName('pre')[0].innerHTML = alertData.traceback.join('');
+        }
+        if (msg_type == 'badrequest') {
+           alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData.details);
         }
 
         alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);

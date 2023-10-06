@@ -21,23 +21,32 @@ site = AdminSite()
 site.register(Token, TokenAdmin)
 
 
-@AdminTaskAction('django_tasks.tasks.doctask_access_test', description='Test async database access')
+@AdminTaskAction('django_tasks.asgi.doctask_access_test', description='Test async database access')
 def doctask_access_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet):
     pass
 
 
-@AdminTaskAction('django_tasks.tasks.doctask_deletion_test', description='Test async database DELETE')
+@AdminTaskAction('django_tasks.asgi.doctask_deletion_test', description='Test async database DELETE')
 def doctask_deletion_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet):
     pass
 
 
 @admin.register(models.DocTask, site=site)
 class DocTaskModelAdmin(StatusDisplayModelAdmin):
-    list_display = ('name', 'inputs', 'duration', *DocTaskSerializer.Meta.read_only_fields)
+    list_display = ('registered_task', 'inputs', 'duration', *DocTaskSerializer.Meta.read_only_fields)
 
     if settings.DEBUG:
         actions = [doctask_access_test, doctask_deletion_test]
 
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(models.RegisteredTask, site=site)
+class RegisteredTaskModelAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 

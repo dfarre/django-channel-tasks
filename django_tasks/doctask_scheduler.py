@@ -5,8 +5,11 @@ import logging
 from typing import Any
 
 from channels.db import database_sync_to_async
+
 from django_tasks.serializers import DocTaskSerializer
 from django_tasks.task_runner import TaskRunner
+
+from django_tasks.task_inspector import get_coro_info
 
 
 class DocTaskScheduler:
@@ -38,18 +41,10 @@ class DocTaskScheduler:
     @classmethod
     async def schedule_doctask(cls, data={}, callable=None) -> asyncio.Future:
         """Schedules a single task, and stores results in DB."""
-        callable = callable or DocTaskSerializer.get_coro_info(data).callable
+        dotted_path, inputs = data['registered_task'], data.get('inputs', {})
+        callable = callable or get_coro_info(dotted_path, **inputs).callable
         runner = TaskRunner.get()
-        task = await runner.schedule(callable(**data.get('inputs', {})), cls.store_doctask_result)
+        task = await runner.schedule(callable(**inputs), cls.store_doctask_result)
         cls.doctask_index[id(task)].update({'future': task, 'id': data.get('id')})
         logging.getLogger('django').info('Scheduled doc-task %s callable=%s.', data, callable)
-        return task
-
-    @staticmethod
-    async def schedule_task(data={}, callable=None) -> asyncio.Future:
-        """Schedules a single task without storage."""
-        callable = callable or DocTaskSerializer.get_coro_info(data).callable
-        runner = TaskRunner.get()
-        task = await runner.schedule(callable(**data.get('inputs', {})))
-        logging.getLogger('django').info('Scheduled task %s callable=%s.', data, callable)
         return task
