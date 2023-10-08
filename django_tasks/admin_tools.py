@@ -43,7 +43,7 @@ class AdminTaskAction:
             self.client.connect(
                 f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/',
                 header={'Content-Type': 'application/json'},
-                timeout=60,
+                timeout=600,
             )
             self.client.send(json.dumps([
                 dict(registered_task=self.task_name,
