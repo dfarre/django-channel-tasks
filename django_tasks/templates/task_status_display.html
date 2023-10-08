@@ -45,7 +45,7 @@
             alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
         }
         if (msg_type == 'error') {
-            alert.getElementsByTagName('pre')[0].innerHTML = alertData.traceback.join('');
+            alert.getElementsByTagName('pre')[0].innerHTML = alertData['exception-repr'];
         }
         if (msg_type == 'badrequest') {
            alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData.details);

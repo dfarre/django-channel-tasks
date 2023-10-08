@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-import traceback
 
 from typing import Any, Callable, Coroutine
 
@@ -92,8 +91,7 @@ class TaskRunner:
             task_info['status'] = 'Cancelled'
         elif task.exception():
             task_info.update({'status': 'Error',
-                              'exception-type': task.exception().__class__.__name__,
-                              'traceback': traceback.format_exception(task.exception())})
+                              'exception-repr': repr(task.exception())})
         else:
             task_info.update({'status': 'Success', 'output': task.result()})
 

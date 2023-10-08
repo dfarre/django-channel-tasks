@@ -50,10 +50,10 @@ class DrfConsumer(AsyncHttpConsumer):
             await self.send_response(drf_response.status_code, drf_response.content, headers=[
                 (k.encode(), v.encode()) for k, v in drf_response.headers.items()
             ])
-        except Exception as exc:
+        except Exception:
             await self.send_response(
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
-                ''.join(traceback.format_exception(exc)).encode() if settings.DEBUG else b''
+                traceback.format_exc().encode() if settings.DEBUG else b''
             )
 
     async def process_drf_response(self, drf_response):
