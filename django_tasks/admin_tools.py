@@ -29,8 +29,9 @@ def register_task(callable: Callable):
 
 
 class AdminTaskAction:
-    def __init__(self, task_name: str, **kwargs):
+    def __init__(self, task_name: str, socket_timeout: int = 600, **kwargs):
         self.task_name = task_name
+        self.socket_timeout = socket_timeout
         self.kwargs = kwargs
         self.client = websocket.WebSocket()
 
@@ -43,7 +44,7 @@ class AdminTaskAction:
             self.client.connect(
                 f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/',
                 header={'Content-Type': 'application/json'},
-                timeout=600,
+                timeout=self.socket_timeout,
             )
             self.client.send(json.dumps([
                 dict(registered_task=self.task_name,
