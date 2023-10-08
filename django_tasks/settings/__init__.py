@@ -5,6 +5,19 @@ import os
 class SettingsIni:
     ini_key = 'CHANNEL_TASKS_INI_PATH'
     secret_key_key = 'DJANGO_SECRET_KEY'
+    default_installed_apps = [
+        'bootstrap5',
+        'django.contrib.auth',
+        'django.contrib.contenttypes',
+        'django.contrib.sessions',
+        'django.contrib.staticfiles',
+        'django.contrib.admin',
+        'rest_framework.authtoken',
+        'rest_framework',
+        'django.contrib.messages',
+        'django_extensions',
+        'django_filters',
+    ]
 
     def __init__(self):
         ini_path = os.getenv(self.ini_key, '')
@@ -93,3 +106,7 @@ class SettingsIni:
     @property
     def redis_port(self):
         return self.get_int('redis', 'port', 6379)
+
+    def sort_installed_apps(self, *apps: list[str]) -> list[str]:
+        return self.default_installed_apps + [
+            k for k in apps if k not in self.default_installed_apps] + self.install_apps

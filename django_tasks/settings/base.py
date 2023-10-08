@@ -15,20 +15,7 @@ ALLOWED_HOSTS: list[str] = CHANNEL_TASKS.allowed_hosts
 DATABASES: dict[str, Any] = CHANNEL_TASKS.databases
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-INSTALLED_APPS: list[str] = [
-    'bootstrap5',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.staticfiles',
-    'django.contrib.admin',
-    'rest_framework.authtoken',
-    'rest_framework',
-    'django.contrib.messages',
-    'django_tasks.apps.TasksConfig',
-    'django_extensions',
-    'django_filters',
-] + CHANNEL_TASKS.install_apps
+INSTALLED_APPS: list[str] = CHANNEL_TASKS.sort_installed_apps('django_tasks.apps.TasksConfig')
 
 CHANNEL_LAYERS = CHANNEL_TASKS.channel_layers
 

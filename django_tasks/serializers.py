@@ -1,10 +1,6 @@
-import asyncio
-
 from typing import Any
 
 from rest_framework import serializers
-
-from channels.db import database_sync_to_async
 
 from django_tasks import models
 
@@ -30,9 +26,7 @@ class DocTaskSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_doctask_group(cls, json_content, *args, **kwargs):
-        kwargs.update(dict(many=True, data=json_content))
-        many_serializer = cls(*args, **kwargs)
-        many_serializer.is_valid(raise_exception=True)
+        many_serializer = cls.get_task_group_serializer(json_content, *args, **kwargs)
         doctasks = many_serializer.save()
 
         return many_serializer, doctasks
