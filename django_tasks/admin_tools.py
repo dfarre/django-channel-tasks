@@ -29,9 +29,8 @@ def register_task(callable: Callable):
 
 
 class AdminTaskAction:
-    def __init__(self, task_name: str, connect_timeout: float = 90, **kwargs):
+    def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
-        self.connect_timeout = connect_timeout
         self.kwargs = kwargs
         self.client = websocket.WebSocket()
 
@@ -44,7 +43,7 @@ class AdminTaskAction:
             self.client.connect(
                 f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/',
                 header={'Content-Type': 'application/json'},
-                timeout=self.connect_timeout,
+                timeout=60,
             )
             self.client.send(json.dumps([
                 dict(registered_task=self.task_name,
@@ -54,7 +53,13 @@ class AdminTaskAction:
             modeladmin.message_user(
                 request,
                 f"Requested to run '{self.task_name}' on {objects_repr}, this page will notify you of updates.",
-                messages.INFO)
+                messages.INFO
+            )
+            ws_response = self.client.recv()
+            modeladmin.message_user(request,
+                                    f'Received response: {ws_response}',
+                                    messages.INFO)
+
             return post_schedule_callable(modeladmin, request, queryset)
 
         return action_callable
