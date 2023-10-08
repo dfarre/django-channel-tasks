@@ -107,6 +107,14 @@ class SettingsIni:
     def redis_port(self):
         return self.get_int('redis', 'port', 6379)
 
+    @property
+    def static_root(self):
+        return self.get_text('security', 'static-root', '/www/django_tasks/static')
+
+    @property
+    def media_root(self):
+        return self.get_text('security', 'media-root', '/www/django_tasks/media')
+
     def sort_installed_apps(self, *apps: list[str]) -> list[str]:
         return self.default_installed_apps + [
             k for k in apps if k not in self.default_installed_apps] + self.install_apps
