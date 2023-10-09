@@ -115,6 +115,27 @@ class SettingsIni:
     def media_root(self):
         return self.get_text('security', 'media-root', '/www/django_tasks/media')
 
+    @property
+    def email_settings(self):
+        return (self.email_host,
+                self.email_port,
+                self.email_use_tls,
+                os.getenv('CHANNEL_TASKS_EMAIL_USER', ''),
+                os.getenv('CHANNEL_TASKS_EMAIL_PASSWORD', ''))
+
+    @property
+    def email_host(self):
+        return self.get_text('email', 'host', '')
+
+    @property
+    def email_port(self):
+        return self.get_int('email', 'port', 0)
+
+    @property
+    def email_use_tls(self):
+        return self.get_boolean('email', 'use-tls', False)
+
+
     def sort_installed_apps(self, *apps: list[str]) -> list[str]:
         return self.default_installed_apps + [
             k for k in apps if k not in self.default_installed_apps] + self.install_apps

@@ -66,6 +66,12 @@ STATIC_ROOT = CHANNEL_TASKS.static_root
 MEDIA_URL = '/media/'
 MEDIA_ROOT = CHANNEL_TASKS.media_root
 
+(EMAIL_HOST,
+ EMAIL_PORT,
+ EMAIL_USE_TLS,
+ EMAIL_HOST_USER,
+ EMAIL_HOST_PASSWORD) = CHANNEL_TASKS.email_settings
+
 MIDDLEWARE: list[str] = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
