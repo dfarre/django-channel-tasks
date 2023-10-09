@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import inspect
 import json
@@ -7,12 +8,42 @@ import websocket
 
 from typing import Any, Callable, Optional
 
+from channels.db import database_sync_to_async
+
 from django.conf import settings
 from django.contrib import admin, messages
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
 from django_tasks import models
+
+
+class ModelTask:
+    def __init__(self, model_class, instance_task):
+        self.model_class = model_class
+        self.instance_task = instance_task
+
+    async def __call__(self, instance_ids):
+        logging.getLogger('django').info(
+            'Running %s on %s objects %s...',
+            self.instance_task.__name__, self.model_class.__name__, instance_ids,
+        )
+        outputs = await asyncio.gather(*[self.run(pk) for pk in instance_ids])
+        return outputs
+
+    async def run(self, instance_id):
+        try:
+            instance = await self.model_class.objects.aget(pk=instance_id)
+        except self.model_class.DoesNotExist:
+            logging.getLogger('django').error(
+                'Instance of %s with pk=%s not found.', self.model_class.__name__, instance_id)
+        else:
+            try:
+                output = await database_sync_to_async(self.instance_task)(instance)
+            except Exception:
+                logging.getLogger('django').exception('Got exception:')
+            else:
+                return output
 
 
 def register_task(callable: Callable):
@@ -50,16 +81,15 @@ class AdminTaskAction:
                 dict(registered_task=self.task_name,
                      inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
             ]))
+            ws_response = self.client.recv()
+            self.client.close()
+
             objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             modeladmin.message_user(
                 request,
-                f"Requested to run '{self.task_name}' on {objects_repr}, this page will notify you of updates.",
-                messages.INFO
-            )
-            ws_response = self.client.recv()
-            modeladmin.message_user(request,
-                                    f'Received response: {ws_response}',
-                                    messages.INFO)
+                f"Requested to run '{self.task_name}' on {objects_repr}. Received response: {ws_response}. "
+                'This page will notify you of updates.',
+                messages.INFO)
 
             return post_schedule_callable(modeladmin, request, queryset)
 

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 
 import django
 
@@ -16,7 +17,7 @@ from channels.security.websocket import AllowedHostsOriginValidator
 from rest_framework import routers
 
 from django_tasks import models
-from django_tasks.admin_tools import register_task
+from django_tasks.admin_tools import ModelTask, register_task
 from django_tasks.consumers import TaskEventsConsumer, TasksRestConsumer
 from django_tasks.viewsets import TaskViewSet
 
@@ -36,18 +37,24 @@ async def sleep_test(duration, raise_error=False):
 
 @register_task
 async def doctask_access_test(instance_ids: list[int]):
-    await asyncio.sleep(3)
-    async for doctask in models.DocTask.objects.filter(pk__in=instance_ids):
+    def instance_function(doctask):
+        time.sleep(1)
         logging.getLogger('django').info('Retrieved %s', repr(doctask))
-    await asyncio.sleep(3)
+        time.sleep(1)
+
+    await ModelTask(models.DocTask, instance_function)(instance_ids)
+    await asyncio.sleep(4)
 
 
 @register_task
 async def doctask_deletion_test(instance_ids: list[int]):
-    await asyncio.sleep(3)
-    await models.DocTask.objects.filter(pk__in=instance_ids).adelete()
-    logging.getLogger('django').info('Deleted doctasks %s', instance_ids)
-    await asyncio.sleep(3)
+    def instance_function(doctask):
+        time.sleep(1)
+        doctask.delete()
+        logging.getLogger('django').info('Deleted %s', repr(doctask))
+        time.sleep(1)
+
+    await ModelTask(models.DocTask, instance_function)(instance_ids)
 
 
 class OptionalSlashRouter(routers.SimpleRouter):
