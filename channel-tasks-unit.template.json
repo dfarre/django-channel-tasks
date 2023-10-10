@@ -32,7 +32,9 @@
             "environment": {
                 "DJANGO_SECRET_KEY": "$DJANGO_SECRET_KEY",
                 "CHANNEL_TASKS_INI_PATH": "$CHANNEL_TASKS_INI_PATH",
-                "CHANNEL_TASKS_DB_PASSWORD": "$CHANNEL_TASKS_DB_PASSWORD"
+                "CHANNEL_TASKS_DB_PASSWORD": "$CHANNEL_TASKS_DB_PASSWORD",
+                "CHANNEL_TASKS_EMAIL_USER": "$CHANNEL_TASKS_EMAIL_USER",
+                "CHANNEL_TASKS_EMAIL_PASSWORD": "$CHANNEL_TASKS_EMAIL_PASSWORD"
             }
         }
     }
