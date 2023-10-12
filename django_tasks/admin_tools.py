@@ -10,17 +10,16 @@ from typing import Any, Callable, Optional
 
 from channels.db import database_sync_to_async
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib import admin, messages
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from django_tasks import models
-
 
 class ModelTask:
-    def __init__(self, model_class, instance_task):
-        self.model_class = model_class
+    def __init__(self, app_name: str, model_name: str, instance_task):
+        self.model_class = apps.get_model(app_name, model_name)
         self.instance_task = instance_task
 
     async def __call__(self, instance_ids):
@@ -49,8 +48,8 @@ class ModelTask:
 def register_task(callable: Callable):
     """To be employed as a mark decorator."""
     assert inspect.iscoroutinefunction(callable), 'The function must be a coroutine'
-
-    instance, created = models.RegisteredTask.objects.get_or_create(
+    RegisteredTask = apps.get_model('django_tasks', 'RegisteredTask')
+    instance, created = RegisteredTask.objects.get_or_create(
         dotted_path=f'{inspect.getmodule(callable).__spec__.name}.{callable.__name__}'
     )
     msg = 'Registered new task %s' if created else 'Task %s already registered'
