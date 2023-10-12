@@ -1,11 +1,12 @@
 #!/bin/bash
 # Django setup
+export DJANGO_SETTINGS_MODULE=django_tasks.settings.base
+
 "${CHANNEL_TASKS_HOME}"/bin/channel-tasks-admin migrate --noinput
 "${CHANNEL_TASKS_HOME}"/bin/channel-tasks-admin create_task_admin "${TASK_ADMIN_USER}" "${TASK_ADMIN_EMAIL}"
 "${CHANNEL_TASKS_HOME}"/bin/channel-tasks-admin collectstatic --noinput
 
 # Nginx-unit setup
-export DJANGO_SETTINGS_MODULE=django_tasks.settings.base
 export CHANNEL_TASKS_LISTENER_ADDRESS="*:${CHANNEL_TASKS_PORT}"
 export CHANNEL_TASKS_PYTHON_HOME="${CHANNEL_TASKS_HOME}"
 export CHANNEL_TASKS_PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
