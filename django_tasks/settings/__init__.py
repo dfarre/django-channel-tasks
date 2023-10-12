@@ -135,7 +135,6 @@ class SettingsIni:
     def email_use_tls(self):
         return self.get_boolean('email', 'use-tls', False)
 
-
     def sort_installed_apps(self, *apps: list[str]) -> list[str]:
         return self.default_installed_apps + [
             k for k in apps if k not in self.default_installed_apps] + self.install_apps
