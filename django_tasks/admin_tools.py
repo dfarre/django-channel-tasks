@@ -1,10 +1,8 @@
 import asyncio
 import functools
 import inspect
-import json
 import logging
 import os
-import websocket
 
 from typing import Any, Callable, Optional
 
@@ -15,6 +13,8 @@ from django.conf import settings
 from django.contrib import admin, messages
 from django.db.models import QuerySet
 from django.http import HttpRequest
+
+from django_tasks.websocket_client import LocalWebSocketClient
 
 
 class ModelTask:
@@ -61,28 +61,17 @@ def register_task(callable: Callable):
 class AdminTaskAction:
     def __init__(self, task_name: str, socket_timeout: int = 600, **kwargs):
         self.task_name = task_name
-        self.socket_timeout = socket_timeout
         self.kwargs = kwargs
-        self.client = websocket.WebSocket()
+        self.client = LocalWebSocketClient(timeout=socket_timeout)
 
     def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
-            local_route = ('tasks' if not settings.CHANNEL_TASKS.proxy_route
-                           else f'{settings.CHANNEL_TASKS.proxy_route}-local/tasks')
-            self.client.connect(
-                f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/',
-                header={'Content-Type': 'application/json'},
-                timeout=self.socket_timeout,
-            )
-            self.client.send(json.dumps([
+            ws_response = self.client.send_locally([
                 dict(registered_task=self.task_name,
                      inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
-            ]))
-            ws_response = self.client.recv()
-            self.client.close()
-
+            ])
             objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             modeladmin.message_user(
                 request,

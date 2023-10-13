@@ -1,13 +1,10 @@
 import asyncio
-import collections
-import importlib
 import json
+import pprint
 
 import bs4
 import pytest
-import pytest_asyncio
 
-from channels.testing import WebsocketCommunicator
 from django.core.management import call_command
 from django.test.client import AsyncClient
 from rest_framework import status
@@ -16,6 +13,7 @@ from bdd_coder import decorators
 from bdd_coder import tester
 
 from django_tasks.task_runner import TaskRunner
+from django_tasks.websocket_client import LocalWebSocketClient
 
 
 @pytest.mark.django_db
@@ -32,9 +30,11 @@ class BddTester(tester.BddTester):
     credentials = dict(username='Alice', password='AlicePassWd')
 
     @pytest.fixture(autouse=True)
-    def setup_clients(self):
+    def setup_clients(self, event_loop):
         self.admin_client = AsyncClient()
         self.api_client = AsyncClient()
+        self.ws_client = LocalWebSocketClient(timeout=10)
+        self.event_collection_task = self.ws_client.collect_events(event_loop)
 
     @pytest.fixture(autouse=True)
     def setup_models(self):
@@ -50,34 +50,6 @@ class BddTester(tester.BddTester):
         response = await getattr(self.api_client, method.lower())(f'/api/{api_path}', **kwargs)
         assert response.status_code == expected_http_code, response.content.decode()
         return response
-
-    @pytest_asyncio.fixture(autouse=True)
-    async def setup_websocket_communicator(self, event_loop):
-        from django_tasks import asgi
-        route = asgi.application.application_mapping['websocket'].application.routes[0]
-        consumers = importlib.import_module(route.lookup_str.rsplit('.', 1)[0])
-        self.communicator = WebsocketCommunicator(
-            consumers.TaskEventsConsumer.as_asgi(), route.pattern.describe().strip("'"))
-
-        connected, subprotocol = await self.communicator.connect()
-        assert connected
-
-        self.event_collection_task = asyncio.wrap_future(
-            asyncio.run_coroutine_threadsafe(self.collect_events(), event_loop))
-
-        yield
-        await self.communicator.disconnect()
-
-    async def collect_events(self):
-        self.events = collections.defaultdict(list)
-        listen = True
-        while listen:
-            try:
-                event = await self.communicator.receive_json_from(timeout=5)
-            except asyncio.TimeoutError:
-                listen = False
-            else:
-                self.events[event['content']['status'].lower()].append(event)
 
     async def fake_task_coro_ok(self, duration):
         await asyncio.sleep(duration)
@@ -117,8 +89,17 @@ class BddTester(tester.BddTester):
 
     async def cancelled_error_success_messages_are_broadcasted(self):
         cancelled, error, success = map(int, self.param)
-        await self.event_collection_task
-        assert len(self.events['started']) == cancelled + error + success
-        assert len(self.events['cancelled']) == cancelled
-        assert len(self.events['error']) == error
-        assert len(self.events['success']) == success
+        self.ws_client.expected_events = {
+            'started': cancelled + error + success,
+            'cancelled': cancelled, 'error': error, 'success': success,
+        }
+        timeout = 2
+        try:
+            await asyncio.wait_for(self.event_collection_task, timeout)
+        except TimeoutError:
+            self.ws_client.wsapp.close()
+            raise AssertionError(
+                f'Timeout in event collection. Expected counts: {self.ws_client.expected_events}. '
+                f'Collected events in {timeout}s: {pprint.pformat(self.ws_client.events)}.')
+        else:
+            self.ws_client.expected_events = {}

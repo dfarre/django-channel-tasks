@@ -51,8 +51,9 @@ class RestApiWithTokenAuth(base.BddTester):
         """
 
     async def a_failed_and_some_ok_tasks_are_posted(self):
-        task_data = [dict(name='sleep_test', inputs={'duration': dn}) for dn in self.task_durations]
-        task_data.append(dict(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True}))
+        name = 'django_tasks.asgi.sleep_test'
+        task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
+        task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = await self.assert_rest_api_call(
             'POST', 'tasks/schedule', status.HTTP_201_CREATED, json_data=task_data)
         time.sleep(max(self.task_durations))
@@ -67,7 +68,8 @@ class RestApiWithTokenAuth(base.BddTester):
 
     async def a_failed_task_is_posted_with_duration(self):
         duration = float(self.param)
-        data = dict(name='sleep_test', inputs={'duration': duration, 'raise_error': True})
+        data = dict(registered_task='django_tasks.asgi.sleep_test',
+                    inputs={'duration': duration, 'raise_error': True})
         response = await self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, json_data=data)
         response_json = response.json()
         del response_json['scheduled_at']
@@ -150,9 +152,10 @@ class TestWebsocketScheduling(base.BddTester):
         """
 
     async def a_failed_and_some_ok_tasks_are_scheduled_through_ws(self):
-        task_data = [dict(name='sleep_test', inputs={'duration': dn}) for dn in self.task_durations]
-        task_data.append(dict(name='sleep_test', inputs={'duration': 0.15, 'raise_error': True}))
-        await self.communicator.send_json_to(task_data)
+        name = 'django_tasks.asgi.sleep_test'
+        task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
+        task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
+        self.ws_client.send_locally(task_data)
 
 
 class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
