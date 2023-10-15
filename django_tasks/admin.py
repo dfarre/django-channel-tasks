@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import admin
 from django.conf import settings
 from django.db.models import QuerySet
@@ -22,13 +24,17 @@ site.register(Token, TokenAdmin)
 
 
 @AdminTaskAction('django_tasks.asgi.doctask_access_test', description='Test async database access')
-def doctask_access_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet):
-    pass
+def doctask_access_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet, ws_response: str):
+    objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
+    logging.getLogger('django').info(
+        'Requested to run DB access test on %s. Received response: %s.', objects_repr, ws_response)
 
 
 @AdminTaskAction('django_tasks.asgi.doctask_deletion_test', description='Test async database DELETE')
-def doctask_deletion_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet):
-    pass
+def doctask_deletion_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet, ws_response: str):
+    objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
+    logging.getLogger('django').info(
+        'Requested to delete %s. Received response: %s.', objects_repr, ws_response)
 
 
 @admin.register(models.DocTask, site=site)

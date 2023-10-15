@@ -12,7 +12,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import admin, messages
 from django.db.models import QuerySet
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponseRedirect
 
 from django_tasks.websocket_client import LocalWebSocketClient
 
@@ -72,14 +72,9 @@ class AdminTaskAction:
                 dict(registered_task=self.task_name,
                      inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
             ])
-            objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
-            modeladmin.message_user(
-                request,
-                f"Requested to run '{self.task_name}' on {objects_repr}. Received response: {ws_response}. "
-                'This page will notify you of updates.',
-                messages.INFO)
+            post_schedule_callable(modeladmin, request, queryset, ws_response)
 
-            return post_schedule_callable(modeladmin, request, queryset)
+            return HttpResponseRedirect(request.build_absolute_uri())
 
         return action_callable
 
