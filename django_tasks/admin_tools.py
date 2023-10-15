@@ -10,7 +10,7 @@ from channels.db import database_sync_to_async
 
 from django.apps import apps
 from django.conf import settings
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
