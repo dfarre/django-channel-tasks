@@ -9,11 +9,11 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.admin import TokenAdmin
 
 from django_tasks import models
-from django_tasks.admin_tools import AdminTaskAction, StatusDisplayModelAdmin
+from django_tasks.admin_tools import AdminTaskAction, ChannelTasksAdminSite
 from django_tasks.serializers import DocTaskSerializer
 
 
-class AdminSite(admin.AdminSite):
+class AdminSite(ChannelTasksAdminSite):
     site_title = 'Stored Tasks'
     site_header = 'Stored Tasks'
     index_title = 'Index'
@@ -38,7 +38,7 @@ def doctask_deletion_test(modeladmin: admin.ModelAdmin, request: HttpRequest, qu
 
 
 @admin.register(models.DocTask, site=site)
-class DocTaskModelAdmin(StatusDisplayModelAdmin):
+class DocTaskModelAdmin(admin.ModelAdmin):
     list_display = ('registered_task', 'inputs', 'duration', *DocTaskSerializer.Meta.read_only_fields)
 
     if settings.DEBUG:

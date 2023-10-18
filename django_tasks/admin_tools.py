@@ -12,9 +12,18 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.db.models import QuerySet
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponseRedirect
 
 from django_tasks.websocket_client import LocalWebSocketClient
+
+
+class ChannelTasksAdminSite(admin.AdminSite):
+    index_template = 'tasks_admin_index.html'
+
+    def each_context(self, request: HttpRequest):
+        context = super().each_context(request)
+        context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
+        return context
 
 
 class ModelTask:
@@ -72,7 +81,8 @@ class AdminTaskAction:
                 dict(registered_task=self.task_name,
                      inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
             ])
-            return post_schedule_callable(modeladmin, request, queryset, ws_response)
+            post_schedule_callable(modeladmin, request, queryset, ws_response)
+            return HttpResponseRedirect('/')
 
         return action_callable
 
@@ -86,10 +96,3 @@ class ExtraContextModelAdmin(admin.ModelAdmin):
 
     def add_changelist_extra_context(self, request: HttpRequest, extra_context: dict):
         raise NotImplementedError
-
-
-class StatusDisplayModelAdmin(ExtraContextModelAdmin):
-    change_list_template = 'task_status_display.html'
-
-    def add_changelist_extra_context(self, request: HttpRequest, extra_context: dict):
-        extra_context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
