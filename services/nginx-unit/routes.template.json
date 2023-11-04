@@ -1,0 +1,15 @@
+[
+    {
+        "match": {
+            "uri": "$CHANNEL_TASKS_STATIC_URI*"
+        },
+        "action": {
+            "share": "$CHANNEL_TASKS_STATIC_ROOT$uri"
+        }
+    },
+    {
+        "action": {
+            "pass": "applications/$CHANNEL_TASKS_APP_NAME"
+        }
+    }
+]

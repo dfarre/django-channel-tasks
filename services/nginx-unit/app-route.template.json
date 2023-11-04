@@ -1,5 +1,0 @@
-{
-    "action": {
-        "pass": "applications/$CHANNEL_TASKS_APP_NAME"
-    }
-}
