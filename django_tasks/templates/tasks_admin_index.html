@@ -23,8 +23,26 @@
         console.log('WebSocket message received:', msg_event.data);
         const msg = JSON.parse(msg_event.data);
         const group = msg.type.split('.')[0];
-        if (group == 'task') { addTaskAlert(msg.content); };
+        if (group == 'task') {
+            pushAlert(msg.content);
+        }
     };
+
+    function getAlertData() {
+        sessionStorage.getItem('alerts') || sessionStorage.setItem('alerts', JSON.stringify([]));
+        return JSON.parse(sessionStorage.getItem('alerts'))
+    }
+
+    function pushAlert(data) {
+        const alerts = getAlertData();
+        alerts.push(data);
+        sessionStorage.setItem('alerts', JSON.stringify(alerts));
+    }
+
+    function dismissAlerts(memoryID) {
+        const alerts = getAlertData().filter((it) => it['memory-id'] != memoryID);
+        sessionStorage.setItem('alerts', JSON.stringify(alerts));
+    }
 
     function addTaskAlert(alertData) {
         const taskId = alertData['memory-id'];
@@ -34,6 +52,7 @@
         if (!alert_group) {
             var alert_group = document.getElementById('alert-group-template').cloneNode(true).firstElementChild;
             alert_group.setAttribute('id', taskId);
+            alert_group.addEventListener('closed.bs.alert', () => dismissAlerts(taskId));
         }
 
         alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${taskId}`;
@@ -72,4 +91,7 @@
 {% block messages %}
 {{ block.super }}
 {% include "task_alerts.html" %}
+<script>
+    getAlertData().forEach(addTaskAlert);
+</script>
 {% endblock %}
