@@ -1,33 +1,8 @@
-{% extends "admin/index.html" %}
+{% extends "admin/base.html" %}
 
 {% block extrahead %}
 {{ block.super }}
 <script>
-    var admin_ws = admin_ws || new WebSocket(
-        `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.host}{{ websocket_uri }}`
-    );
-
-    admin_ws.onopen = function (event) {
-        console.log('WebSocket connection opened:', event);
-    };
-
-    admin_ws.onclose = function (event) {
-        console.log('WebSocket connection closed:', event);
-    };
-
-    admin_ws.onerror = function (event) {
-        console.error('WebSocket error:', event);
-    };
-
-    admin_ws.onmessage = function (msg_event) {
-        console.log('WebSocket message received:', msg_event.data);
-        const msg = JSON.parse(msg_event.data);
-        const group = msg.type.split('.')[0];
-        if (group == 'task') {
-            pushAlert(msg.content);
-        }
-    };
-
     function getAlertData() {
         sessionStorage.getItem('alerts') || sessionStorage.setItem('alerts', JSON.stringify([]));
         return JSON.parse(sessionStorage.getItem('alerts'))
@@ -82,6 +57,35 @@
         var yyyy = today.getFullYear();
         return `${yyyy}/${mm}/${dd} at ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
     };
+
+    function wsOnOpen(event) {
+        console.log('WebSocket connection opened:', event);
+    };
+
+    function wsOnClose(event) {
+        console.log('WebSocket connection closed:', event);
+    };
+
+    function wsOnError(event) {
+        console.error('WebSocket error:', event);
+    };
+
+    function wsOnMessage(msg_event) {
+        console.log('WebSocket message received:', msg_event.data);
+        const msg = JSON.parse(msg_event.data);
+        const group = msg.type.split('.')[0];
+        if (group == 'task') {
+            pushAlert(msg.content);
+        }
+    };
+
+    var admin_ws = admin_ws || new WebSocket(
+        `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.host}{{ websocket_uri }}`
+    );
+    admin_ws.onopen = wsOnOpen;
+    admin_ws.onclose = wsOnClose;
+    admin_ws.onerror = wsOnError;
+    admin_ws.onmessage = wsOnMessage;
 </script>
 {% load bootstrap5 %}
 {% bootstrap_css %}

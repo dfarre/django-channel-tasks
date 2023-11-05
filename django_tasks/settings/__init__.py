@@ -11,12 +11,13 @@ class SettingsIni:
         'django.contrib.contenttypes',
         'django.contrib.sessions',
         'django.contrib.staticfiles',
-        'django.contrib.admin',
         'rest_framework.authtoken',
         'rest_framework',
         'django.contrib.messages',
         'django_extensions',
         'django_filters',
+        'django_tasks',
+        'django.contrib.admin',
     ]
 
     def __init__(self):
