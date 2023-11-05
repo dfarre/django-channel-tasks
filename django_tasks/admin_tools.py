@@ -81,7 +81,7 @@ class AdminTaskAction:
             ])
             objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             description = self.kwargs.get('description', self.task_name)
-            msg = f"Requested to '{description}' on {objects_repr}. Load the home page to get notified of updates."
+            msg = f"Requested to '{description}' on {objects_repr}."
             modeladmin.message_user(request, msg, messages.INFO)
 
             return post_schedule_callable(modeladmin, request, queryset, ws_response)
