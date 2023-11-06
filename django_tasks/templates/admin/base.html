@@ -28,6 +28,7 @@
             var alert_group = document.getElementById('alert-group-template').cloneNode(true).firstElementChild;
             alert_group.setAttribute('id', taskId);
             alert_group.addEventListener('closed.bs.alert', () => dismissAlerts(taskId));
+            document.getElementById('task-alerts-display').appendChild(alert_group);
         }
 
         alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${taskId}`;
@@ -47,7 +48,6 @@
 
         alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
         alert_group.getElementsByClassName('last-updated')[0].textContent = currentDateFormatted();
-        document.getElementById('task-alerts-display').appendChild(alert_group);
     };
 
     function currentDateFormatted() {
