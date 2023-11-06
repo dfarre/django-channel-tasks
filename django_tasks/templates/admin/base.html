@@ -19,7 +19,7 @@
         sessionStorage.setItem('alerts', JSON.stringify(alerts));
     }
 
-    function addTaskAlert(alertData) {
+    function addTaskAlert(alertData, index) {
         const taskId = alertData['memory-id'];
         delete alertData['memory-id'];
         var alert_group = document.getElementById(taskId);
@@ -28,26 +28,31 @@
             var alert_group = document.getElementById('alert-group-template').cloneNode(true).firstElementChild;
             alert_group.setAttribute('id', taskId);
             alert_group.addEventListener('closed.bs.alert', () => dismissAlerts(taskId));
+            alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${taskId}`;
+            delete alertData['registered_task'];
             document.getElementById('task-alerts-display').appendChild(alert_group);
         }
 
-        alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${taskId}`;
-        delete alertData['registered_task'];
+        var alert = document.getElementById(`${taskId}.${index}`);
 
-        var msg_type = alertData.status.toLowerCase();
-        var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
-        if (msg_type == 'success') {
-            alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
-        }
-        if (msg_type == 'error') {
-            alert.getElementsByTagName('pre')[0].innerHTML = alertData['exception-repr'];
-        }
-        if (msg_type == 'badrequest') {
-           alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData.details);
-        }
+        if (!alert) {
+            var msg_type = alertData.status.toLowerCase();
+            var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
+            alert.setAttribute('id', `${taskId}.${index}`);
 
-        alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
-        alert_group.getElementsByClassName('last-updated')[0].textContent = currentDateFormatted();
+            if (msg_type == 'success') {
+                alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
+            }
+            if (msg_type == 'error') {
+                alert.getElementsByTagName('pre')[0].innerHTML = alertData['exception-repr'];
+            }
+            if (msg_type == 'badrequest') {
+            alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData.details);
+            }
+
+            alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
+            alert_group.getElementsByClassName('last-updated')[0].textContent = currentDateFormatted();
+        }
     };
 
     function currentDateFormatted() {
