@@ -9,6 +9,7 @@
     }
 
     function pushAlert(data) {
+        data.timestamp = currentDateTimeFormatted();
         const alerts = getAlertData();
         alerts.push(data);
         sessionStorage.setItem('alerts', JSON.stringify(alerts));
@@ -39,6 +40,7 @@
             var msg_type = alertData.status.toLowerCase();
             var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
             alert.setAttribute('id', `${taskId}.${index}`);
+            alert.getElementsByClassName('timestamp')[0].textContent = alertData.timestamp;
 
             if (msg_type == 'success') {
                 alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
@@ -47,20 +49,22 @@
                 alert.getElementsByTagName('pre')[0].innerHTML = alertData['exception-repr'];
             }
             if (msg_type == 'badrequest') {
-            alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData.details);
+                alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData.details);
             }
 
             alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
-            alert_group.getElementsByClassName('last-updated')[0].textContent = currentDateFormatted();
         }
     };
 
-    function currentDateFormatted() {
+    function currentDateTimeFormatted() {
         var today = new Date();
         var dd = String(today.getDate()).padStart(2, '0');
         var mm = String(today.getMonth() + 1).padStart(2, '0');
         var yyyy = today.getFullYear();
-        return `${yyyy}/${mm}/${dd} at ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+        var hh = String(today.getHours()).padStart(2, '0');
+        var minutes = String(today.getMinutes()).padStart(2, '0');
+        var secs = String(today.getSeconds()).padStart(2, '0');
+        return `${yyyy}/${mm}/${dd} ${hh}:${minutes}:${secs}`
     };
 
     function wsOnOpen(event) {
@@ -82,6 +86,7 @@
         if (group == 'task') {
             pushAlert(msg.content);
         }
+        getAlertData().forEach(addTaskAlert);
     };
 </script>
 {% load bootstrap5 %}

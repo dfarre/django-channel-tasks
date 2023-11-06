@@ -12,29 +12,60 @@
 
 <span hidden id="started-alert-template">
 <div class="alert alert-primary alert-dismissible fade show d-inline-flex align-items-center mx-auto" role="alert">
-    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Started"><use xlink:href="#info-fill"/></svg>
-    Started.
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-auto"><svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Started"><use xlink:href="#info-fill"/></svg></div>
+      <div class="col-auto"> Started. </div>
+    </div>
+    <div class="row">
+      <small><span class="timestamp"></span></small>
+    </div>
+  </div>
 </div>
 </span>
 
 <span hidden id="success-alert-template">
 <div class="alert alert-success alert-dismissible fade show d-inline-flex align-items-center mx-auto" role="alert">
-    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Done:"><use xlink:href="#check-circle-fill"/></svg>
-    Done. &nbsp;&nbsp; <code></code>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-auto"><svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Done:"><use xlink:href="#check-circle-fill"/></svg></div>
+      <div class="col-auto"> Done. </div>
+      <div class="col-auto"><code></code></div>
+    </div>
+    <div class="row">
+      <small><span class="timestamp"></span></small>
+    </div>
+  </div>
 </div>
 </span>
 
 <span hidden id="error-alert-template">
 <div class="alert alert-danger alert-dismissible fade show d-inline-flex align-items-center mx-auto" role="alert">
-    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Error:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-    Error: &nbsp;&nbsp;&nbsp; <pre></pre>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-auto"><svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Error:"><use xlink:href="#exclamation-triangle-fill"/></svg></div>
+      <div class="col-auto"> Error: </div>
+      <div class="col-auto"><pre></pre></div>
+    </div>
+    <div class="row">
+      <small><span class="timestamp"></span></small>
+    </div>
+  </div>
 </div>
 </span>
 
 <span hidden id="badrequest-alert-template">
 <div class="alert alert-danger alert-dismissible fade show d-inline-flex align-items-center mx-auto" role="alert">
-    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Error:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-    Error: &nbsp;&nbsp;&nbsp; <pre></pre>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-auto"><svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Error:"><use xlink:href="#exclamation-triangle-fill"/></svg></div>
+      <div class="col-auto"> Error: </div>
+      <div class="col-auto"><pre></pre></div>
+    </div>
+    <div class="row">
+      <small><span class="timestamp"></span></small>
+    </div>
+  </div>
 </div>
 </span>
 
@@ -45,9 +76,6 @@
         &#x24D8; Task &nbsp; <small class="task-name"></small>
       </h6>
       <div class="task-alerts d-inline-flex p-1"></div>
-      <div class="card-footer d-inline-flex">
-        <small> Last updated &nbsp;<span class="last-updated"></span></small>
-      </div>
     </div>
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div>
