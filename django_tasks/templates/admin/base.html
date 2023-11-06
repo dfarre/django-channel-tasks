@@ -78,14 +78,6 @@
             pushAlert(msg.content);
         }
     };
-
-    var admin_ws = admin_ws || new WebSocket(
-        `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.host}{{ websocket_uri }}`
-    );
-    admin_ws.onopen = wsOnOpen;
-    admin_ws.onclose = wsOnClose;
-    admin_ws.onerror = wsOnError;
-    admin_ws.onmessage = wsOnMessage;
 </script>
 {% load bootstrap5 %}
 {% bootstrap_css %}
@@ -94,8 +86,21 @@
 
 {% block messages %}
 {{ block.super }}
+{{ request.user.is_authenticated|json_script:"user_is_authenticated" }}
 {% include "task_alerts.html" %}
 <script>
-    getAlertData().forEach(addTaskAlert);
+    var user_is_authenticated = JSON.parse(document.getElementById('user_is_authenticated').textContent);
+
+    if (user_is_authenticated === true) {
+        var admin_ws = admin_ws || new WebSocket(
+            `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.host}{{ websocket_uri }}`
+        );
+        admin_ws.onopen = wsOnOpen;
+        admin_ws.onclose = wsOnClose;
+        admin_ws.onerror = wsOnError;
+        admin_ws.onmessage = wsOnMessage;
+
+        getAlertData().forEach(addTaskAlert);
+    }
 </script>
 {% endblock %}
