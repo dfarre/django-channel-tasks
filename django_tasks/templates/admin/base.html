@@ -2,12 +2,12 @@
 
 {% block extrahead %}
 {{ block.super }}
+{{ cached_task_events|json_script:"cached_alerts" }}
 <script>
     function getAlertData() {
         sessionStorage.getItem('alerts') || sessionStorage.setItem('alerts', '{}');
         const session_alerts = JSON.parse(sessionStorage.getItem('alerts'));
-        const cached_alerts = JSON.parse('{{ cached_task_events }}');
-        console.log('{{ cached_task_events }}');
+        var cached_alerts = JSON.parse(document.getElementById('cached_alerts').textContent);
         return {...cached_alerts, ...session_alerts}
     }
 

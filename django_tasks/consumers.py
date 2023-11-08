@@ -1,5 +1,4 @@
 import asyncio
-import json
 import time
 
 from channels.db import database_sync_to_async
@@ -60,16 +59,16 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer, DocTaskScheduler):
 
     def cache_task_event(self, event):
         cache_key = f"{self.scope['user'].username}.task_events"
-        user_task_events = json.loads(cache.get(cache_key, '{}'))
+        user_task_events = cache.get(cache_key, {})
         user_task_events[str(event['timestamp'])] = event['content']
-        cache.set(cache_key, json.dumps(user_task_events))
+        cache.set(cache_key, user_task_events)
 
     def clear_task_cache(self, content):
         memory_id = content.get('memory-id', 0)
         cache_key = f"{self.scope['user'].username}.task_events"
-        cache.set(cache_key, json.dumps({
-            timestamp: data for timestamp, data in json.loads(cache.get(cache_key, '{}')).items()
-            if data['memory-id'] != memory_id}))
+        cache.set(cache_key, {
+            timestamp: data for timestamp, data in cache.get(cache_key, {}).items()
+            if data['memory-id'] != memory_id})
 
     async def receive_json(self, event):
         """Pocesses task schedule websocket requests, and task cache clear requests."""
