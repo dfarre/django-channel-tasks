@@ -101,6 +101,16 @@ class SettingsIni:
         }
 
     @property
+    def caches(self):
+        return {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+                'LOCATION': f'redis://{self.redis_host}:{self.redis_port}',
+                'TIMEOUT': 4*86400,
+            },
+        }
+
+    @property
     def redis_host(self):
         return self.get_text('redis', 'host', '127.0.0.1')
 

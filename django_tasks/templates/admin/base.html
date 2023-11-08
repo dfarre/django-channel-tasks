@@ -4,23 +4,30 @@
 {{ block.super }}
 <script>
     function getAlertData() {
-        sessionStorage.getItem('alerts') || sessionStorage.setItem('alerts', JSON.stringify([]));
-        return JSON.parse(sessionStorage.getItem('alerts'))
+        sessionStorage.getItem('alerts') || sessionStorage.setItem('alerts', '{}');
+        const session_alerts = JSON.parse(sessionStorage.getItem('alerts'));
+        const cached_alerts = JSON.parse('{{ cached_task_events }}');
+        console.log('{{ cached_task_events }}');
+        return {...cached_alerts, ...session_alerts}
     }
 
     function pushAlert(data) {
-        data.timestamp = currentDateTimeFormatted();
         const alerts = getAlertData();
-        alerts.push(data);
+        alerts[String(data.timestamp)] = data.content;
         sessionStorage.setItem('alerts', JSON.stringify(alerts));
     }
 
     function dismissAlerts(memoryID) {
-        const alerts = getAlertData().filter((it) => it['memory-id'] != memoryID);
+        admin_ws.send(JSON.stringify({'type': 'task.clear', 'content': {'memory-id': memoryID}}))
+
+        const alerts = {};
+        for (const [timestamp, alert] of Object.entries(getAlertData())) {
+            if (alert['memory-id'] !== memoryID) { alerts[timestamp] = alert; }
+        }
         sessionStorage.setItem('alerts', JSON.stringify(alerts));
     }
 
-    function addTaskAlert(alertData, index) {
+    function addTaskAlert(timestamp, alertData) {
         const taskId = alertData['memory-id'];
         delete alertData['memory-id'];
         var alert_group = document.getElementById(taskId);
@@ -34,13 +41,13 @@
             document.getElementById('task-alerts-display').appendChild(alert_group);
         }
 
-        var alert = document.getElementById(`${taskId}.${index}`);
+        var alert = document.getElementById(`${taskId}.${timestamp}`);
 
         if (!alert) {
             var msg_type = alertData.status.toLowerCase();
             var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
-            alert.setAttribute('id', `${taskId}.${index}`);
-            alert.getElementsByClassName('timestamp')[0].textContent = alertData.timestamp;
+            alert.setAttribute('id', `${taskId}.${timestamp}`);
+            alert.getElementsByClassName('timestamp')[0].textContent = formatTimestamp(timestamp);
 
             if (msg_type == 'success') {
                 alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
@@ -56,8 +63,14 @@
         }
     };
 
-    function currentDateTimeFormatted() {
-        var today = new Date();
+    function showTaskAlerts() {
+        for (const [timestamp, alert] of Object.entries(getAlertData())) {
+            addTaskAlert(timestamp, alert);
+        }
+    }
+
+    function formatTimestamp(timestamp) {
+        var today = new Date(timestamp * 1000);
         var dd = String(today.getDate()).padStart(2, '0');
         var mm = String(today.getMonth() + 1).padStart(2, '0');
         var yyyy = today.getFullYear();
@@ -83,10 +96,8 @@
         console.log('WebSocket message received:', msg_event.data);
         const msg = JSON.parse(msg_event.data);
         const group = msg.type.split('.')[0];
-        if (group == 'task') {
-            pushAlert(msg.content);
-        }
-        getAlertData().forEach(addTaskAlert);
+        if (group == 'task') { pushAlert(msg); }
+        showTaskAlerts();
     };
 </script>
 {% load bootstrap5 %}
@@ -110,7 +121,7 @@
         admin_ws.onerror = wsOnError;
         admin_ws.onmessage = wsOnMessage;
 
-        getAlertData().forEach(addTaskAlert);
+        showTaskAlerts();
     }
 </script>
 {% endblock %}

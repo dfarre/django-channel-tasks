@@ -17,6 +17,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 INSTALLED_APPS: list[str] = CHANNEL_TASKS.sort_installed_apps()
 
 CHANNEL_LAYERS = CHANNEL_TASKS.channel_layers
+CACHES = CHANNEL_TASKS.caches
 
 DJANGO_LOG_LEVEL = CHANNEL_TASKS.log_level
 REQUEST_LOGGING_DATA_LOG_LEVEL = logging.INFO

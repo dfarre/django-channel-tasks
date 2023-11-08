@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import inspect
+import json
 import logging
 import os
 
@@ -11,6 +12,7 @@ from channels.db import database_sync_to_async
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin, messages
+from django.core.cache import cache
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponseRedirect
 
@@ -21,6 +23,7 @@ class ChannelTasksAdminSite(admin.AdminSite):
     def each_context(self, request: HttpRequest):
         context = super().each_context(request)
         context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
+        context['cached_task_events'] = cache.get(f'{request.user.username}.task_events', '{}')
         return context
 
 
@@ -75,10 +78,11 @@ class AdminTaskAction:
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
-            ws_response = self.client.send_locally([
-                dict(registered_task=self.task_name,
-                     inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}),
-            ])
+            ws_response = self.client.send_locally({
+                'type': 'task.schedule',
+                'content': [dict(registered_task=self.task_name,
+                            inputs={'instance_ids': list(queryset.values_list('pk', flat=True))})],
+            })
             objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             description = self.kwargs.get('description', self.task_name)
             msg = f"Requested to '{description}' on {objects_repr}."

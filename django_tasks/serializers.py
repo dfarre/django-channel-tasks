@@ -7,6 +7,11 @@ from django_tasks import models
 from django_tasks.task_inspector import get_coro_info
 
 
+class TaskEventSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=['task.schedule', 'task.clear'])
+    content = serializers.JSONField(default=None)
+
+
 class DocTaskSerializer(serializers.ModelSerializer):
     registered_task = serializers.SlugRelatedField(
         slug_field='dotted_path', queryset=models.RegisteredTask.objects.all())
