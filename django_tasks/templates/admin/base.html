@@ -17,8 +17,24 @@
         sessionStorage.setItem('alerts', JSON.stringify(alerts));
     }
 
+    function formatTimestamp(timestamp) {
+        var today = new Date(timestamp * 1000);
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var yyyy = today.getFullYear();
+        var hh = String(today.getHours()).padStart(2, '0');
+        var minutes = String(today.getMinutes()).padStart(2, '0');
+        var secs = String(today.getSeconds()).padStart(2, '0');
+        return `${yyyy}/${mm}/${dd} ${hh}:${minutes}:${secs}`
+    };
+
+    // WebSocket bound methods
     function dismissAlerts(memoryID) {
-        admin_ws.send(JSON.stringify({'type': 'task.clear', 'content': {'memory-id': memoryID}}))
+        if (this.readyState === WebSocket.OPEN) {
+            this.send(JSON.stringify({'type': 'task.clear', 'content': {'memory-id': memoryID}}));
+        } else {
+            console.warn('Coud not open websocket in order to clear backend-cached alerts:', this);
+        }
 
         const alerts = {};
         for (const [timestamp, alert] of Object.entries(getAlertData())) {
@@ -35,7 +51,7 @@
         if (!alert_group) {
             var alert_group = document.getElementById('alert-group-template').cloneNode(true).firstElementChild;
             alert_group.setAttribute('id', taskId);
-            alert_group.addEventListener('closed.bs.alert', () => dismissAlerts(taskId));
+            alert_group.addEventListener('closed.bs.alert', () => this.dismissAlerts(taskId));
             alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${taskId}`;
             delete alertData['registered_task'];
             document.getElementById('task-alerts-display').appendChild(alert_group);
@@ -65,23 +81,13 @@
 
     function showTaskAlerts() {
         for (const [timestamp, alert] of Object.entries(getAlertData())) {
-            addTaskAlert(timestamp, alert);
+            this.addTaskAlert(timestamp, alert);
         }
     }
 
-    function formatTimestamp(timestamp) {
-        var today = new Date(timestamp * 1000);
-        var dd = String(today.getDate()).padStart(2, '0');
-        var mm = String(today.getMonth() + 1).padStart(2, '0');
-        var yyyy = today.getFullYear();
-        var hh = String(today.getHours()).padStart(2, '0');
-        var minutes = String(today.getMinutes()).padStart(2, '0');
-        var secs = String(today.getSeconds()).padStart(2, '0');
-        return `${yyyy}/${mm}/${dd} ${hh}:${minutes}:${secs}`
-    };
-
     function wsOnOpen(event) {
         console.log('WebSocket connection opened:', event);
+        this.showTaskAlerts();
     };
 
     function wsOnClose(event) {
@@ -97,7 +103,22 @@
         const msg = JSON.parse(msg_event.data);
         const group = msg.type.split('.')[0];
         if (group == 'task') { pushAlert(msg); }
-        showTaskAlerts();
+        this.showTaskAlerts();
+    };
+
+    // Overriden WebSocket instance factory
+    function newWebSocket() {
+        const ws = new WebSocket(
+            `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.host}{{ websocket_uri }}`
+        );
+        ws.onopen = wsOnOpen; wsOnOpen.bind(ws);
+        ws.onclose = wsOnClose; wsOnClose.bind(ws);
+        ws.onerror = wsOnError; wsOnError.bind(ws);
+        ws.onmessage = wsOnMessage; wsOnMessage.bind(ws);
+        ws.addTaskAlert = addTaskAlert; addTaskAlert.bind(ws);
+        ws.dismissAlerts = dismissAlerts; dismissAlerts.bind(ws);
+        ws.showTaskAlerts = showTaskAlerts; showTaskAlerts.bind(ws);
+        return ws
     };
 </script>
 {% load bootstrap5 %}
@@ -107,21 +128,10 @@
 
 {% block messages %}
 {{ block.super }}
-{{ request.user.is_authenticated|json_script:"user_is_authenticated" }}
-{% include "task_alerts.html" %}
-<script>
-    var user_is_authenticated = JSON.parse(document.getElementById('user_is_authenticated').textContent);
-
-    if (user_is_authenticated === true) {
-        var admin_ws = admin_ws || new WebSocket(
-            `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.host}{{ websocket_uri }}`
-        );
-        admin_ws.onopen = wsOnOpen;
-        admin_ws.onclose = wsOnClose;
-        admin_ws.onerror = wsOnError;
-        admin_ws.onmessage = wsOnMessage;
-
-        showTaskAlerts();
-    }
-</script>
+{% if request.user.is_authenticated %}
+    {% include "task_alerts.html" %}
+    <script>
+        newWebSocket();
+    </script>
+{% endif %}
 {% endblock %}
