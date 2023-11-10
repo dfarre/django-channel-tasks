@@ -87,7 +87,8 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer, DocTaskScheduler):
     async def send_bad_request_message(self, error: exceptions.ValidationError):
         await self.channel_layer.group_send('tasks', {
             'type': 'task.badrequest', 'content': {
-            'details': error.get_full_details(), 'status': 'BadRequest'}
+                'details': error.get_full_details(), 'status': 'BadRequest'
+            }
         })
 
     async def schedule_tasks(self, content):

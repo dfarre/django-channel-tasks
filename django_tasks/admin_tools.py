@@ -13,7 +13,7 @@ from django.conf import settings
 from django.contrib import admin, messages
 from django.core.cache import cache
 from django.db.models import QuerySet
-from django.http import HttpRequest, HttpResponseRedirect
+from django.http import HttpRequest
 
 from django_tasks.websocket_client import LocalWebSocketClient
 
