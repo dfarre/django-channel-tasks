@@ -11,7 +11,7 @@ with open('README.md') as readme:
 
 
 tests_require = ['pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio', 'pytest-timeout',
-                 'bdd-coder==2.2.3.dev2', 'beautifulsoup4']
+                 'bdd-coder==2.2.3.dev2', 'beautifulsoup4', 'daphne']
 
 setuptools.setup(
     name=ini['version']['name'],

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 
 from rest_framework import status
@@ -12,6 +13,28 @@ def teardown_module():
     log final scenario results
     """
     base.BddTester.gherkin.log()
+
+
+class TestWebsocketScheduling(base.BddTester):
+    """
+    This covers:
+    * The task runner
+    * The tasks websocket API
+    """
+
+    @base.BddTester.gherkin()
+    def test_several_tasks_are_scheduled_with_ws_message(self):
+        """
+        When a failed and some OK tasks are scheduled through WS
+        Then $(0) cancelled $(1) error $(4) success messages are broadcasted
+        """
+
+    async def a_failed_and_some_ok_tasks_are_scheduled_through_ws(self):
+        name = 'django_tasks.asgi.sleep_test'
+        task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
+        task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
+        response = json.loads(self.ws_client.send_locally({'type': 'task.schedule', 'content': task_data}))
+        assert not response.get('type', '') == 'task.badrequest', response
 
 
 class RestApiWithTokenAuth(base.BddTester):
@@ -29,6 +52,7 @@ class RestApiWithTokenAuth(base.BddTester):
     def a_user_creates_an_api_token(self):
         """
         Given a tasks admin `user` is created with command
+        And the user logs in
         And the user creates an API `token`
         """
 
@@ -78,9 +102,11 @@ class RestApiWithTokenAuth(base.BddTester):
         return response_json,
 
     async def the_user_creates_an_api_token(self):
-        response = await self.admin_client.post('/authtoken/token/add/', {'user': self.get_output('user').pk})
-        redirected_response = await self.assert_admin_redirection(response)
-        soup = self.get_soup(redirected_response)
+        user = self.get_output('user')
+        response = await self.assert_admin_call(
+            'POST', '/authtoken/token/add/', status.HTTP_200_OK, data={'user': user.pk},
+        )
+        soup = self.get_soup(response['content'])
         messages = self.get_all_admin_messages(soup)
         assert len(messages['success']) == 1, soup
 
@@ -90,6 +116,9 @@ class RestApiWithTokenAuth(base.BddTester):
         response = await self.assert_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) == 1
+
+    async def the_user_logs_in(self):
+        await self.assert_admin_call('POST', '/login/', status.HTTP_200_OK, data=self.credentials)
 
 
 class TestTaskRunner(base.BddTester):
@@ -135,27 +164,6 @@ class TestTaskRunner(base.BddTester):
         await asyncio.sleep(0.01)
         cancelled_task_info = self.runner.get_task_info(self.get_output('cancelled'))
         assert cancelled_task_info['status'] == 'Cancelled'
-
-
-class TestWebsocketScheduling(base.BddTester):
-    """
-    This covers:
-    * The task runner
-    * The tasks websocket API
-    """
-
-    @base.BddTester.gherkin()
-    def test_several_tasks_are_scheduled_with_ws_message(self):
-        """
-        When a failed and some OK tasks are scheduled through WS
-        Then $(0) cancelled $(1) error $(4) success messages are broadcasted
-        """
-
-    async def a_failed_and_some_ok_tasks_are_scheduled_through_ws(self):
-        name = 'django_tasks.asgi.sleep_test'
-        task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
-        task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
-        self.ws_client.send_locally(task_data)
 
 
 class TestAsyncAdminSiteActions(RestApiWithTokenAuth):

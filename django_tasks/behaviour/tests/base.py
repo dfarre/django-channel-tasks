@@ -5,8 +5,8 @@ import pprint
 import bs4
 import pytest
 
+from channels.testing import HttpCommunicator
 from django.core.management import call_command
-from django.test.client import AsyncClient
 from rest_framework import status
 
 from bdd_coder import decorators
@@ -30,26 +30,63 @@ class BddTester(tester.BddTester):
     credentials = dict(username='Alice', password='AlicePassWd')
 
     @pytest.fixture(autouse=True)
-    def setup_clients(self, event_loop):
-        self.admin_client = AsyncClient()
-        self.api_client = AsyncClient()
+    def setup_ws_client(self, event_loop):
         self.ws_client = LocalWebSocketClient(timeout=10)
         self.event_collection_task = self.ws_client.collect_events(event_loop)
 
     @pytest.fixture(autouse=True)
-    def setup_models(self):
-        from django_tasks import models
+    def setup_asgi_models(self, settings):
+        settings.ALLOWED_HOSTS = ['*']
+        settings.MIDDLEWARE[3] = 'django_tasks.behaviour.tests.DisableCSRFMiddleware'
+        from django_tasks import asgi, models
+
+        self.api_asgi = asgi.http_paths[0].callback
+        self.admin_asgi = asgi.http_paths[1].callback
         self.models = models
 
-    async def assert_rest_api_call(self, method, api_path, expected_http_code, **kwargs):
-        if 'json_data' in kwargs:
-            kwargs['content_type'] = 'application/json'
-            kwargs['data'] = json.dumps(kwargs.pop('json_data'))
+    async def assert_admin_call(self, method, path, expected_http_code, data=None):
+        body = b''
+        headers = [(b'CONTENT_TYPE', b'application/x-www-form-urlencoded')]
 
-        kwargs.setdefault('HTTP_AUTHORIZATION', 'Token ' + self.get_output('token'))
-        response = await getattr(self.api_client, method.lower())(f'/api/{api_path}', **kwargs)
-        assert response.status_code == expected_http_code, response.content.decode()
+        if data:
+            body = '&'.join([f'{k}={v}' for k, v in data.items()]).encode()
+
+        response = await self.assert_daphne_call(
+            self.admin_asgi, method, path, expected_http_code, body, headers
+        )
         return response
+
+    async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None):
+        body, headers = b'', [(b'HTTP_AUTHORIZATION', f'Token {self.get_output("token")}'.encode())]
+
+        if json_data:
+            headers.append((b'CONTENT_TYPE', b'application/json'))
+            body = json.dumps(json_data).encode()
+
+        response = await self.assert_daphne_call(
+            self.api_asgi, method, api_path, expected_http_code, body, headers
+        )
+        return response
+
+    @classmethod
+    async def assert_daphne_call(cls, asgi, method, path, expected_http_code, body=b'', headers=None):
+        communicator = HttpCommunicator(asgi, method, path, body=body, headers=headers)
+        response = await communicator.get_response()
+
+        if response['status'] == status.HTTP_302_FOUND:
+            redirected_response = await cls.assert_daphne_call(
+                asgi, 'GET', cls.get_response_header(response, 'Location'), expected_http_code
+            )
+            return redirected_response
+
+        assert response['status'] == expected_http_code
+
+        return response
+
+    @staticmethod
+    def get_response_header(response, header_name):
+        header, value = next(filter(lambda h: h[0].decode().lower() == header_name.lower(), response['headers']))
+        return value.decode()
 
     async def fake_task_coro_ok(self, duration):
         await asyncio.sleep(duration)
@@ -67,25 +104,14 @@ class BddTester(tester.BddTester):
         return [li.contents[0] for li in soup.find_all('li', {'class': message_class})]
 
     @staticmethod
-    def get_soup(response):
-        return bs4.BeautifulSoup(response.content.decode(), features='html.parser')
+    def get_soup(content):
+        return bs4.BeautifulSoup(content.decode(), features='html.parser')
 
     def a_tasks_admin_user_is_created_with_command(self, django_user_model):
         self.credentials['password'] = call_command(
             'create_task_admin', self.credentials['username'], 'fake@gmail.com')
-        self.assert_login()
         user = django_user_model.objects.get(username=self.credentials['username'])
         return user,
-
-    def assert_login(self):
-        accepted = self.admin_client.login(**self.credentials)
-        assert accepted, self.credentials
-
-    async def assert_admin_redirection(self, response):
-        assert response.status_code == status.HTTP_302_FOUND
-        redirected_response = await self.admin_client.get(response.headers['Location'])
-        assert redirected_response.status_code == status.HTTP_200_OK
-        return redirected_response
 
     async def cancelled_error_success_messages_are_broadcasted(self):
         cancelled, error, success = map(int, self.param)

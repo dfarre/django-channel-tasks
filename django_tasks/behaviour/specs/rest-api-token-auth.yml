@@ -12,6 +12,7 @@ Story: |-
 Scenarios:
   A user creates an API token:
     - Given a tasks admin `user` is created with command
+    - And the user logs in
     - And the user creates an API `token`
   Single task execution POST with result storage:
     - Given a user creates an API token
