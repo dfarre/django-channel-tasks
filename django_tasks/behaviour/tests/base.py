@@ -86,7 +86,7 @@ class BddTester(tester.BddTester):
         )
         return responses
 
-    async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None, cookie=None):
+    async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None):
         body, headers = b'', [(b'HTTP_AUTHORIZATION', f'Token {self.get_output("token")}'.encode())]
 
         if json_data:
