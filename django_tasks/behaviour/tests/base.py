@@ -2,11 +2,16 @@ import asyncio
 import json
 import pprint
 
+from importlib import import_module
+
 import bs4
 import pytest
 
 from channels.testing import HttpCommunicator
+from django.contrib.auth import login
+from django.http import HttpRequest
 from django.core.management import call_command
+from django.middleware import csrf
 from rest_framework import status
 
 from bdd_coder import decorators
@@ -37,36 +42,61 @@ class BddTester(tester.BddTester):
     @pytest.fixture(autouse=True)
     def setup_asgi_models(self, settings):
         settings.ALLOWED_HOSTS = ['*']
-        settings.MIDDLEWARE[3] = 'django_tasks.behaviour.tests.DisableCSRFMiddleware'
+        # settings.MIDDLEWARE.insert(3, 'django_tasks.behaviour.tests.DisableCSRFMiddleware')
+        settings.MIDDLEWARE.insert(1, 'django_tasks.behaviour.tests.AuthTestMiddleware')
+        self.settings = settings
         from django_tasks import asgi, models
 
         self.api_asgi = asgi.http_paths[0].callback
         self.admin_asgi = asgi.http_paths[1].callback
         self.models = models
 
+        self.cookies = {}
+
+    def store_session_cookie(self, user):
+        # Create a fake request to store login details.
+        self.request = HttpRequest()
+        engine = import_module(self.settings.SESSION_ENGINE)
+        self.request.session = engine.SessionStore()
+        login(self.request, user)
+
+        # Save the session values.
+        self.request.session.save()
+
+        # Set the cookie to represent the session.
+        self.cookies[self.settings.SESSION_COOKIE_NAME] = self.request.session.session_key
+
+        # Set the CSRF cookie
+        csrf._add_new_csrf_cookie(self.request)
+        self.cookies['csrftoken'] = self.request.META['CSRF_COOKIE']
+
     async def assert_admin_call(self, method, path, expected_http_code, data=None):
-        body = b''
         headers = [(b'CONTENT_TYPE', b'application/x-www-form-urlencoded')]
 
-        if data:
-            body = '&'.join([f'{k}={v}' for k, v in data.items()]).encode()
+        if self.cookies:
+            cookie_header = '; '.join(f'{k}={v}' for k, v in self.cookies.items())
+            headers.append((b'COOKIE', cookie_header.encode()))
 
-        response = await self.assert_daphne_call(
+        data = data or {}
+        data['csrfmiddlewaretoken'] = csrf.get_token(self.request)
+        body = '&'.join([f'{k}={v}' for k, v in data.items()]).encode()
+
+        responses = await self.assert_daphne_call(
             self.admin_asgi, method, path, expected_http_code, body, headers
         )
-        return response
+        return responses
 
-    async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None):
+    async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None, cookie=None):
         body, headers = b'', [(b'HTTP_AUTHORIZATION', f'Token {self.get_output("token")}'.encode())]
 
         if json_data:
             headers.append((b'CONTENT_TYPE', b'application/json'))
             body = json.dumps(json_data).encode()
 
-        response = await self.assert_daphne_call(
+        responses = await self.assert_daphne_call(
             self.api_asgi, method, api_path, expected_http_code, body, headers
         )
-        return response
+        return responses
 
     @classmethod
     async def assert_daphne_call(cls, asgi, method, path, expected_http_code, body=b'', headers=None):
@@ -74,14 +104,13 @@ class BddTester(tester.BddTester):
         response = await communicator.get_response()
 
         if response['status'] == status.HTTP_302_FOUND:
-            redirected_response = await cls.assert_daphne_call(
+            redirected_responses = await cls.assert_daphne_call(
                 asgi, 'GET', cls.get_response_header(response, 'Location'), expected_http_code
             )
-            return redirected_response
+            return [response, *redirected_responses]
 
         assert response['status'] == expected_http_code
-
-        return response
+        return [response]
 
     @staticmethod
     def get_response_header(response, header_name):
@@ -109,8 +138,11 @@ class BddTester(tester.BddTester):
 
     def a_tasks_admin_user_is_created_with_command(self, django_user_model):
         self.credentials['password'] = call_command(
-            'create_task_admin', self.credentials['username'], 'fake@gmail.com')
+            'create_task_admin', self.credentials['username'], 'fake@gmail.com'
+        )
         user = django_user_model.objects.get(username=self.credentials['username'])
+        self.store_session_cookie(user)
+
         return user,
 
     async def cancelled_error_success_messages_are_broadcasted(self):

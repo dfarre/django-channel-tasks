@@ -52,7 +52,6 @@ class RestApiWithTokenAuth(base.BddTester):
     def a_user_creates_an_api_token(self):
         """
         Given a tasks admin `user` is created with command
-        And the user logs in
         And the user creates an API `token`
         """
 
@@ -102,11 +101,12 @@ class RestApiWithTokenAuth(base.BddTester):
         return response_json,
 
     async def the_user_creates_an_api_token(self):
-        user = self.get_output('user')
-        response = await self.assert_admin_call(
-            'POST', '/authtoken/token/add/', status.HTTP_200_OK, data={'user': user.pk},
+        responses = await self.assert_admin_call(
+            'POST', '/authtoken/token/add/', status.HTTP_200_OK, data={
+                'user': self.get_output('user').pk, '_save': 'Save',
+            },
         )
-        soup = self.get_soup(response['content'])
+        soup = self.get_soup(responses[1]['body'])
         messages = self.get_all_admin_messages(soup)
         assert len(messages['success']) == 1, soup
 
