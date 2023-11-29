@@ -115,6 +115,10 @@ class SettingsIni:
         return self.get_text('redis', 'host', '127.0.0.1')
 
     @property
+    def channel_group(self):
+        return self.get_text('redis', 'channel-group', 'tasks')
+
+    @property
     def redis_port(self):
         return self.get_int('redis', 'port', 6379)
 

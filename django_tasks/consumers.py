@@ -3,6 +3,7 @@ import time
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.conf import settings
 from django.core.cache import cache
 from rest_framework import exceptions, status
 
@@ -23,7 +24,7 @@ class TasksRestConsumer(DrfConsumer, DocTaskScheduler):
 
 
 class TaskEventsConsumer(AsyncJsonWebsocketConsumer, DocTaskScheduler):
-    groups = ['tasks']
+    groups = [settings.CHANNEL_TASKS.channel_group]
 
     async def task_started(self, event):
         """Handles the DocTask, if any, and echoes the task.started document."""
@@ -85,7 +86,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer, DocTaskScheduler):
                 await self.schedule_tasks(serializer.data['content'])
 
     async def send_bad_request_message(self, error: exceptions.ValidationError):
-        await self.channel_layer.group_send('tasks', {
+        await self.channel_layer.group_send(settings.CHANNEL_TASKS.channel_group, {
             'type': 'task.badrequest', 'content': {
                 'details': error.get_full_details(), 'status': 'BadRequest'
             }
