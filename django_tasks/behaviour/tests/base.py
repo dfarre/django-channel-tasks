@@ -43,6 +43,7 @@ class BddTester(tester.BddTester):
     def setup_asgi_models(self, settings):
         settings.ALLOWED_HOSTS = ['*']
         # settings.MIDDLEWARE.insert(3, 'django_tasks.behaviour.tests.DisableCSRFMiddleware')
+        settings.SESSION_SAVE_EVERY_REQUEST = True
         settings.MIDDLEWARE.insert(1, 'django_tasks.behaviour.tests.AuthTestMiddleware')
         self.settings = settings
         from django_tasks import asgi, models
@@ -51,39 +52,43 @@ class BddTester(tester.BddTester):
         self.admin_asgi = asgi.http_paths[1].callback
         self.models = models
 
-        self.cookies = {}
-
     def store_session_cookie(self, user):
         # Create a fake request to store login details.
         self.request = HttpRequest()
-        engine = import_module(self.settings.SESSION_ENGINE)
-        self.request.session = engine.SessionStore()
+        self.session_engine = import_module(self.settings.SESSION_ENGINE)
+        self.request.session = self.session_engine.SessionStore()
         login(self.request, user)
 
         # Save the session values.
         self.request.session.save()
 
         # Set the cookie to represent the session.
-        self.cookies[self.settings.SESSION_COOKIE_NAME] = self.request.session.session_key
+        self.request.COOKIES[self.settings.SESSION_COOKIE_NAME] = self.request.session.session_key
 
         # Set the CSRF cookie
         csrf._add_new_csrf_cookie(self.request)
-        self.cookies['csrftoken'] = self.request.META['CSRF_COOKIE']
+        self.request.COOKIES['csrftoken'] = self.request.META['CSRF_COOKIE']
+
+        from django.contrib.sessions.models import Session
+        print(self.request.session.load(), Session.objects.all())
 
     async def assert_admin_call(self, method, path, expected_http_code, data=None):
         headers = [(b'CONTENT_TYPE', b'application/x-www-form-urlencoded')]
 
-        if self.cookies:
-            cookie_header = '; '.join(f'{k}={v}' for k, v in self.cookies.items())
+        if self.request.COOKIES:
+            cookie_header = '; '.join(f'{k}={v}' for k, v in self.request.COOKIES.items())
             headers.append((b'COOKIE', cookie_header.encode()))
 
         data = data or {}
-        data['csrfmiddlewaretoken'] = csrf.get_token(self.request)
+
+        if method.lower() not in ['get', 'head', 'options', 'trace']:
+            data['csrfmiddlewaretoken'] = csrf.get_token(self.request)
+
         body = '&'.join([f'{k}={v}' for k, v in data.items()]).encode()
 
         responses = await self.assert_daphne_call(
-            self.admin_asgi, method, path, expected_http_code, body, headers
-        )
+            self.admin_asgi, method, path, expected_http_code, body, headers)
+
         return responses
 
     async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None):

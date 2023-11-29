@@ -1,6 +1,12 @@
+from importlib import import_module
+
 import logging
 
 import pytest
+
+from django.conf import settings
+from django.contrib.auth import login
+from django.contrib.sessions.models import Session
 
 pytest.register_assert_rewrite(f'{__name__}.base')
 
@@ -18,9 +24,21 @@ class DisableCSRFMiddleware:
 class AuthTestMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
+        self.logger = logging.getLogger('django')
+        self.session_engine = import_module(settings.SESSION_ENGINE)
 
     def __call__(self, request):
         response = self.get_response(request)
-        logging.getLogger('django').debug('Session: %s', dict(request.session))
+
+        self.log_object(request, 'COOKIES')
+        self.log_object(request, 'META')
+        self.log_object(request.session, 'session_key')
+        request.session.save()
+        self.log_object(request, 'session', lambda s: s.load())
+        self.log_object(Session.objects, 'all')
 
         return response
+
+    def log_object(self, obj, key='', f=lambda v: v):
+        v = getattr(obj, key, None) if hasattr(obj, key) else (obj if not key else None)
+        self.logger.debug('%s.%s: %s', type(obj).__name__, key, f(v() if callable(v) else v))
