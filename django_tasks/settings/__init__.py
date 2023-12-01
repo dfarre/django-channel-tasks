@@ -6,7 +6,6 @@ class SettingsIni:
     ini_key = 'CHANNEL_TASKS_INI_PATH'
     secret_key_key = 'DJANGO_SECRET_KEY'
     default_installed_apps = [
-        'bootstrap5',
         'django.contrib.auth',
         'django.contrib.contenttypes',
         'django.contrib.sessions',
@@ -18,6 +17,7 @@ class SettingsIni:
         'django_filters',
         'django_tasks',
         'django.contrib.admin',
+        'django_sass_compiler',
     ]
 
     def __init__(self):

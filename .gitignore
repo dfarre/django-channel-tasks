@@ -14,9 +14,14 @@ build
 version.ini_bk
 htmlcov
 
-*.sqlite3
+.DS_Store
 
 bdd_runs.log*
 
-static
+django_tasks/static/css/bootstrap-isolated.min.css
+django_tasks/static/bootstrap
+django_tasks/static/admin
+django_tasks/static/django_extensions
+django_tasks/static/rest_framework
+
 media
