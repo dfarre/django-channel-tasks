@@ -5,7 +5,6 @@ import logging
 import pytest
 
 from django.conf import settings
-from django.contrib.auth import login
 from django.contrib.sessions.models import Session
 
 pytest.register_assert_rewrite(f'{__name__}.base')
