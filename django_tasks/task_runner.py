@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 import threading
 
 from typing import Any, Callable, Coroutine
@@ -79,8 +80,8 @@ class TaskRunner:
         task_info['registered_task'] = name
         message_type = f"task.{task_info['status'].lower()}"
         channel_layer = get_channel_layer()
-        await channel_layer.group_send(
-            settings.CHANNEL_TASKS.channel_group, {'type': message_type, 'content': task_info})
+        await channel_layer.group_send(settings.CHANNEL_TASKS.channel_group, {
+            'type': message_type, 'content': task_info, 'timestamp': time.time()})
 
     @staticmethod
     def get_task_info(task: asyncio.Future) -> dict[str, Any]:

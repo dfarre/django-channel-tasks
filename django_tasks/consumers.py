@@ -1,5 +1,4 @@
 import asyncio
-import time
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -23,12 +22,11 @@ class TasksRestConsumer(DrfConsumer, DocTaskScheduler):
                 await asyncio.gather(*[self.schedule_doctask(data) for data in drf_response.data])
 
 
-class TaskEventsConsumer(AsyncJsonWebsocketConsumer, DocTaskScheduler):
+class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
     groups = [settings.CHANNEL_TASKS.channel_group]
 
     async def task_started(self, event):
-        """Handles the DocTask, if any, and echoes the task.started document."""
-        await self.handle_doctask(event['content'])
+        """Echoes the task.started document."""
         await self.distribute_task_event(event)
 
     async def task_success(self, event):
@@ -47,14 +45,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer, DocTaskScheduler):
         """Echoes the task.badrequest document."""
         await self.distribute_task_event(event)
 
-    async def handle_doctask(self, event_content):
-        doctask = await database_sync_to_async(self.retrieve_doctask)(event_content['memory-id'])
-        if doctask:
-            doctask.document.append(event_content)
-            await doctask.asave()
-
     async def distribute_task_event(self, event):
-        event['timestamp'] = time.time()
         await self.send_json(content=event)
         self.cache_task_event(event)
 
