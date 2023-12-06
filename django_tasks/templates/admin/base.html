@@ -136,7 +136,7 @@
 {% if request.user.is_authenticated %}
     {% include "task_alerts.html" %}
     <script>
-        newWebSocket();
+        var websocket = websocket || newWebSocket();
     </script>
 {% endif %}
 {% endblock %}
