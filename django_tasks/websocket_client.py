@@ -48,5 +48,5 @@ class LocalWebSocketClient:
 
     @property
     def expected_events_collected(self) -> bool:
-        return all(event_type in self.events and len(self.events[event_type]) == count
+        return all(len(self.events[event_type]) == count
                    for event_type, count in self.expected_events.items())
