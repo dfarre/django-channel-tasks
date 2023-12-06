@@ -45,7 +45,7 @@ setuptools.setup(
                            'services/setup-channel-tasks.sh'])],
     entry_points={'console_scripts': ['channel-tasks-admin=django_tasks.entrypoint:manage_channel_tasks']},
     install_requires=[
-        'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
+        'Django<5', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
         'channels', 'channels-redis', 'tzdata', 'psycopg2', 'websocket-client', 'django-sass-compiler',
     ],
     extras_require={'dev': ['ipdb', 'ipython'],
