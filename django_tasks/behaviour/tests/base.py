@@ -2,16 +2,15 @@ import asyncio
 import json
 import pprint
 
-from importlib import import_module
+import importlib
 
 import bs4
 import pytest
 
-from channels.testing import HttpCommunicator
 from django.contrib.auth import login
-from django.http import HttpRequest
 from django.core.management import call_command
 from django.middleware import csrf
+from django.test.client import AsyncClient
 from rest_framework import status
 
 from bdd_coder import decorators
@@ -42,85 +41,38 @@ class BddTester(tester.BddTester):
     @pytest.fixture(autouse=True)
     def setup_asgi_models(self, settings):
         settings.ALLOWED_HOSTS = ['*']
-        # settings.MIDDLEWARE.insert(3, 'django_tasks.behaviour.tests.DisableCSRFMiddleware')
-        settings.SESSION_SAVE_EVERY_REQUEST = True
-        settings.MIDDLEWARE.insert(1, 'django_tasks.behaviour.tests.AuthTestMiddleware')
+        settings.MIDDLEWARE.insert(3, 'django_tasks.behaviour.tests.DisableCSRFMiddleware')
         self.settings = settings
+
         from django_tasks import asgi, models
 
         self.api_asgi = asgi.http_paths[0].callback
         self.admin_asgi = asgi.http_paths[1].callback
         self.models = models
-
-    def store_session_cookie(self, user):
-        # Create a fake request to store login details.
-        self.request = HttpRequest()
-        self.session_engine = import_module(self.settings.SESSION_ENGINE)
-        self.request.session = self.session_engine.SessionStore()
-        login(self.request, user)
-
-        # Save the session values.
-        self.request.session.save()
-
-        # Set the cookie to represent the session.
-        self.request.COOKIES[self.settings.SESSION_COOKIE_NAME] = self.request.session.session_key
-
-        # Set the CSRF cookie
-        csrf._add_new_csrf_cookie(self.request)
-        self.request.COOKIES['csrftoken'] = self.request.META['CSRF_COOKIE']
-
-        from django.contrib.sessions.models import Session
-        print(self.request.session.load(), Session.objects.all())
+        self.client = AsyncClient()
 
     async def assert_admin_call(self, method, path, expected_http_code, data=None):
-        headers = [(b'CONTENT_TYPE', b'application/x-www-form-urlencoded')]
+        await self.client.aforce_login(user=self.get_output('user'))
+        request = self.client.request(
+            method=method.lower(), path=path, data=data, content_type='application/x-www-form-urlencoded',
+        )
+        print(request)
+        response = await self.admin_asgi.get_response_async(request)
+        print(response)
 
-        if self.request.COOKIES:
-            cookie_header = '; '.join(f'{k}={v}' for k, v in self.request.COOKIES.items())
-            headers.append((b'COOKIE', cookie_header.encode()))
+        if response.status_code == status.HTTP_302_FOUND:
+            response = await self.admin_asgi.get_response_async(
+                self.request_factory.get(path=response.headers['Location']))
 
-        data = data or {}
+        assert response.status_code == expected_http_code
 
-        if method.lower() not in ['get', 'head', 'options', 'trace']:
-            data['csrfmiddlewaretoken'] = csrf.get_token(self.request)
-
-        body = '&'.join([f'{k}={v}' for k, v in data.items()]).encode()
-
-        responses = await self.assert_daphne_call(
-            self.admin_asgi, method, path, expected_http_code, body, headers)
-
-        return responses
+        print(response)
+        return response
 
     async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None):
-        body, headers = b'', [(b'HTTP_AUTHORIZATION', f'Token {self.get_output("token")}'.encode())]
-
-        if json_data:
-            headers.append((b'CONTENT_TYPE', b'application/json'))
-            body = json.dumps(json_data).encode()
-
-        responses = await self.assert_daphne_call(
-            self.api_asgi, method, api_path, expected_http_code, body, headers
-        )
-        return responses
-
-    @classmethod
-    async def assert_daphne_call(cls, asgi, method, path, expected_http_code, body=b'', headers=None):
-        communicator = HttpCommunicator(asgi, method, path, body=body, headers=headers)
-        response = await communicator.get_response()
-
-        if response['status'] == status.HTTP_302_FOUND:
-            redirected_responses = await cls.assert_daphne_call(
-                asgi, 'GET', cls.get_response_header(response, 'Location'), expected_http_code
-            )
-            return [response, *redirected_responses]
-
-        assert response['status'] == expected_http_code
-        return [response]
-
-    @staticmethod
-    def get_response_header(response, header_name):
-        header, value = next(filter(lambda h: h[0].decode().lower() == header_name.lower(), response['headers']))
-        return value.decode()
+        request = getattr(self.request_factory, method.lower())(
+            api_path, data, content_type='application/json',
+            headers={'HTTP_AUTHORIZATION': f'Token {self.get_output("token")}'})
 
     async def fake_task_coro_ok(self, duration):
         await asyncio.sleep(duration)
@@ -146,7 +98,8 @@ class BddTester(tester.BddTester):
             'create_task_admin', self.credentials['username'], 'fake@gmail.com'
         )
         user = django_user_model.objects.get(username=self.credentials['username'])
-        self.store_session_cookie(user)
+
+        assert user.check_password(self.credentials['password'])
 
         return user,
 

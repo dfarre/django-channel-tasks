@@ -10,8 +10,8 @@ with open('README.md') as readme:
     long_description = readme.read()
 
 
-tests_require = ['pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio', 'pytest-timeout',
-                 'bdd-coder==2.2.3.dev2', 'beautifulsoup4', 'daphne']
+tests_require = ['pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio',
+                 'bdd-coder==2.2.3.dev2', 'beautifulsoup4']
 
 setuptools.setup(
     name=ini['version']['name'],
@@ -45,7 +45,7 @@ setuptools.setup(
                            'services/setup-channel-tasks.sh'])],
     entry_points={'console_scripts': ['channel-tasks-admin=django_tasks.entrypoint:manage_channel_tasks']},
     install_requires=[
-        'Django<5', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
+        'Django', 'django-filter', 'django-extensions', 'django-request-logging', 'djangorestframework',
         'channels', 'channels-redis', 'tzdata', 'psycopg2', 'websocket-client', 'django-sass-compiler',
     ],
     extras_require={'dev': ['ipdb', 'ipython'],
