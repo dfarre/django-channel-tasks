@@ -53,20 +53,13 @@ class BddTester(tester.BddTester):
 
     async def assert_admin_call(self, method, path, expected_http_code, data=None):
         await self.client.aforce_login(user=self.get_output('user'))
-        request = self.client.request(
-            method=method.lower(), path=path, data=data, content_type='application/x-www-form-urlencoded',
+        response = await getattr(self.client, method.lower())(
+            path=path, data=data, content_type='application/x-www-form-urlencoded', follow=True,
         )
-        print(request)
-        response = await self.admin_asgi.get_response_async(request)
         print(response)
-
-        if response.status_code == status.HTTP_302_FOUND:
-            response = await self.admin_asgi.get_response_async(
-                self.request_factory.get(path=response.headers['Location']))
 
         assert response.status_code == expected_http_code
 
-        print(response)
         return response
 
     async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None):
