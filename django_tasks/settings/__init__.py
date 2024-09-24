@@ -12,6 +12,7 @@ class SettingsIni:
         'django.contrib.staticfiles',
         'rest_framework.authtoken',
         'rest_framework',
+        'adrf',
         'django.contrib.messages',
         'django_extensions',
         'django_filters',

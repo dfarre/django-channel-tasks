@@ -3,18 +3,14 @@ import logging
 import time
 
 from django import urls
-from django.conf import settings
 
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 
-from rest_framework import routers
-
 from django_tasks import asgi_setup
 from django_tasks.admin_tools import ModelTask, register_task
-from django_tasks.consumers import TaskEventsConsumer, TasksRestConsumer
-from django_tasks.viewsets import TaskViewSet
+from django_tasks.consumers import TaskEventsConsumer
 
 
 @register_task
@@ -52,24 +48,8 @@ async def doctask_deletion_test(instance_ids: list[int]):
     await ModelTask('django_tasks', 'DocTask', instance_function)(instance_ids)
 
 
-class OptionalSlashRouter(routers.SimpleRouter):
-    def __init__(self):
-        super().__init__()
-        self.trailing_slash = '/?'
-
-
-http_paths = []
-
-
-if settings.CHANNEL_TASKS.expose_doctask_api is True:
-    drf_router = OptionalSlashRouter()
-    drf_router.register('tasks', TaskViewSet)
-    http_paths.append(urls.re_path(r'^api/', URLRouter(TasksRestConsumer.get_urls(drf_router))))
-
-
-http_paths.append(urls.re_path(r'^', asgi_setup.asgi_app))
 url_routers = {
-    'http': URLRouter(http_paths),
+    'http': asgi_setup.asgi_app,
     'websocket': AllowedHostsOriginValidator(AuthMiddlewareStack(
         URLRouter([urls.path('tasks/', TaskEventsConsumer.as_asgi())])
     )),

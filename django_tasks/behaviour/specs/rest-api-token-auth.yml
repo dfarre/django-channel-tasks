@@ -11,14 +11,14 @@ Story: |-
 
 Scenarios:
   A user creates an API token:
-    - Given a tasks admin `user` is created with command
+    - Given a task admin is created by command
     - And the user logs in
     - And the user creates an API `token`
   Single task execution POST with result storage:
     - Given a user creates an API token
     - When a failed `task` is posted with duration $(0.1)
     - Then $(0) cancelled $(1) error $(0) success messages are broadcasted
-    - Then the task result is correctly stored in DB
+    - And the task result is correctly stored in DB
   Many tasks execution POST with result storage:
     - Given a user creates an API token
     - When a failed and some OK `tasks` are posted

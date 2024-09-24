@@ -1,18 +1,10 @@
 import asyncio
-import json
 import pprint
-import datetime
-
-import importlib
 
 import bs4
 import pytest
 
-from django.contrib.auth import login
-from django.core.management import call_command
-from django.middleware import csrf
 from django.test.client import AsyncClient
-from rest_framework import status
 
 from bdd_coder import decorators
 from bdd_coder import tester
@@ -89,19 +81,6 @@ class BddTester(tester.BddTester):
     @staticmethod
     def get_soup(content):
         return bs4.BeautifulSoup(content.decode(), features='html.parser')
-
-    def a_tasks_admin_user_is_created_with_command(self, django_user_model):
-        self.credentials['password'] = call_command(
-            'create_task_admin', self.credentials['username'], 'fake@gmail.com'
-        )
-        user = django_user_model.objects.get(username=self.credentials['username'])
-
-        assert user.check_password(self.credentials['password'])
-        assert user.is_superuser is False
-        assert user.is_staff is True
-        assert user.is_active is True
-
-        return user,
 
     async def cancelled_error_success_messages_are_broadcasted(self):
         cancelled, error, success = map(int, self.param)

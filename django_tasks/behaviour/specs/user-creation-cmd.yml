@@ -1,0 +1,11 @@
+Title: Task admin user reation
+
+Story: |-
+  As a site administrator,
+  I want to create staff users with task management and scheduling permissions,
+  so that they can start operating with a temporary password.
+
+Scenarios:
+  A task admin is created by command:
+    - When a task admin `user` is created by command
+    - Then the user has the correct status

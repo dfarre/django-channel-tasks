@@ -4,22 +4,11 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
 from django.core.cache import cache
-from rest_framework import exceptions, status
+from rest_framework import exceptions
 
-from django_tasks.drf_consumer import DrfConsumer
-from django_tasks.doctask_scheduler import DocTaskScheduler
 from django_tasks.serializers import DocTaskSerializer, TaskEventSerializer
 from django_tasks.task_inspector import get_coro_info
 from django_tasks.task_runner import TaskRunner
-
-
-class TasksRestConsumer(DrfConsumer, DocTaskScheduler):
-    async def process_drf_response(self, drf_response):
-        if drf_response.status_code == status.HTTP_201_CREATED:
-            if isinstance(drf_response.data, dict):
-                await self.schedule_doctask(drf_response.data)
-            elif isinstance(drf_response.data, list):
-                await asyncio.gather(*[self.schedule_doctask(data) for data in drf_response.data])
 
 
 class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
