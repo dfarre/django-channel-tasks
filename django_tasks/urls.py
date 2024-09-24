@@ -4,5 +4,5 @@ from django_tasks import admin
 
 
 urlpatterns = [
-    urls.path('', admin.site.urls),
+    urls.path('admin/', admin.site.urls),
 ]

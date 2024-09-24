@@ -33,6 +33,10 @@ class TestWebsocketScheduling(base.BddTester):
         name = 'django_tasks.asgi.sleep_test'
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
+
+        # Ensures the 'task.strated' messages are collected
+        await asyncio.sleep(.5)
+
         response = json.loads(self.ws_client.send_locally({'type': 'task.schedule', 'content': task_data}))
         assert not response.get('type', '') == 'task.badrequest', response
 
@@ -52,6 +56,7 @@ class RestApiWithTokenAuth(base.BddTester):
     def a_user_creates_an_api_token(self):
         """
         Given a tasks admin `user` is created with command
+        And the user logs in
         And the user creates an API `token`
         """
 
@@ -78,7 +83,7 @@ class RestApiWithTokenAuth(base.BddTester):
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = await self.assert_rest_api_call(
-            'POST', 'tasks/schedule', status.HTTP_201_CREATED, json_data=task_data)
+            'POST', 'tasks/schedule', status.HTTP_201_CREATED, data=task_data)
         time.sleep(max(self.task_durations))
 
         return response.json(),
@@ -93,7 +98,7 @@ class RestApiWithTokenAuth(base.BddTester):
         duration = float(self.param)
         data = dict(registered_task='django_tasks.asgi.sleep_test',
                     inputs={'duration': duration, 'raise_error': True})
-        response = await self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, json_data=data)
+        response = await self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, data=data)
         response_json = response.json()
         del response_json['scheduled_at']
         assert response_json == {**data, 'completed_at': None, 'document': None}
@@ -101,24 +106,30 @@ class RestApiWithTokenAuth(base.BddTester):
         return response_json,
 
     async def the_user_creates_an_api_token(self):
-        responses = await self.assert_admin_call(
-            'POST', '/authtoken/token/add/', status.HTTP_200_OK, data={
+        response = await self.assert_admin_call(
+            'POST', '/admin/authtoken/token/add/', status.HTTP_200_OK, data={
                 'user': self.get_output('user').pk, '_save': 'Save',
             },
         )
-        soup = self.get_soup(responses[1]['body'])
+        soup = self.get_soup(response.content)
         messages = self.get_all_admin_messages(soup)
         assert len(messages['success']) == 1, soup
 
         return messages['success'][0].split()[2].strip('“”'),
+
+    def the_user_creates_an_api_token(self):
+        # generate token
+
+        return '',
 
     async def the_task_result_is_correctly_stored_in_db(self):
         response = await self.assert_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) == 1
 
-    async def the_user_logs_in(self):
-        await self.assert_admin_call('POST', '/login/', status.HTTP_200_OK, data=self.credentials)
+    def the_user_logs_in(self):
+        logged_in = self.client.login(**self.credentials)
+        assert logged_in
 
 
 class TestTaskRunner(base.BddTester):

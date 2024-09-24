@@ -1,6 +1,7 @@
 import asyncio
 import json
 import pprint
+import datetime
 
 import importlib
 
@@ -41,31 +42,34 @@ class BddTester(tester.BddTester):
     @pytest.fixture(autouse=True)
     def setup_asgi_models(self, settings):
         settings.ALLOWED_HOSTS = ['*']
-        settings.MIDDLEWARE.insert(3, 'django_tasks.behaviour.tests.DisableCSRFMiddleware')
+        settings.SESSION_COOKIE_DOMAIN = 'testserver'
+        settings.SESSION_COOKIE_SAMESITE = False
+        settings.SESSION_COOKIE_SECURE = False
+        settings.SESSION_SAVE_EVERY_REQUEST = True
         self.settings = settings
 
-        from django_tasks import asgi, models
+        from django_tasks import models
 
-        self.api_asgi = asgi.http_paths[0].callback
-        self.admin_asgi = asgi.http_paths[1].callback
         self.models = models
         self.client = AsyncClient()
 
     async def assert_admin_call(self, method, path, expected_http_code, data=None):
-        await self.client.aforce_login(user=self.get_output('user'))
         response = await getattr(self.client, method.lower())(
             path=path, data=data, content_type='application/x-www-form-urlencoded', follow=True,
         )
-        print(response)
-
         assert response.status_code == expected_http_code
 
         return response
 
-    async def assert_rest_api_call(self, method, api_path, expected_http_code, json_data=None):
-        request = getattr(self.request_factory, method.lower())(
-            api_path, data, content_type='application/json',
-            headers={'HTTP_AUTHORIZATION': f'Token {self.get_output("token")}'})
+    async def assert_rest_api_call(self, method, api_path, expected_http_code, data=None):
+        await self.client.alogout()
+        response = await getattr(self.client, method.lower())(
+            path=f'/api/{api_path}', data=data, content_type='application/json',
+            headers={'HTTP_AUTHORIZATION': f'Token {self.get_output("token")}'}, follow=True,
+        )
+        assert response.status_code == expected_http_code
+
+        return response
 
     async def fake_task_coro_ok(self, duration):
         await asyncio.sleep(duration)
@@ -93,6 +97,9 @@ class BddTester(tester.BddTester):
         user = django_user_model.objects.get(username=self.credentials['username'])
 
         assert user.check_password(self.credentials['password'])
+        assert user.is_superuser is False
+        assert user.is_staff is True
+        assert user.is_active is True
 
         return user,
 

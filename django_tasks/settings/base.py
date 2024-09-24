@@ -120,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTHENTICATION_BACKENDS: list[str] = [
-    "django.contrib.auth.backends.ModelBackend",
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 LANGUAGE_CODE = 'en-us'
