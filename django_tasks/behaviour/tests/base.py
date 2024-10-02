@@ -1,7 +1,9 @@
 import asyncio
+import os
 import pprint
 
 import bs4
+import pytest_asyncio
 import pytest
 
 from django.test.client import AsyncClient
@@ -9,6 +11,8 @@ from django.test.client import AsyncClient
 from bdd_coder import decorators
 from bdd_coder import tester
 
+from django_tasks import tasks
+from django_tasks.admin_tools import aregister_task
 from django_tasks.task_runner import TaskRunner
 from django_tasks.websocket_client import LocalWebSocketClient
 
@@ -32,18 +36,26 @@ class BddTester(tester.BddTester):
         self.event_collection_task = self.ws_client.collect_events(event_loop)
 
     @pytest.fixture(autouse=True)
-    def setup_asgi_models(self, settings):
-        settings.ALLOWED_HOSTS = ['*']
-        settings.SESSION_COOKIE_DOMAIN = 'testserver'
-        settings.SESSION_COOKIE_SAMESITE = False
-        settings.SESSION_COOKIE_SECURE = False
-        settings.SESSION_SAVE_EVERY_REQUEST = True
+    def setup_django(self, settings):
+        # os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        # settings.ALLOWED_HOSTS = ['*']
+        # settings.SESSION_COOKIE_DOMAIN = 'testserver'
+        # settings.SESSION_COOKIE_SAMESITE = False
+        # settings.SESSION_COOKIE_SECURE = False
+        # settings.SESSION_SAVE_EVERY_REQUEST = True
         self.settings = settings
 
         from django_tasks import models
-
         self.models = models
+
         self.client = AsyncClient()
+
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup_tasks(self):
+        await asyncio.gather(
+            aregister_task(tasks.sleep_test),
+            aregister_task(tasks.doctask_deletion_test),
+            aregister_task(tasks.doctask_access_test))
 
     async def assert_admin_call(self, method, path, expected_http_code, data=None):
         response = await getattr(self.client, method.lower())(
@@ -55,11 +67,21 @@ class BddTester(tester.BddTester):
 
     async def assert_rest_api_call(self, method, api_path, expected_http_code, data=None):
         await self.client.alogout()
+
+        # from django.contrib.auth import models
+        # user_count = await models.User.objects.acount()
+        # assert user_count > 0
+        # from rest_framework.authtoken.models import Token
+        # token_count = await Token.objects.acount()
+        # assert token_count > 0
+        # token = await Token.objects.aget(user=self.get_output('user'))
+        # assert token.key == self.get_output("token")
+
         response = await getattr(self.client, method.lower())(
             path=f'/api/{api_path}', data=data, content_type='application/json',
-            headers={'HTTP_AUTHORIZATION': f'Token {self.get_output("token")}'}, follow=True,
+            headers={'Authorization': f'Token {self.get_output("token")}'}, follow=True,
         )
-        assert response.status_code == expected_http_code
+        assert response.status_code == expected_http_code, response.json()
 
         return response
 

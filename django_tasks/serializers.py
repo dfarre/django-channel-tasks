@@ -1,19 +1,21 @@
+from asgiref.sync import sync_to_async
 from typing import Any
 
-from rest_framework import serializers
+from adrf.serializers import ModelSerializer
+from rest_framework.serializers import ChoiceField, JSONField, SlugRelatedField, Serializer
 
 from django_tasks import models
 
 from django_tasks.task_inspector import get_coro_info
 
 
-class TaskEventSerializer(serializers.Serializer):
-    type = serializers.ChoiceField(choices=['task.schedule', 'task.clear'])
-    content = serializers.JSONField(default=None)
+class TaskEventSerializer(Serializer):
+    type = ChoiceField(choices=['task.schedule', 'task.clear'])
+    content = JSONField(default=None)
 
 
-class DocTaskSerializer(serializers.ModelSerializer):
-    registered_task = serializers.SlugRelatedField(
+class DocTaskSerializer(ModelSerializer):
+    registered_task = SlugRelatedField(
         slug_field='dotted_path', queryset=models.RegisteredTask.objects.all())
 
     class Meta:
@@ -22,17 +24,17 @@ class DocTaskSerializer(serializers.ModelSerializer):
         fields = ('registered_task', 'inputs', *read_only_fields)
 
     @classmethod
-    def get_task_group_serializer(cls, json_content, *args, **kwargs):
+    async def get_task_group_serializer(cls, json_content, *args, **kwargs):
         kwargs.update(dict(many=True, data=json_content))
         many_serializer = cls(*args, **kwargs)
-        many_serializer.is_valid(raise_exception=True)
+        await sync_to_async(many_serializer.is_valid)(raise_exception=True)
 
         return many_serializer
 
     @classmethod
-    def create_doctask_group(cls, json_content, *args, **kwargs):
-        many_serializer = cls.get_task_group_serializer(json_content, *args, **kwargs)
-        doctasks = many_serializer.save()
+    async def create_doctask_group(cls, json_content, *args, **kwargs):
+        many_serializer = await cls.get_task_group_serializer(json_content, *args, **kwargs)
+        doctasks = await many_serializer.asave()
 
         return many_serializer, doctasks
 

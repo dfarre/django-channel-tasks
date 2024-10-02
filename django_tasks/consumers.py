@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -41,7 +42,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
     def cache_task_event(self, event):
         cache_key = f"{self.scope['user'].username}.task_events"
         user_task_events = cache.get(cache_key, {})
-        user_task_events[str(event['timestamp'])] = event['content']
+        user_task_events[str(event.get('timestamp', time.time()))] = event['content']
         cache.set(cache_key, user_task_events)
 
     def clear_task_cache(self, content):
@@ -75,7 +76,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
     async def schedule_tasks(self, content):
         """Pocesses task schedule websocket requests, and task cache clear requests."""
         try:
-            many_serializer = await database_sync_to_async(DocTaskSerializer.get_task_group_serializer)(content)
+            many_serializer = await DocTaskSerializer.get_task_group_serializer(content)
         except exceptions.ValidationError as error:
             await self.send_bad_request_message(error)
         else:

@@ -33,7 +33,7 @@ class TestWebsocketScheduling(base.BddTester):
         """
 
     async def a_failed_and_some_ok_tasks_are_scheduled_through_ws(self):
-        name = 'django_tasks.asgi.sleep_test'
+        name = 'django_tasks.tasks.sleep_test'
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
 
@@ -89,7 +89,7 @@ class TestTaskRunner(base.BddTester):
         assert cancelled_task_info['status'] == 'Cancelled'
 
 
-class TaskAdminUserReation(base.BddTester):
+class TestTaskAdminUserCreation(base.BddTester):
     """
     As a site administrator,
     I want to create staff users with task management and scheduling permissions,
@@ -97,7 +97,7 @@ class TaskAdminUserReation(base.BddTester):
     """
 
     @base.BddTester.gherkin()
-    def a_task_admin_is_created_by_command(self):
+    def test_a_task_admin_is_created_by_command(self):
         """
         When a task admin `user` is created by command
         Then the user has the correct status
@@ -119,7 +119,7 @@ class TaskAdminUserReation(base.BddTester):
         assert user.is_active is True
 
 
-class RestApiWithTokenAuth(TaskAdminUserReation):
+class RestApiWithTokenAuth(base.BddTester):
     """
     Staff users may obtain a token through Django admin site, and use it to schedule
     concurrent tasks through REST API.
@@ -131,17 +131,9 @@ class RestApiWithTokenAuth(TaskAdminUserReation):
     """
 
     @base.BddTester.gherkin()
-    def a_user_creates_an_api_token(self):
-        """
-        Given a task admin is created by command
-        And the user logs in
-        And the user creates an API `token`
-        """
-
-    @base.BddTester.gherkin()
     def test_many_tasks_execution_post_with_result_storage(self):
         """
-        Given a user creates an API token
+        Given a user creates an API `token`
         When a failed and some OK `tasks` are posted
         Then $(0) cancelled $(1) error $(4) success messages are broadcasted
         And the different task results are correctly stored in DB
@@ -150,14 +142,14 @@ class RestApiWithTokenAuth(TaskAdminUserReation):
     @base.BddTester.gherkin()
     def single_task_execution_post_with_result_storage(self):
         """
-        Given a user creates an API token
+        Given a user creates an API `token`
         When a failed `task` is posted with duration $(0.1)
         Then $(0) cancelled $(1) error $(0) success messages are broadcasted
         And the task result is correctly stored in DB
         """
 
     async def a_failed_and_some_ok_tasks_are_posted(self):
-        name = 'django_tasks.asgi.sleep_test'
+        name = 'django_tasks.tasks.sleep_test'
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = await self.assert_rest_api_call(
@@ -174,7 +166,7 @@ class RestApiWithTokenAuth(TaskAdminUserReation):
 
     async def a_failed_task_is_posted_with_duration(self):
         duration = float(self.param)
-        data = dict(registered_task='django_tasks.asgi.sleep_test',
+        data = dict(registered_task='django_tasks.tasks.sleep_test',
                     inputs={'duration': duration, 'raise_error': True})
         response = await self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, data=data)
         response_json = response.json()
@@ -195,8 +187,12 @@ class RestApiWithTokenAuth(TaskAdminUserReation):
 
         return messages['success'][0].split()[2].strip('“”'),
 
-    def the_user_creates_an_api_token(self):
-        return Token.objects.create(user=self.get_output('user')).key,
+    async def a_user_creates_an_api_token(self, django_user_model):
+        user = await django_user_model.objects.acreate(username=self.credentials['username'])
+        user.set_password(self.credentials['password'])
+        await user.asave()
+        token, created = await Token.objects.aget_or_create(user=user)
+        return token.key,
 
     async def the_task_result_is_correctly_stored_in_db(self):
         response = await self.assert_rest_api_call('GET', 'tasks', status.HTTP_200_OK)

@@ -13,7 +13,7 @@ class TaskViewSet(AsyncModelViewSet):
     serializer_class = serializers.DocTaskSerializer
 
     async def create(self, request, *args, **kwargs):
-        drf_response = await super().create(request, *args, **kwargs)
+        drf_response = await super().acreate(request, *args, **kwargs)
 
         await DocTaskScheduler.schedule_doctask(drf_response.data)
 
@@ -22,7 +22,7 @@ class TaskViewSet(AsyncModelViewSet):
     @decorators.action(detail=False, methods=['post'])
     async def schedule(self, request, *args, **kwargs):
         """DRF action that schedules an array of tasks."""
-        many_serializer, _ = self.serializer_class.create_doctask_group(
+        many_serializer, _ = await self.serializer_class.create_doctask_group(
             request.data, context=self.get_serializer_context())
         drf_response = response.Response(data=many_serializer.data, status=status.HTTP_201_CREATED)
 

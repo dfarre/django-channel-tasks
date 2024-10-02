@@ -1,4 +1,5 @@
 import configparser
+import json
 import os
 
 
@@ -11,7 +12,6 @@ class SettingsIni:
         'django.contrib.sessions',
         'django.contrib.staticfiles',
         'rest_framework.authtoken',
-        'rest_framework',
         'adrf',
         'django.contrib.messages',
         'django_extensions',
@@ -87,6 +87,9 @@ class SettingsIni:
 
         default = {k.upper(): v for k, v in dict(self.ini['database']).items()}
         default.setdefault('PASSWORD', os.getenv('CHANNEL_TASKS_DB_PASSWORD', ''))
+
+        if 'OPTIONS' in default:
+            default['OPTIONS'] = json.loads(default['OPTIONS'])
 
         return {'default': default}
 

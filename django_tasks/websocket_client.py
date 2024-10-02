@@ -22,7 +22,7 @@ class LocalWebSocketClient:
         self.events = collections.defaultdict(list)
         websocket.setdefaulttimeout(self.connect_kwargs.get('timeout', 10))
         self.wsapp = websocket.WebSocketApp(
-            self.local_url, header=self.header, on_message=self.on_message, on_error=self.on_message,
+            self.local_url, header=self.header, on_message=self.on_message, on_error=self.on_error,
         )
         self.expected_events = {}
 
@@ -34,13 +34,17 @@ class LocalWebSocketClient:
 
         return ws_response
 
-    def on_message(self, wsapp, message):
+    def on_message(self, wsapp, message: str):
         logging.getLogger('django').debug('Received local WS message: %s', message)
         event = json.loads(message)
         self.events[event['content']['status'].lower()].append(event)
 
         if self.expected_events and self.expected_events_collected:
             wsapp.close()
+
+    def on_error(self, wsapp, error: websocket.WebSocketTimeoutException):
+        logging.getLogger('django').error('Catched local WS error: %s. Closing connection.', error)
+        wsapp.close()
 
     def collect_events(self, event_loop):
         return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(
