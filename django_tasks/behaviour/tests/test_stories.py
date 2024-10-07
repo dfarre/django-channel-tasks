@@ -188,7 +188,7 @@ class RestApiWithTokenAuth(base.BddTester):
         return messages['success'][0].split()[2].strip('“”'),
 
     async def a_user_creates_an_api_token(self, django_user_model):
-        user = await django_user_model.objects.acreate(username=self.credentials['username'])
+        user = await django_user_model.objects.acreate(username=self.credentials['username'], is_staff=True)
         user.set_password(self.credentials['password'])
         await user.asave()
         token, created = await Token.objects.aget_or_create(user=user)

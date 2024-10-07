@@ -2,10 +2,10 @@ import logging
 
 from typing import Any
 
-from django_tasks.settings import SettingsIni
+from django_tasks.settings import SettingsJson
 
 
-CHANNEL_TASKS = SettingsIni()
+CHANNEL_TASKS = SettingsJson()
 
 DEBUG = CHANNEL_TASKS.debug
 SECRET_KEY = CHANNEL_TASKS.secret_key

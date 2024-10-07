@@ -1,10 +1,9 @@
-import configparser
 import json
 import os
 
 
-class SettingsIni:
-    ini_key = 'CHANNEL_TASKS_INI_PATH'
+class SettingsJson:
+    json_key = 'CHANNEL_TASKS_SETTINGS_PATH'
     secret_key_key = 'DJANGO_SECRET_KEY'
     default_installed_apps = [
         'django.contrib.auth',
@@ -22,26 +21,14 @@ class SettingsIni:
     ]
 
     def __init__(self):
-        ini_path = os.getenv(self.ini_key, '')
-        assert os.path.isfile(ini_path), f'Channel-tasks settings file at {self.ini_key}={ini_path} not found.'
-        self.ini = configparser.ConfigParser()
-        self.ini.read(ini_path)
+        json_path = os.getenv(self.json_key, '')
+        assert os.path.isfile(json_path), f'Channel-tasks settings file at {self.json_key}={json_path} not found.'
+
+        with open(json_path) as json_file:
+            self.jsonlike = json.load(json_file)
 
         assert self.secret_key_key in os.environ, f'Expected a Django secret key in {self.secret_key_key} envvar.'
         self.secret_key = os.environ[self.secret_key_key]
-
-    def get_array(self, section, key, default):
-        return ([line.strip() for line in self.ini[section][key].splitlines() if line.strip()]
-                if self.ini.has_option(section, key) else default)
-
-    def get_boolean(self, section, key, default):
-        return self.ini[section].getboolean(key, default) if self.ini.has_section(section) else default
-
-    def get_int(self, section, key, default):
-        return self.ini[section].getint(key, default) if self.ini.has_section(section) else default
-
-    def get_text(self, section, key, default):
-        return self.ini[section][key].strip() if self.ini.has_option(section, key) else default
 
     @property
     def allowed_hosts(self):
@@ -49,35 +36,35 @@ class SettingsIni:
 
     @property
     def install_apps(self):
-        return self.get_array('apps', 'install-apps', [])
+        return self.jsonlike.get('install-apps', [])
 
     @property
     def debug(self):
-        return self.get_boolean('security', 'debug', False)
+        return self.jsonlike.get('debug', False)
 
     @property
     def server_name(self):
-        return self.get_text('security', 'server-name', 'localhost')
+        return self.jsonlike.get('server-name', 'localhost')
 
     @property
     def proxy_route(self):
-        return self.get_text('security', 'proxy-route', '')
+        return self.jsonlike.get('proxy-route', '')
 
     @property
     def local_port(self):
-        return self.get_int('security', 'local-port', 8001)
+        return self.jsonlike.get('local-port', 8001)
 
     @property
     def log_level(self):
-        return self.get_text('logging', 'log-level', 'INFO')
+        return self.jsonlike.get('log-level', 'INFO')
 
     @property
     def expose_doctask_api(self):
-        return self.get_boolean('asgi', 'expose-doctask-api', False)
+        return self.jsonlike.get('expose-doctask-api', False)
 
     @property
     def databases(self):
-        if not self.ini.has_section('database'):
+        if 'database' not in self.jsonlike:
             return {
                 'default': {
                     'ENGINE': 'django.db.backends.sqlite3',
@@ -85,11 +72,8 @@ class SettingsIni:
                 }
             }
 
-        default = {k.upper(): v for k, v in dict(self.ini['database']).items()}
+        default = {k.upper(): v for k, v in self.jsonlike['database'].items()}
         default.setdefault('PASSWORD', os.getenv('CHANNEL_TASKS_DB_PASSWORD', ''))
-
-        if 'OPTIONS' in default:
-            default['OPTIONS'] = json.loads(default['OPTIONS'])
 
         return {'default': default}
 
@@ -116,23 +100,23 @@ class SettingsIni:
 
     @property
     def redis_host(self):
-        return self.get_text('redis', 'host', '127.0.0.1')
+        return self.jsonlike.get('redis-host', '127.0.0.1')
 
     @property
     def channel_group(self):
-        return self.get_text('redis', 'channel-group', 'tasks')
+        return self.jsonlike.get('redis-channel-group', 'tasks')
 
     @property
     def redis_port(self):
-        return self.get_int('redis', 'port', 6379)
+        return self.jsonlike.get('redis-port', 6379)
 
     @property
     def static_root(self):
-        return self.get_text('security', 'static-root', '/www/django_tasks/static')
+        return self.jsonlike.get('static-root', '/www/django_tasks/static')
 
     @property
     def media_root(self):
-        return self.get_text('security', 'media-root', '/www/django_tasks/media')
+        return self.jsonlike.get('media-root', '/www/django_tasks/media')
 
     @property
     def email_settings(self):
@@ -144,15 +128,15 @@ class SettingsIni:
 
     @property
     def email_host(self):
-        return self.get_text('email', 'host', '')
+        return self.jsonlike.get('email-host', '')
 
     @property
     def email_port(self):
-        return self.get_int('email', 'port', 0)
+        return self.jsonlike.get('email-port', 0)
 
     @property
     def email_use_tls(self):
-        return self.get_boolean('email', 'use-tls', False)
+        return self.jsonlike.get('email-use-tls', False)
 
     def sort_installed_apps(self, *apps: list[str]) -> list[str]:
         return self.default_installed_apps + [

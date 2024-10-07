@@ -1,0 +1,24 @@
+{
+    "expose-doctask-api": true,
+    "install-apps": [
+        "django.contrib.postgres"
+    ],
+    "log-level": "DEBUG",
+    "debug": true,
+    "database": {
+        "engine": "django.db.backends.postgresql",
+        "name": "postgres",
+        "user": "postgres",
+        "host": "db",
+        "port": 5433,
+        "options" : {
+            "pool": {
+                "min_size": 2,
+                "max_size": 6,
+                "timeout": 7
+            }
+        },
+        "atomic_requests": true
+    },
+    "redis-host": "redis"
+}
