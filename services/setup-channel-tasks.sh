@@ -7,7 +7,7 @@ export DJANGO_SETTINGS_MODULE=django_tasks.settings.base
 "${CHANNEL_TASKS_HOME}"/bin/channel-tasks-admin collectstatic --noinput
 
 # Nginx-unit setup
-export CHANNEL_TASKS_LISTENER_ADDRESS="*:${CHANNEL_TASKS_PORT}"
+export CHANNEL_TASKS_LISTENER_ADDRESS="*:${CHANNEL_TASKS_ASGI_PORT}"
 export CHANNEL_TASKS_PYTHON_HOME="${CHANNEL_TASKS_HOME}"
 export CHANNEL_TASKS_PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 export CHANNEL_TASKS_ASGI_PATH="${CHANNEL_TASKS_HOME}/lib/python${CHANNEL_TASKS_PYTHON_VERSION}/site-packages"

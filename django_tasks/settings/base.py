@@ -103,6 +103,7 @@ TEMPLATES: list[dict[str, Any]] = [
 ]
 
 ASGI_APPLICATION = 'django_tasks.asgi.application'
+WSGI_APPLICATION = 'django_tasks.wsgi.application'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
