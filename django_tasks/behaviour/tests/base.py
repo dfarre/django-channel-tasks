@@ -6,7 +6,8 @@ import bs4
 import pytest_asyncio
 import pytest
 
-from adrf.test import APIClient, AsyncAPIClient
+from adrf.test import AsyncAPIClient
+from rest_framework.test import APIClient
 from django.test.client import Client, AsyncClient
 
 from bdd_coder import decorators
@@ -73,8 +74,7 @@ class BddTester(tester.BddTester):
         self.client.logout()
 
         response = getattr(self.api_client, method.lower())(
-            path=f'/api/{api_path}', data=data, content_type='application/json',
-            headers={'Authorization': f'Token {self.get_output("token")}'},
+            path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {self.get_output("token")}'},
         )
         assert response.status_code == expected_http_code, response.json()
 
