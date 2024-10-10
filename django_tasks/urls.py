@@ -5,7 +5,7 @@ from django.conf import settings
 from rest_framework import routers
 
 from django_tasks import admin
-from django_tasks.viewsets import TaskViewSet
+from django_tasks.viewsets import WSTaskViewSet
 
 
 class OptionalSlashRouter(routers.SimpleRouter):
@@ -20,5 +20,5 @@ urlpatterns = [
 
 if settings.CHANNEL_TASKS.expose_doctask_api is True:
     drf_router = OptionalSlashRouter()
-    drf_router.register('tasks', TaskViewSet)
+    drf_router.register('tasks', WSTaskViewSet)
     urlpatterns.append(urls.path('api/', urls.include(drf_router.urls)))

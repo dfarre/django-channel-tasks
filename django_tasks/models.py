@@ -1,8 +1,7 @@
-import datetime
 import json
 
 from django.db.models import Model, CharField, DateTimeField, JSONField, ForeignKey, CASCADE
-
+from django.utils import timezone
 
 class DefensiveJsonEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -23,7 +22,7 @@ class RegisteredTask(Model):
 class DocTask(Model):
     """Stored information of a task execution."""
     registered_task: ForeignKey = ForeignKey(RegisteredTask, on_delete=CASCADE)
-    scheduled_at: DateTimeField = DateTimeField(default=datetime.datetime.now)
+    scheduled_at: DateTimeField = DateTimeField(default=timezone.now)
     completed_at: DateTimeField = DateTimeField(null=True)
     inputs: JSONField = JSONField(default=dict, encoder=DefensiveJsonEncoder)
     document: JSONField = JSONField(default=list, encoder=DefensiveJsonEncoder)
@@ -35,9 +34,9 @@ class DocTask(Model):
 
     @property
     def duration(self):
-        return (self.completed_at if self.completed_at else datetime.datetime.now()) - self.scheduled_at
+        return (self.completed_at if self.completed_at else timezone.now()) - self.scheduled_at
 
     async def on_completion(self, task_info):
-        self.completed_at = datetime.datetime.now()
+        self.completed_at = timezone.now()
         self.document.append(task_info)
         await self.asave()

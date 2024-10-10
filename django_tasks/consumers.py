@@ -76,7 +76,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
     async def schedule_tasks(self, content):
         """Pocesses task schedule websocket requests, and task cache clear requests."""
         try:
-            many_serializer = await DocTaskSerializer.get_task_group_serializer(content)
+            many_serializer = await database_sync_to_async(DocTaskSerializer.get_task_group_serializer)(content)
         except exceptions.ValidationError as error:
             await self.send_bad_request_message(error)
         else:

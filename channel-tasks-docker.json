@@ -17,8 +17,7 @@
                 "max_size": 6,
                 "timeout": 7
             }
-        },
-        "atomic_requests": true
+        }
     },
     "redis-host": "redis"
 }
