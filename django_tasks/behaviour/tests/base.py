@@ -6,7 +6,8 @@ import bs4
 import pytest_asyncio
 import pytest
 
-from django.test.client import AsyncClient
+from adrf.test import APIClient, AsyncAPIClient
+from django.test.client import Client, AsyncClient
 
 from bdd_coder import decorators
 from bdd_coder import tester
@@ -48,7 +49,10 @@ class BddTester(tester.BddTester):
         from django_tasks import models
         self.models = models
 
-        self.client = AsyncClient()
+        self.client = Client()
+        self.api_client = APIClient()
+        self.async_client = AsyncClient()
+        self.async_api_client = AsyncAPIClient()
 
     @pytest_asyncio.fixture(autouse=True)
     async def setup_tasks(self):
@@ -57,29 +61,20 @@ class BddTester(tester.BddTester):
             aregister_task(tasks.doctask_deletion_test),
             aregister_task(tasks.doctask_access_test))
 
-    async def assert_admin_call(self, method, path, expected_http_code, data=None):
-        response = await getattr(self.client, method.lower())(
+    def assert_admin_call(self, method, path, expected_http_code, data=None):
+        response = getattr(self.client, method.lower())(
             path=path, data=data, content_type='application/x-www-form-urlencoded', follow=True,
         )
         assert response.status_code == expected_http_code
 
         return response
 
-    async def assert_rest_api_call(self, method, api_path, expected_http_code, data=None):
-        await self.client.alogout()
+    def assert_rest_api_call(self, method, api_path, expected_http_code, data=None):
+        self.client.logout()
 
-        # from django.contrib.auth import models
-        # user_count = await models.User.objects.acount()
-        # assert user_count > 0
-        # from rest_framework.authtoken.models import Token
-        # token_count = await Token.objects.acount()
-        # assert token_count > 0
-        # token = await Token.objects.aget(user=self.get_output('user'))
-        # assert token.key == self.get_output("token")
-
-        response = await getattr(self.client, method.lower())(
+        response = getattr(self.api_client, method.lower())(
             path=f'/api/{api_path}', data=data, content_type='application/json',
-            headers={'Authorization': f'Token {self.get_output("token")}'}, follow=True,
+            headers={'Authorization': f'Token {self.get_output("token")}'},
         )
         assert response.status_code == expected_http_code, response.json()
 

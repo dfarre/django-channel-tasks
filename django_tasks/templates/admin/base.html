@@ -117,7 +117,7 @@
     // Overriden WebSocket instance factory
     function newWebSocket() {
         const ws = new WebSocket(
-            `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.host}{{ websocket_uri }}`
+            `${(location.protocol === 'https:') ? 'wss' : 'ws'}://${window.location.hostname}:{{ websocket_port }}{{ websocket_uri }}`
         );
         ws.onopen = wsOnOpen; wsOnOpen.bind(ws);
         ws.onclose = wsOnClose; wsOnClose.bind(ws);

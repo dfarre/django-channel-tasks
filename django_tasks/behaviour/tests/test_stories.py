@@ -148,35 +148,35 @@ class RestApiWithTokenAuth(base.BddTester):
         And the task result is correctly stored in DB
         """
 
-    async def a_failed_and_some_ok_tasks_are_posted(self):
+    def a_failed_and_some_ok_tasks_are_posted(self):
         name = 'django_tasks.tasks.sleep_test'
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
-        response = await self.assert_rest_api_call(
+        response = self.assert_rest_api_call(
             'POST', 'tasks/schedule/', status.HTTP_201_CREATED, data=task_data)
         time.sleep(max(self.task_durations))
 
         return response.json(),
 
     async def the_different_task_results_are_correctly_stored_in_db(self):
-        response = await self.assert_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) == 5
         assert tasks == []
 
-    async def a_failed_task_is_posted_with_duration(self):
+    def a_failed_task_is_posted_with_duration(self):
         duration = float(self.param)
         data = dict(registered_task='django_tasks.tasks.sleep_test',
                     inputs={'duration': duration, 'raise_error': True})
-        response = await self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, data=data)
+        response = self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, data=data)
         response_json = response.json()
         del response_json['scheduled_at']
         assert response_json == {**data, 'completed_at': None, 'document': None}
 
         return response_json,
 
-    async def the_user_creates_an_api_token(self):
-        response = await self.assert_admin_call(
+    def the_user_may_obtain_an_api_token(self):
+        response = self.assert_admin_call(
             'POST', '/admin/authtoken/token/add/', status.HTTP_200_OK, data={
                 'user': self.get_output('user').pk, '_save': 'Save',
             },
@@ -187,15 +187,15 @@ class RestApiWithTokenAuth(base.BddTester):
 
         return messages['success'][0].split()[2].strip('“”'),
 
-    async def a_user_creates_an_api_token(self, django_user_model):
-        user = await django_user_model.objects.acreate(username=self.credentials['username'], is_staff=True)
-        user.set_password(self.credentials['password'])
-        await user.asave()
-        token, created = await Token.objects.aget_or_create(user=user)
-        return token.key,
+    # def a_user_creates_an_api_token(self, django_user_model):
+    #     user = django_user_model(username=self.credentials['username'], is_staff=True)
+    #     user.set_password(self.credentials['password'])
+    #     user.save()
+    #     token = Token.objects.create(user=user)
+    #     return token.key,
 
     async def the_task_result_is_correctly_stored_in_db(self):
-        response = await self.assert_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) == 1
 

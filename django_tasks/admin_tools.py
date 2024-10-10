@@ -22,6 +22,7 @@ class ChannelTasksAdminSite(admin.AdminSite):
     def each_context(self, request: HttpRequest):
         context = super().each_context(request)
         context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
+        context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
         context['cached_task_events'] = cache.get(f'{request.user.username}.task_events', {})
         return context
 
