@@ -8,7 +8,7 @@ from django_tasks.task_inspector import get_coro_info
 
 
 class TaskEventSerializer(Serializer):
-    type = ChoiceField(choices=['task.schedule', 'task.clear'])
+    type = ChoiceField(choices=['task.schedule', 'task.store', 'task.clear'])
     content = JSONField(default=None)
 
 

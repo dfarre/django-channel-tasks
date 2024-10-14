@@ -68,19 +68,6 @@ def register_task(callable: Callable):
     return callable
 
 
-async def aregister_task(callable: Callable):
-    """Async version of `register_task`."""
-    assert inspect.iscoroutinefunction(callable), 'The function must be a coroutine'
-    RegisteredTask = apps.get_model('django_tasks', 'RegisteredTask')
-    instance, created = await RegisteredTask.objects.aget_or_create(
-        dotted_path=f'{inspect.getmodule(callable).__spec__.name}.{callable.__name__}'
-    )
-    msg = 'Registered new task %s' if created else 'Task %s already registered'
-    logging.getLogger('django').info(msg, instance)
-
-    return callable
-
-
 class AdminTaskAction:
     def __init__(self, task_name: str, socket_timeout: int = 600, **kwargs):
         self.task_name = task_name

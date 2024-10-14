@@ -8,6 +8,7 @@ from django.core.cache import cache
 from rest_framework import exceptions
 
 from django_tasks.serializers import DocTaskSerializer, TaskEventSerializer
+from django_tasks.doctask_scheduler import DocTaskScheduler, schedule_tasks
 from django_tasks.task_inspector import get_coro_info
 from django_tasks.task_runner import TaskRunner
 
@@ -35,6 +36,34 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         """Echoes the task.badrequest document."""
         await self.distribute_task_event(event)
 
+    async def task_schedule(self, event):
+        """Processes task schedule websocket requests."""
+        try:
+            many_serializer = await database_sync_to_async(
+                DocTaskSerializer.get_task_group_serializer)(event['content'])
+        except exceptions.ValidationError as error:
+            await self.send_bad_request_message(error)
+        else:
+            await schedule_tasks(*many_serializer.data)
+
+    async def task_store(self, event):
+        """Processes doc-task schedule websocket requests."""
+        import logging; logging.getLogger('django').debug('STORE event: %s', event)
+        try:
+            many_serializer, doctasks = await database_sync_to_async(
+                DocTaskSerializer.create_doctask_group)(event['content'])
+        except exceptions.ValidationError as error:
+            await self.send_bad_request_message(error)
+        else:
+            await DocTaskScheduler.schedule_doctasks(*many_serializer.data)
+
+    async def task_clear(self, event):
+        """Clears a specific task cache."""
+        await database_sync_to_async(self.clear_task_cache)(event['content'])
+
+    async def group_send(self, event):
+        await self.channel_layer.group_send(settings.CHANNEL_TASKS.channel_group, event)
+
     async def distribute_task_event(self, event):
         await self.send_json(content=event)
         self.cache_task_event(event)
@@ -53,7 +82,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
             if data['memory-id'] != memory_id})
 
     async def receive_json(self, event):
-        """Pocesses task schedule websocket requests, and task cache clear requests."""
+        """Validates the event type, and propagates it."""
         serializer = TaskEventSerializer(data=event)
 
         try:
@@ -61,26 +90,11 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         except exceptions.ValidationError as error:
             await self.send_bad_request_message(error)
         else:
-            if serializer.data['type'] == 'task.clear':
-                self.clear_task_cache(serializer.data['content'])
-            elif serializer.data['type'] == 'task.schedule':
-                await self.schedule_tasks(serializer.data['content'])
+            await self.group_send(serializer.data)
 
     async def send_bad_request_message(self, error: exceptions.ValidationError):
-        await self.channel_layer.group_send(settings.CHANNEL_TASKS.channel_group, {
+        await self.group_send({
             'type': 'task.badrequest', 'content': {
                 'details': error.get_full_details(), 'status': 'BadRequest'
             }
         })
-
-    async def schedule_tasks(self, content):
-        """Pocesses task schedule websocket requests, and task cache clear requests."""
-        try:
-            many_serializer = await database_sync_to_async(DocTaskSerializer.get_task_group_serializer)(content)
-        except exceptions.ValidationError as error:
-            await self.send_bad_request_message(error)
-        else:
-            runner = TaskRunner.get()
-            await asyncio.gather(*[runner.schedule(
-                get_coro_info(task['registered_task'], **task['inputs']).callable(**task['inputs'])
-            ) for task in many_serializer.data])

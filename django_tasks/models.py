@@ -3,6 +3,7 @@ import json
 from django.db.models import Model, CharField, DateTimeField, JSONField, ForeignKey, CASCADE
 from django.utils import timezone
 
+
 class DefensiveJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         try:
