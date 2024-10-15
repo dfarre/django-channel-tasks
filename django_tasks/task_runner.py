@@ -8,6 +8,7 @@ import threading
 from typing import Any, Callable, Coroutine
 
 from channels.layers import get_channel_layer
+from rest_framework import status
 from django.conf import settings
 
 
@@ -59,12 +60,14 @@ class TaskRunner:
 
     async def schedule(self,
                        coroutine: Coroutine,
-                       *coro_callbacks: Callable[[dict[str, Any]], Coroutine]) -> asyncio.Future:
+                       *coro_callbacks: Callable[[dict[str, Any]], Coroutine],
+                       request_id: str='',
+                       user_name: str='') -> asyncio.Future:
         task_name = coroutine.__name__
         task = self.run_coroutine(coroutine)
-        await self.broadcast_task(task_name, task)
+        await self.broadcast_task(task_name, request_id, user_name, task)
 
-        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(task_name, tk)))
+        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(task_name, request_id, user_name, tk)))
 
         for coro_callback in coro_callbacks:
             task.add_done_callback(lambda tk: self.run_on_task_info(coro_callback, tk))
@@ -72,15 +75,18 @@ class TaskRunner:
         return task
 
     @classmethod
-    async def broadcast_task(cls, name: str, task: asyncio.Future):
+    async def broadcast_task(cls, name: str, request_id: str, user_name: str, task: asyncio.Future):
         """
-        Sends the task info to the 'tasks' group of consumers, specifying a message type per task status.
+        Sends the task info to all consumers to which the user is connected,
+        specifying a message type per task status.
         """
         task_info = cls.get_task_info(task)
         task_info['registered_task'] = name
+        task_info['request_id'] = request_id
+        task_info['http_status'] = status.HTTP_200_OK
         message_type = f"task.{task_info['status'].lower()}"
         channel_layer = get_channel_layer()
-        await channel_layer.group_send(settings.CHANNEL_TASKS.channel_group, {
+        await channel_layer.group_send(f'{user_name}_{settings.CHANNEL_TASKS.channel_group}', {
             'type': message_type, 'content': task_info, 'timestamp': time.time()})
 
     @staticmethod

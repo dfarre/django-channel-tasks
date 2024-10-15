@@ -23,14 +23,14 @@ site = AdminSite()
 site.register(Token, TokenAdmin)
 
 
-@AdminTaskAction('django_tasks.asgi.doctask_access_test', description='Test async database access')
+@AdminTaskAction('django_tasks.tasks.doctask_access_test', description='Test async database access')
 def doctask_access_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet, ws_response: str):
     objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
     logging.getLogger('django').info(
         'Requested to run DB access test on %s. Received response: %s.', objects_repr, ws_response)
 
 
-@AdminTaskAction('django_tasks.asgi.doctask_deletion_test', description='Test async database DELETE')
+@AdminTaskAction('django_tasks.tasks.doctask_deletion_test', description='Test async database DELETE')
 def doctask_deletion_test(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet, ws_response: str):
     objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
     logging.getLogger('django').info(

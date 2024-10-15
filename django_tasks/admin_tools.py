@@ -78,11 +78,10 @@ class AdminTaskAction:
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
-            ws_response = self.client.send_locally({
-                'type': 'task.schedule',
-                'content': [dict(registered_task=self.task_name,
-                            inputs={'instance_ids': list(queryset.values_list('pk', flat=True))})],
-            })
+            ws_response = self.client.perform_request('schedule_tasks', [dict(
+                registered_task=self.task_name,
+                inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}
+            )])
             objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             description = self.kwargs.get('description', self.task_name)
             msg = f"Requested to '{description}' on {objects_repr}."

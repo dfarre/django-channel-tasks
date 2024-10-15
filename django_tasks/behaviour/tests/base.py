@@ -14,7 +14,6 @@ from bdd_coder import decorators
 from bdd_coder import tester
 
 from django_tasks import tasks
-from django_tasks.admin_tools import aregister_task
 from django_tasks.task_runner import TaskRunner
 from django_tasks.websocket_client import LocalWebSocketClient
 
@@ -47,20 +46,13 @@ class BddTester(tester.BddTester):
         # settings.SESSION_SAVE_EVERY_REQUEST = True
         self.settings = settings
 
-        from django_tasks import models
+        from django_tasks import models, wsgi
         self.models = models
 
         self.client = Client()
         self.api_client = APIClient()
         self.async_client = AsyncClient()
         self.async_api_client = AsyncAPIClient()
-
-    @pytest_asyncio.fixture(autouse=True)
-    async def setup_tasks(self):
-        await asyncio.gather(
-            aregister_task(tasks.sleep_test),
-            aregister_task(tasks.doctask_deletion_test),
-            aregister_task(tasks.doctask_access_test))
 
     def assert_admin_call(self, method, path, expected_http_code, data=None):
         response = getattr(self.client, method.lower())(

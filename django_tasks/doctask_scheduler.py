@@ -39,25 +39,26 @@ class DocTaskScheduler:
             logging.getLogger('django').info('Stored %s.', repr(doctask))
 
     @classmethod
-    async def schedule_doctask(cls, data) -> asyncio.Future:
+    async def schedule_doctask(cls, request_id: str, user_name: str, data: dict) -> asyncio.Future:
         """Schedules a single task, and stores results in DB."""
         dotted_path, inputs = data['registered_task'], data.get('inputs', {})
         callable = get_coro_info(dotted_path, **inputs).callable
         runner = TaskRunner.get()
-        task = await runner.schedule(callable(**inputs), cls.store_doctask_result)
+        task = await runner.schedule(callable(**inputs), cls.store_doctask_result, request_id=request_id, user_name=user_name)
         cls.doctask_index[id(task)].update({'future': task, 'id': data['id']})
         logging.getLogger('django').info('Scheduled doc-task %s callable=%s.', data, callable)
         return task
 
     @classmethod
-    async def schedule_doctasks(cls, *task_data) -> asyncio.Future:
-        future = await asyncio.gather(*[cls.schedule_doctask(data) for data in task_data])
+    async def schedule_doctasks(cls, request_id: str, user_name: str, *task_data) -> asyncio.Future:
+        future = await asyncio.gather(*[cls.schedule_doctask(request_id, user_name, data) for data in task_data])
         return future
 
 
-async def schedule_tasks(cls, *task_data) -> asyncio.Future:
+async def schedule_tasks(cls, request_id: str, user_name: str, *task_data) -> asyncio.Future:
     runner = TaskRunner.get()
     future = await asyncio.gather(*[runner.schedule(
-        get_coro_info(task['registered_task'], **task['inputs']).callable(**task['inputs'])
+        get_coro_info(task['registered_task'], **task['inputs']).callable(**task['inputs']),
+        request_id=request_id, user_name=user_name,
     ) for task in task_data])
     return future

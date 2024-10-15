@@ -39,9 +39,8 @@ class TestWebsocketScheduling(base.BddTester):
         # Ensures the WS app is ready to collect the 'task.strated' messages
         await asyncio.sleep(.5)
 
-        response = json.loads(self.ws_client.send_locally({'type': 'task.schedule', 'content': task_data}))
-        assert not response.get('type', '') == 'task.badrequest', response
-
+        response = self.ws_client.perform_request('schedule_tasks', task_data)
+        assert response['http_status'] == status.HTTP_200_OK
 
 class TestTaskRunner(base.BddTester):
     """

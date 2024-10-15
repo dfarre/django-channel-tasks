@@ -1,11 +1,14 @@
 from asgiref.sync import sync_to_async
 
+import uuid
+
 import asyncio
 import collections
 import json
 import logging
 import websocket
 
+from rest_framework import status
 from django.conf import settings
 
 
@@ -26,21 +29,31 @@ class LocalWebSocketClient:
         )
         self.expected_events = {}
 
-    def send_locally(self, json_obj):
+    def perform_request(self, action: str, content: dict):
         self.ws.connect(self.local_url, header=self.header, **self.connect_kwargs)
-        self.ws.send(json.dumps(json_obj))
-        ws_response = self.ws.recv()
+        event = dict(request_id=uuid.uuid4().hex, action=action, content=content)
+        self.ws.send(json.dumps(event))
+        ws_response = self.get_response(event['request_id'])
         self.ws.close()
 
         return ws_response
 
+    def get_response(self, request_id: str):
+        msg = json.loads(self.ws.recv())
+        logging.getLogger('django').debug('Received local WS message: %s. RequestID: %s', msg, request_id)
+
+        if msg.get('request_id') == request_id:
+            return msg
+
+        return {'http_status': status.HTTP_502_BAD_GATEWAY, 'request_id': request_id, 'details': 'No response.'}
+
     def on_message(self, wsapp, message: str):
         logging.getLogger('django').debug('Received local WS message: %s', message)
-        event = json.loads(message)
-        self.events[event['content']['status'].lower()].append(event)
+        # event = json.loads(message)
+        # self.events[event['content']['status'].lower()].append(event)
 
-        if self.expected_events and self.expected_events_collected:
-            wsapp.close()
+        # if self.expected_events and self.expected_events_collected:
+        #     wsapp.close()
 
     def on_error(self, wsapp, error: websocket.WebSocketTimeoutException):
         logging.getLogger('django').error('Catched local WS error: %s. Closing connection.', error)

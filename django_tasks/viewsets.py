@@ -2,7 +2,7 @@ import asyncio
 import json
 
 from adrf.viewsets import ModelViewSet as AsyncModelViewSet
-from rest_framework import decorators, response, status, viewsets
+from rest_framework import decorators, response, viewsets
 
 from django_tasks import models, serializers
 from django_tasks.doctask_scheduler import DocTaskScheduler
@@ -16,22 +16,15 @@ class WSTaskViewSet(viewsets.ModelViewSet):
     ws_client = LocalWebSocketClient(timeout=300)
 
     def create(self, request, *args, **kwargs):
-        ws_response = self.ws_client.send_locally({'type': 'task.store', 'content': [request.data]})
-
-        if 'task.badrequest' in ws_response:
-            return response.Response(data=json.loads(ws_response), status=status.HTTP_400_BAD_REQUEST)
-
-        return response.Response(status=status.HTTP_201_CREATED)
+        """DRF action that schedules a doc-task through local Websocket."""
+        ws_response = self.ws_client.perform_request('schedule_doctasks', [request.data])
+        return response.Response(status=ws_response.pop('http_status'), data=ws_response)
 
     @decorators.action(detail=False, methods=['post'])
     def schedule(self, request, *args, **kwargs):
-        """DRF action that schedules an array of tasks through local Websocket."""
-        ws_response = self.ws_client.send_locally({'type': 'task.store', 'content': request.data})
-
-        if 'task.badrequest' in ws_response:
-            return response.Response(data=json.loads(ws_response), status=status.HTTP_400_BAD_REQUEST)
-
-        return response.Response(status=status.HTTP_201_CREATED)
+        """DRF action that schedules an array of doc-tasks through local Websocket."""
+        ws_response = self.ws_client.perform_request('schedule_doctasks', request.data)
+        return response.Response(status=ws_response.pop('http_status'), data=ws_response)
 
 
 class TaskViewSet(AsyncModelViewSet):

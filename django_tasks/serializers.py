@@ -1,14 +1,15 @@
 from typing import Any
 
-from rest_framework.serializers import ChoiceField, JSONField, SlugRelatedField, Serializer, ModelSerializer
+from rest_framework.serializers import ChoiceField, JSONField, SlugRelatedField, Serializer, ModelSerializer, UUIDField
 
 from django_tasks import models
 
 from django_tasks.task_inspector import get_coro_info
 
 
-class TaskEventSerializer(Serializer):
-    type = ChoiceField(choices=['task.schedule', 'task.store', 'task.clear'])
+class TaskRequestSerializer(Serializer):
+    request_id = UUIDField(format='hex')
+    action = ChoiceField(choices=['schedule_tasks', 'schedule_doctasks', 'clear_task_cache'])
     content = JSONField(default=None)
 
 
