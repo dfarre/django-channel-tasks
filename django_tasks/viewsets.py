@@ -13,7 +13,7 @@ from django_tasks.websocket_client import LocalWebSocketClient
 
 
 class WSTaskViewSet(ModelViewSet):
-    http_method_names = ['get', 'post', 'delete', 'head', 'options', 'trace']
+    http_method_names = ['post', 'delete', 'head', 'options', 'trace']
     queryset = models.DocTask.objects.all()
     serializer_class = serializers.DocTaskSerializer
     ws_client = LocalWebSocketClient(timeout=300)
@@ -33,7 +33,7 @@ class WSTaskViewSet(ModelViewSet):
 
 
 class TaskViewSet(AsyncModelViewSet):
-    http_method_names = ['get', 'post', 'delete', 'head', 'options', 'trace']
+    http_method_names = ['get', 'head', 'options', 'trace']
     queryset = models.DocTask.objects.all()
     serializer_class = serializers.DocTaskSerializer
 
