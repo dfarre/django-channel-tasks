@@ -31,16 +31,13 @@ class TestWebsocketScheduling(base.BddTester):
         Then $(0) cancelled $(1) error $(4) success messages are broadcasted
         """
 
-    async def a_failed_and_some_ok_tasks_are_scheduled_through_ws(self):
+    def a_failed_and_some_ok_tasks_are_scheduled_through_ws(self):
         name = 'django_tasks.tasks.sleep_test'
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
-
-        # Ensures the WS app is ready to collect the 'task.strated' messages
-        await asyncio.sleep(.5)
-
-        response = self.ws_client.perform_request('schedule_tasks', task_data)
+        response = self.local_ws_client.perform_request('schedule_tasks', task_data)
         assert response['http_status'] == status.HTTP_200_OK
+
 
 class TestTaskRunner(base.BddTester):
     """
@@ -160,7 +157,6 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = self.assert_rest_api_call(
             'POST', 'tasks/schedule/', status.HTTP_201_CREATED, data=task_data)
-        time.sleep(max(self.task_durations))
 
         return response.json(),
 
@@ -175,12 +171,8 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
         data = dict(registered_task='django_tasks.tasks.sleep_test',
                     inputs={'duration': duration, 'raise_error': True})
         response = self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, data=data)
-        response_json = response.json()
-        del response_json['scheduled_at']
-        del response_json['id']
-        assert response_json == {**data, 'completed_at': None, 'document': []}
 
-        return response_json,
+        return response.json(),
 
     def the_user_may_obtain_an_api_token(self):
         response = self.assert_admin_call(

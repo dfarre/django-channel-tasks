@@ -55,7 +55,7 @@ class DocTaskScheduler:
         return future
 
 
-async def schedule_tasks(cls, request_id: str, user_name: str, *task_data) -> asyncio.Future:
+async def schedule_tasks(request_id: str, user_name: str, *task_data) -> asyncio.Future:
     runner = TaskRunner.get()
     future = await asyncio.gather(*[runner.schedule(
         get_coro_info(task['registered_task'], **task['inputs']).callable(**task['inputs']),

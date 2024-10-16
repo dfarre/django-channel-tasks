@@ -13,21 +13,20 @@ from django.conf import settings
 
 
 class LocalWebSocketClient:
-    """Wrapper for handy usage of `websocket.WebSocket` within localhost."""
+    """Wrapper for handy usage of `websocket.WebSocket` within the backend, able to:
+      * Handle WSGI requests asyncronously through websocket, returning the first websocket message
+        received for a specific request.
+    """
     local_route = ('tasks' if not settings.CHANNEL_TASKS.proxy_route
                    else f'{settings.CHANNEL_TASKS.proxy_route}-local/tasks')
     local_url = f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/'
     header = {'Content-Type': 'application/json'}
+    max_response_msg_count = 10
 
     def __init__(self, **connect_kwargs):
         self.connect_kwargs = connect_kwargs
         self.ws = websocket.WebSocket()
-        self.events = collections.defaultdict(list)
         websocket.setdefaulttimeout(self.connect_kwargs.get('timeout', 10))
-        self.wsapp = websocket.WebSocketApp(
-            self.local_url, header=self.header, on_message=self.on_message, on_error=self.on_error,
-        )
-        self.expected_events = {}
 
     def perform_request(self, action: str, content: dict):
         self.ws.connect(self.local_url, header=self.header, **self.connect_kwargs)
@@ -39,31 +38,23 @@ class LocalWebSocketClient:
         return first_response
 
     def get_first_response(self, request_id: str):
-        msg = json.loads(self.ws.recv())
-        logging.getLogger('django').debug('First local WS message: %s. RequestID: %s', msg, request_id)
+        for i in range(self.max_response_msg_count):
+            raw_msg = self.ws.recv()
+            is_response = True
 
-        if msg.get('request_id') == request_id:
-            return msg
+            try:
+                msg = json.loads(raw_msg)
+            except json.JSONDecodeError as error:
+                is_response = False
+            else:
+                if msg.get('request_id') == request_id:
+                    logging.getLogger('django').debug('Received first response to request %s: %s', request_id, msg)
+                else:
+                    is_response = False
+
+            if is_response:
+                return msg
+            else:
+                logging.getLogger('django').warning('Unknown message received after request %s: %s', request_id, msg)
 
         return {'http_status': status.HTTP_502_BAD_GATEWAY, 'request_id': request_id, 'details': 'No response.'}
-
-    def on_message(self, wsapp, message: str):
-        logging.getLogger('django').debug('Received local WS message: %s', message)
-        # event = json.loads(message)
-        # self.events[event['content']['status'].lower()].append(event)
-
-        # if self.expected_events and self.expected_events_collected:
-        #     wsapp.close()
-
-    def on_error(self, wsapp, error: websocket.WebSocketTimeoutException):
-        logging.getLogger('django').error('Catched local WS error: %s. Closing connection.', error)
-        wsapp.close()
-
-    def collect_events(self, event_loop):
-        return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(
-            sync_to_async(self.wsapp.run_forever)(), event_loop))
-
-    @property
-    def expected_events_collected(self) -> bool:
-        return all(len(self.events[event_type]) == count
-                   for event_type, count in self.expected_events.items())

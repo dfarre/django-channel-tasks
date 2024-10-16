@@ -15,6 +15,8 @@ from bdd_coder import tester
 
 from django_tasks import tasks
 from django_tasks.task_runner import TaskRunner
+
+from django_tasks.behaviour.tests.websocket_test_client import TestingWebSocketClient
 from django_tasks.websocket_client import LocalWebSocketClient
 
 
@@ -33,8 +35,10 @@ class BddTester(tester.BddTester):
 
     @pytest.fixture(autouse=True)
     def setup_ws_client(self, event_loop):
-        self.ws_client = LocalWebSocketClient(timeout=10)
-        self.event_collection_task = self.ws_client.collect_events(event_loop)
+        timeout = 7
+        self.local_ws_client = LocalWebSocketClient(timeout=timeout)
+        self.testing_ws_client = TestingWebSocketClient(timeout)
+        self.event_collection_task = self.testing_ws_client.collect_events(event_loop)
 
     @pytest.fixture(autouse=True)
     def setup_django(self, settings):
@@ -93,7 +97,7 @@ class BddTester(tester.BddTester):
 
     async def cancelled_error_success_messages_are_broadcasted(self):
         cancelled, error, success = map(int, self.param)
-        self.ws_client.expected_events = {
+        self.testing_ws_client.expected_events = {
             'started': cancelled + error + success,
             'cancelled': cancelled, 'error': error, 'success': success,
         }
@@ -101,9 +105,9 @@ class BddTester(tester.BddTester):
         try:
             await asyncio.wait_for(self.event_collection_task, timeout)
         except TimeoutError:
-            self.ws_client.wsapp.close()
+            self.testing_ws_client.wsapp.close()
             raise AssertionError(
-                f'Timeout in event collection. Expected counts: {self.ws_client.expected_events}. '
-                f'Collected events in {timeout}s: {pprint.pformat(self.ws_client.events)}.')
+                f'Timeout in event collection. Expected counts: {self.testing_ws_client.expected_events}. '
+                f'Collected events in {timeout}s: {pprint.pformat(self.testing_ws_client.events)}.')
         else:
-            self.ws_client.expected_events = {}
+            self.testing_ws_client.expected_events = {}
