@@ -52,7 +52,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
 
     async def task_badrequest(self, event):
         """Echoes the task.badrequest document."""
-        await self.send_json(content=event['content'])
+        await self.distribute_task_event(event)
 
     async def schedule_tasks(self, request_data):
         """Processes task schedule websocket requests."""
@@ -101,7 +101,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         try:
             serializer.is_valid(raise_exception=True)
         except exceptions.ValidationError as error:
-            await self.send_bad_request_message(error)
+            await self.send_bad_request_message(request_data['request_id'], error)
         else:
             await getattr(self, serializer.data['action'])(serializer.data)
 

@@ -33,14 +33,14 @@ class LocalWebSocketClient:
         self.ws.connect(self.local_url, header=self.header, **self.connect_kwargs)
         event = dict(request_id=uuid.uuid4().hex, action=action, content=content)
         self.ws.send(json.dumps(event))
-        ws_response = self.get_response(event['request_id'])
+        first_response = self.get_first_response(event['request_id'])
         self.ws.close()
 
-        return ws_response
+        return first_response
 
-    def get_response(self, request_id: str):
+    def get_first_response(self, request_id: str):
         msg = json.loads(self.ws.recv())
-        logging.getLogger('django').debug('Received local WS message: %s. RequestID: %s', msg, request_id)
+        logging.getLogger('django').debug('First local WS message: %s. RequestID: %s', msg, request_id)
 
         if msg.get('request_id') == request_id:
             return msg
