@@ -39,8 +39,11 @@
     // WebSocket bound methods
     function dismissAlerts(memoryID) {
         if (this.readyState === WebSocket.OPEN) {
-            this.send(JSON.stringify({'action': 'clear_task_cache', 'request_id': 'e0acf62acb6546b6bf733257e71a3f4b',
-                                      'content': {'memory-id': memoryID}}));
+            this.send(JSON.stringify({
+                'request_id': 'e0acf62acb6546b6bf733257e71a3f4b',
+                'action': 'clear_task_cache',
+                'content': {'memory-id': memoryID},
+            }));
         } else {
             console.warn('Coud not open websocket in order to clear backend-cached alerts:', this);
         }

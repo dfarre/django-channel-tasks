@@ -8,6 +8,8 @@ import json
 import logging
 import websocket
 
+from typing import Optional
+
 from rest_framework import status
 from django.conf import settings
 
@@ -20,7 +22,7 @@ class LocalWebSocketClient:
     local_route = ('tasks' if not settings.CHANNEL_TASKS.proxy_route
                    else f'{settings.CHANNEL_TASKS.proxy_route}-local/tasks')
     local_url = f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/'
-    header = {'Content-Type': 'application/json'}
+    headers = {'Content-Type': 'application/json'}
     max_response_msg_count = 10
 
     def __init__(self, **connect_kwargs):
@@ -28,14 +30,22 @@ class LocalWebSocketClient:
         self.ws = websocket.WebSocket()
         websocket.setdefaulttimeout(self.connect_kwargs.get('timeout', 10))
 
-    def perform_request(self, action: str, content: dict):
-        self.ws.connect(self.local_url, header=self.header, **self.connect_kwargs)
-        event = dict(request_id=uuid.uuid4().hex, action=action, content=content)
-        self.ws.send(json.dumps(event))
-        first_response = self.get_first_response(event['request_id'])
-        self.ws.close()
+    def perform_request(self, action: str, content: dict, headers: Optional[dict]=None) -> dict:
+        header = headers or {}
+        header.update(self.headers)
+        header['Request-ID'] = uuid.uuid4().hex
 
-        return first_response
+        try:
+            self.ws.connect(self.local_url, header=header, **self.connect_kwargs)
+            self.ws.send(json.dumps(dict(action=action, content=content)))
+            first_response = self.get_first_response(header['Request-ID'])
+        except Exception as exc:
+             return {'http_status': status.HTTP_502_BAD_GATEWAY,
+                     'request_id': header['Request-ID'],
+                     'details': repr(exc)}
+        else:
+            self.ws.close()
+            return first_response
 
     def get_first_response(self, request_id: str):
         for i in range(self.max_response_msg_count):
@@ -55,6 +65,8 @@ class LocalWebSocketClient:
             if is_response:
                 return msg
             else:
-                logging.getLogger('django').warning('Unknown message received after request %s: %s', request_id, msg)
+                logging.getLogger('django').warning('Unknown message received after request %s: %s', request_id, raw_msg)
 
-        return {'http_status': status.HTTP_502_BAD_GATEWAY, 'request_id': request_id, 'details': 'No response.'}
+        return {'http_status': status.HTTP_502_BAD_GATEWAY,
+                'request_id': request_id,
+                'details': 'No Websocket response.'}

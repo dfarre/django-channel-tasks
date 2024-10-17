@@ -76,6 +76,14 @@ class BddTester(tester.BddTester):
 
         return response
 
+    async def assert_async_rest_api_call(self, method, api_path, expected_http_code, data=None):
+        response = await getattr(self.async_api_client, method.lower())(
+            path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {self.get_output("token")}'},
+        )
+        assert response.status_code == expected_http_code, response.json()
+
+        return response
+
     async def fake_task_coro_ok(self, duration):
         await asyncio.sleep(duration)
         return duration

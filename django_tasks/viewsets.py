@@ -17,17 +17,22 @@ class WSTaskViewSet(ModelViewSet):
     queryset = models.DocTask.objects.all()
     serializer_class = serializers.DocTaskSerializer
     ws_client = LocalWebSocketClient(timeout=300)
+    auth_header = 'Authorization'
 
     def create(self, request, *args, **kwargs):
         """DRF action that schedules a doc-task through local Websocket."""
-        ws_response = self.ws_client.perform_request('schedule_doctasks', [request.data])
+        ws_response = self.ws_client.perform_request('schedule_doctasks', [request.data], headers={
+            self.auth_header: request.headers[self.auth_header],
+        })
         status = ws_response.pop('http_status')
         return Response(status=HTTP_201_CREATED if status == HTTP_200_OK else status, data=ws_response)
 
     @action(detail=False, methods=['post'])
     def schedule(self, request, *args, **kwargs):
         """DRF action that schedules an array of doc-tasks through local Websocket."""
-        ws_response = self.ws_client.perform_request('schedule_doctasks', request.data)
+        ws_response = self.ws_client.perform_request('schedule_doctasks', request.data, headers={
+            self.auth_header: request.headers[self.auth_header],
+        })
         status = ws_response.pop('http_status')
         return Response(status=HTTP_201_CREATED if status == HTTP_200_OK else status, data=ws_response)
 

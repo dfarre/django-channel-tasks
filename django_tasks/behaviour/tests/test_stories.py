@@ -161,7 +161,7 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
         return response.json(),
 
     async def the_different_task_results_are_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'doctasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) == 5
         assert tasks == []
@@ -190,7 +190,7 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
         return messages['success'][0].split()[2].strip('“”'),
 
     async def the_task_result_is_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'tasks', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'doctasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) == 1
 
