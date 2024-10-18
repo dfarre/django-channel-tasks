@@ -39,11 +39,7 @@
     // WebSocket bound methods
     function dismissAlerts(memoryID) {
         if (this.readyState === WebSocket.OPEN) {
-            this.send(JSON.stringify({
-                'request_id': 'e0acf62acb6546b6bf733257e71a3f4b',
-                'action': 'clear_task_cache',
-                'content': {'memory-id': memoryID},
-            }));
+            this.send(JSON.stringify({'action': 'clear_task_cache', 'content': {'memory-id': memoryID}}));
         } else {
             console.warn('Coud not open websocket in order to clear backend-cached alerts:', this);
         }
@@ -57,7 +53,6 @@
 
     function addTaskAlert(timestamp, alertData) {
         const taskId = alertData['memory-id'];
-        delete alertData['memory-id'];
         var alert_group = document.getElementById(taskId);
 
         if (!alert_group) {
@@ -82,9 +77,6 @@
             }
             if (msg_type == 'error') {
                 alert.getElementsByTagName('pre')[0].innerHTML = alertData['exception-repr'];
-            }
-            if (msg_type == 'badrequest') {
-                alert.getElementsByTagName('pre')[0].innerHTML = JSON.stringify(alertData.details);
             }
 
             alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
@@ -112,9 +104,8 @@
 
     function wsOnMessage(msg_event) {
         console.log('WebSocket message received:', msg_event.data);
-        const msg = JSON.parse(msg_event.data);
-        const group = msg.type.split('.')[0];
-        if (group == 'task') { pushAlert(msg); }
+        const message = JSON.parse(msg_event.data);
+        if (message.content && message.content.status) { pushAlert(message); }
         this.showTaskAlerts();
     };
 

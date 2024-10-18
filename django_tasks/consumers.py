@@ -29,27 +29,26 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         for name, value in self.scope.get('headers', []):
             if name == b'request-id':
                 return value.decode()
-        return 'unknown'
 
     async def task_started(self, event):
-        """Echoes the task.started document."""
+        """Caches and echoes the task.started document."""
         await self.distribute_task_event(event)
 
     async def task_success(self, event):
-        """Echoes the task.success document."""
+        """Caches and echoes the task.success document."""
         await self.distribute_task_event(event)
 
     async def task_cancelled(self, event):
-        """Echoes the task.cancelled document."""
+        """Caches and echoes the task.cancelled document."""
         await self.distribute_task_event(event)
 
     async def task_error(self, event):
-        """Echoes the task.error document."""
+        """Caches and echoes the task.error document."""
         await self.distribute_task_event(event)
 
     async def task_badrequest(self, event):
         """Echoes the task.badrequest document."""
-        await self.distribute_task_event(event)
+        await self.send_json(content=event)
 
     async def group_send(self, event):
         await self.channel_layer.group_send(self.user_group, event)
@@ -108,7 +107,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
             if data['memory-id'] != memory_id})
 
     async def distribute_task_event(self, event):
-        await self.send_json(content=event['content'])
+        await self.send_json(content=event)
         self.cache_task_event(event)
 
     def cache_task_event(self, event):
