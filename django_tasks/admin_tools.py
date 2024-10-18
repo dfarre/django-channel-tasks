@@ -69,20 +69,20 @@ def register_task(callable: Callable):
 
 
 class AdminTaskAction:
-    def __init__(self, task_name: str, socket_timeout: int = 600, **kwargs):
+    def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
         self.kwargs = kwargs
-        self.client = LocalWebSocketClient(timeout=socket_timeout)
+        self.client = LocalWebSocketClient()
 
     def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
+            objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             ws_response = self.client.perform_request('schedule_tasks', [dict(
                 registered_task=self.task_name,
                 inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}
             )], headers={'Cookie': request.headers['Cookie']})
-            objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
             description = self.kwargs.get('description', self.task_name)
             msg = f"Requested to '{description}' on {objects_repr}."
             modeladmin.message_user(request, msg, messages.INFO)

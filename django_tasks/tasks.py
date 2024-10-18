@@ -29,7 +29,6 @@ async def doctask_access_test(instance_ids: list[int]):
 
 async def doctask_deletion_test(instance_ids: list[int]):
     def instance_function(doctask):
-        time.sleep(1)
         doctask.delete()
         logging.getLogger('django').info('Deleted %s', repr(doctask))
         time.sleep(1)

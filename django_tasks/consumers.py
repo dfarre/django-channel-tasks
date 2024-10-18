@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import time
 
@@ -11,8 +10,6 @@ from rest_framework import exceptions, status
 
 from django_tasks.serializers import DocTaskSerializer, TaskRequestSerializer
 from django_tasks.doctask_scheduler import DocTaskScheduler, schedule_tasks
-from django_tasks.task_inspector import get_coro_info
-from django_tasks.task_runner import TaskRunner
 
 
 class TaskEventsConsumer(AsyncJsonWebsocketConsumer):

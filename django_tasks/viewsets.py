@@ -1,6 +1,3 @@
-import asyncio
-import json
-
 from adrf.viewsets import ModelViewSet as AsyncModelViewSet
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -16,7 +13,7 @@ class WSTaskViewSet(ModelViewSet):
     http_method_names = ['post', 'delete', 'head', 'options', 'trace']
     queryset = models.DocTask.objects.all()
     serializer_class = serializers.DocTaskSerializer
-    ws_client = LocalWebSocketClient(timeout=300)
+    ws_client = LocalWebSocketClient()
     auth_header = 'Authorization'
 
     def create(self, request, *args, **kwargs):

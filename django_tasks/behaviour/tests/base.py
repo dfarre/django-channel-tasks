@@ -1,9 +1,7 @@
 import asyncio
-import os
 import pprint
 
 import bs4
-import pytest_asyncio
 import pytest
 
 from adrf.test import AsyncAPIClient
@@ -13,7 +11,6 @@ from django.test.client import Client, AsyncClient
 from bdd_coder import decorators
 from bdd_coder import tester
 
-from django_tasks import tasks
 from django_tasks.task_runner import TaskRunner
 
 from django_tasks.behaviour.tests.websocket_test_client import TestingWebSocketClient
@@ -52,6 +49,7 @@ class BddTester(tester.BddTester):
 
         from django_tasks import models, wsgi
         self.models = models
+        self.wsgi = wsgi
 
         self.client = Client()
         self.api_client = APIClient()

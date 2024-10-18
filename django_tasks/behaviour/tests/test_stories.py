@@ -1,5 +1,4 @@
 import asyncio
-import json
 import time
 
 from django.core.management import call_command

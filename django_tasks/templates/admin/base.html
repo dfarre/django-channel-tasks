@@ -104,9 +104,15 @@
 
     function wsOnMessage(msg_event) {
         console.log('WebSocket message received:', msg_event.data);
-        const message = JSON.parse(msg_event.data);
-        if (message.content && message.content.status) { pushAlert(message); }
+        const parsed_data = JSON.parse(msg_event.data);
+        if (this.isTaskStatusMessage(parsed_data)) { pushAlert(parsed_data); }
         this.showTaskAlerts();
+    };
+
+    function isTaskStatusMessage(parsed_data) {
+        return (parsed_data.type && [
+            'task.started', 'task.success', 'task.error', 'task.cancelled'
+        ].indexOf(parsed_data.type) >= 0)
     };
 
     // Overriden WebSocket instance factory
@@ -119,6 +125,7 @@
         ws.onerror = wsOnError; wsOnError.bind(ws);
         ws.onmessage = wsOnMessage; wsOnMessage.bind(ws);
         ws.addTaskAlert = addTaskAlert; addTaskAlert.bind(ws);
+        ws.isTaskStatusMessage = isTaskStatusMessage; isTaskStatusMessage.bind(ws);
         ws.dismissAlerts = dismissAlerts; dismissAlerts.bind(ws);
         ws.showTaskAlerts = showTaskAlerts; showTaskAlerts.bind(ws);
         return ws
