@@ -44,7 +44,8 @@ class DocTaskScheduler:
         dotted_path, inputs = data['registered_task'], data.get('inputs', {})
         callable = get_coro_info(dotted_path, **inputs).callable
         runner = TaskRunner.get()
-        task = await runner.schedule(callable(**inputs), cls.store_doctask_result, request_id=request_id, user_name=user_name)
+        task = await runner.schedule(
+            callable(**inputs), cls.store_doctask_result, request_id=request_id, user_name=user_name)
         cls.doctask_index[id(task)].update({'future': task, 'id': data['id']})
         logging.getLogger('django').info('Scheduled doc-task %s callable=%s.', data, callable)
         return task

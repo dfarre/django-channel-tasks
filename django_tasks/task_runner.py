@@ -61,8 +61,8 @@ class TaskRunner:
     async def schedule(self,
                        coroutine: Coroutine,
                        *coro_callbacks: Callable[[dict[str, Any]], Coroutine],
-                       request_id: str='',
-                       user_name: str='') -> asyncio.Future:
+                       request_id: str = '',
+                       user_name: str = '') -> asyncio.Future:
         task_name = coroutine.__name__
         task = self.run_coroutine(coroutine)
         await self.broadcast_task(task_name, request_id, user_name, task)

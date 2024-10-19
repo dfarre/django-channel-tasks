@@ -34,14 +34,13 @@ class LocalWebSocketClient:
     max_response_msg_collect = 2
     default_timeout = 0.1
 
-
     def __init__(self, **connect_kwargs):
         self.connect_kwargs = connect_kwargs
         self.connect_kwargs.setdefault('timeout', self.default_timeout)
         self.ws = websocket.WebSocket()
         websocket.setdefaulttimeout(self.connect_kwargs['timeout'])
 
-    def perform_request(self, action: str, content: dict, headers: Optional[dict]=None) -> dict:
+    def perform_request(self, action: str, content: dict, headers: Optional[dict] = None) -> dict:
         header = headers or {}
         header.update(self.headers)
         header['Request-ID'] = uuid.uuid4().hex
@@ -106,7 +105,8 @@ class LocalWebSocketClient:
                 http_statuses.append(msg['content']['http_status'])
                 response['first_messages'].append(msg['content'])
             else:
-                logging.getLogger('django').warning('Unknown message received after request %s: %s', request_id, raw_msg)
+                logging.getLogger('django').warning(
+                    'Unknown message received after request %s: %s', request_id, raw_msg)
 
         response['http_status'] = max(http_statuses) if http_statuses else status.HTTP_502_BAD_GATEWAY
 

@@ -91,7 +91,8 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         except exceptions.ValidationError as error:
             await self.send_bad_request_message(error)
         else:
-            await DocTaskScheduler.schedule_doctasks(self.request_id, self.scope['user'].username, *many_serializer.data)
+            await DocTaskScheduler.schedule_doctasks(
+                self.request_id, self.scope['user'].username, *many_serializer.data)
 
     @database_sync_to_async
     def clear_task_cache(self, request_data):
