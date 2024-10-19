@@ -127,7 +127,6 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
     @base.BddTester.gherkin()
     def test_many_tasks_execution_post_with_result_storage(self):
         """
-        Given a task admin creates an API token
         When a failed and some OK `tasks` are posted
         Then $(0) cancelled $(1) error $(4) success messages are broadcasted
         And the different task results are correctly stored in DB
@@ -136,14 +135,13 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
     @base.BddTester.gherkin()
     def single_task_execution_post_with_result_storage(self):
         """
-        Given a task admin creates an API token
         When a failed `task` is posted with duration $(0.1)
         Then $(0) cancelled $(1) error $(0) success messages are broadcasted
         And the task result is correctly stored in DB
         """
 
     @base.BddTester.gherkin()
-    def a_task_admin_creates_an_api_token(self):
+    def test_a_task_admin_creates_an_api_token(self):
         """
         Given a task admin is created by command
         When the user logs in

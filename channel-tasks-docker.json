@@ -17,6 +17,9 @@
                 "max_size": 6,
                 "timeout": 7
             }
+        },
+        "test": {
+            "NAME": "postgres"
         }
     },
     "redis-host": "redis"
