@@ -12,6 +12,7 @@ build
 .tox
 .secrets.ini
 .test_token.txt
+.test_cookie.txt
 version.ini_bk
 htmlcov
 

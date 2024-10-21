@@ -34,7 +34,8 @@ class TestWebsocketScheduling(base.BddTester):
         name = 'django_tasks.tasks.sleep_test'
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
-        response = self.local_ws_client.perform_request('schedule_tasks', task_data)
+        response = self.local_ws_client.perform_request(
+            'schedule_tasks', task_data, headers={'Cookie': base.get_test_credential('cookie')})
         assert response['http_status'] == status.HTTP_200_OK
 
 

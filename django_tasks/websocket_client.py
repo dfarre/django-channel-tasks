@@ -105,8 +105,8 @@ class LocalWebSocketClient:
                 http_statuses.append(msg['content']['http_status'])
                 response['first_messages'].append(msg['content'])
             else:
-                logging.getLogger('django').warning(
-                    'Unknown message received after request %s: %s', request_id, raw_msg)
+                logging.getLogger('django').debug(
+                    'Discarded unknown message, received after request %s: %s', request_id, raw_msg)
 
         response['http_status'] = max(http_statuses) if http_statuses else status.HTTP_502_BAD_GATEWAY
 

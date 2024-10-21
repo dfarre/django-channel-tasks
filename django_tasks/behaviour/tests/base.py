@@ -68,7 +68,7 @@ class BddTester(tester.BddTester):
         self.client.logout()
 
         response = getattr(self.api_client, method.lower())(
-            path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {get_taskadmin_token()}'},
+            path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {get_test_credential("token")}'},
         )
         assert response.status_code == expected_http_code, response.json()
 
@@ -76,7 +76,7 @@ class BddTester(tester.BddTester):
 
     async def assert_async_rest_api_call(self, method, api_path, expected_http_code, data=None):
         response = await getattr(self.async_api_client, method.lower())(
-            path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {get_taskadmin_token()}'},
+            path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {get_test_credential("token")}'},
         )
         assert response.status_code == expected_http_code, response.json()
 
@@ -119,6 +119,6 @@ class BddTester(tester.BddTester):
             self.testing_ws_client.expected_events = {}
 
 
-def get_taskadmin_token():
-    with open('.test_token.txt') as token_file:
-        return token_file.read().strip()
+def get_test_credential(name: str):
+    with open(f'.test_{name}.txt') as secret_file:
+        return secret_file.read().strip()
