@@ -19,9 +19,16 @@
         return {...cached_alerts, ...session_alerts}
     }
 
-    function pushAlert(data) {
+    function pushAlert(alertData) {
         const alerts = getAlertData();
-        alerts[String(data.timestamp)] = data.content;
+        if (!alerts.hasOwnProperty(alertData.task_id)) { alerts[alertData.task_id] = []; }
+        alerts[alertData.task_id].push(alertData);
+        sessionStorage.setItem('alerts', JSON.stringify(alerts));
+    }
+
+    function dropAlerts(taskID) {
+        const alerts = getAlertData();
+        delete alerts[taskID];
         sessionStorage.setItem('alerts', JSON.stringify(alerts));
     }
 
@@ -37,55 +44,43 @@
     };
 
     // WebSocket bound methods
-    function dismissAlerts(memoryID) {
+    function dismissAlerts(taskID) {
         if (this.readyState === WebSocket.OPEN) {
-            this.send(JSON.stringify({'action': 'clear_task_cache', 'content': {'memory-id': memoryID}}));
+            this.send(JSON.stringify({'action': 'clear_task_cache', 'content': {'task_id': taskID}}));
         } else {
             console.warn('Coud not open websocket in order to clear backend-cached alerts:', this);
         }
-
-        const alerts = {};
-        for (const [timestamp, alert] of Object.entries(getAlertData())) {
-            if (alert['memory-id'] !== memoryID) { alerts[timestamp] = alert; }
-        }
-        sessionStorage.setItem('alerts', JSON.stringify(alerts));
+        dropAlerts(taskID);
     }
 
-    function addTaskAlert(timestamp, alertData) {
-        const taskId = alertData['memory-id'];
-        var alert_group = document.getElementById(taskId);
+    function addTaskAlert(alertData) {
+        var alert_group = document.getElementById(alertData.task_id);
 
         if (!alert_group) {
             var alert_group = document.getElementById('alert-group-template').cloneNode(true).firstElementChild;
-            alert_group.setAttribute('id', taskId);
-            alert_group.addEventListener('closed.bs.alert', () => this.dismissAlerts(taskId));
-            alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${taskId}`;
-            delete alertData['registered_task'];
+            alert_group.setAttribute('id', alertData.task_id);
+            alert_group.addEventListener('closed.bs.alert', () => this.dismissAlerts(alertData.task_id));
+            alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${alertData.task_id}`;
+            alertData['registered_task'];
             document.getElementById('task-alerts-display').appendChild(alert_group);
         }
 
-        var alert = document.getElementById(`${taskId}.${timestamp}`);
+        var msg_type = alertData.status.toLowerCase();
+        var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
 
-        if (!alert) {
-            var msg_type = alertData.status.toLowerCase();
-            var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
-            alert.setAttribute('id', `${taskId}.${timestamp}`);
-            alert.getElementsByClassName('timestamp')[0].textContent = formatTimestamp(timestamp);
-
-            if (msg_type == 'success') {
-                alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
-            }
-            if (msg_type == 'error') {
-                alert.getElementsByTagName('pre')[0].innerHTML = alertData['exception-repr'];
-            }
-
-            alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
+        if (msg_type == 'success') {
+            alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
         }
+        if (msg_type == 'error') {
+            alert.getElementsByTagName('pre')[0].innerHTML = alertData['exception-repr'];
+        }
+
+        alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);
     };
 
     function showTaskAlerts() {
-        for (const [timestamp, alert] of Object.entries(getAlertData())) {
-            this.addTaskAlert(timestamp, alert);
+        for (const taskAlerts of Object.values(getAlertData())) {
+            taskAlerts.forEach((alertData) => this.addTaskAlert(alertData));
         }
     }
 
@@ -105,7 +100,7 @@
     function wsOnMessage(msg_event) {
         console.log('WebSocket message received:', msg_event.data);
         const parsed_data = JSON.parse(msg_event.data);
-        if (this.isTaskStatusMessage(parsed_data)) { pushAlert(parsed_data); }
+        if (this.isTaskStatusMessage(parsed_data)) { pushAlert(parsed_data.content); }
         this.showTaskAlerts();
     };
 

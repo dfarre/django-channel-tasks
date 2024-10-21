@@ -96,7 +96,10 @@ class LocalWebSocketClient:
             except json.JSONDecodeError:
                 is_response = False
             else:
-                if msg.get('content', {}).pop('request_id', None) == request_id:
+                task_id = msg.get('content', {}).pop('task_id', '').split('.')
+                reqid = msg.get('content', {}).pop('request_id', '')
+
+                if len(task_id) == 2 and task_id[0] == request_id or reqid and reqid == request_id:
                     logging.getLogger('django').debug('Received response message to request %s: %s', request_id, msg)
                 else:
                     is_response = False

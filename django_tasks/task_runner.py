@@ -11,10 +11,12 @@ from channels.layers import get_channel_layer
 from rest_framework import status
 from django.conf import settings
 
+from django_tasks.task_cache import TaskCache
+
 
 class TaskRunner:
     """
-    Class in charge of in-memory handling of `asyncio` background tasks, with a worker thread per instance.
+    Class in charge of handling `asyncio` background tasks, with a worker thread per instance.
     """
     _instances: list[TaskRunner] = []
 
@@ -54,45 +56,49 @@ class TaskRunner:
 
     def run_on_task_info(self,
                          async_callback: Callable[[dict[str, Any]], Coroutine],
+                         task_id: str,
                          task: asyncio.Future) -> asyncio.Future:
         """Runs the `async_callback` taking the task info as the argument."""
-        return self.run_coroutine(async_callback(self.get_task_info(task)))
+        return self.run_coroutine(async_callback(task_id, self.get_task_info(task)))
 
     async def schedule(self,
                        coroutine: Coroutine,
                        *coro_callbacks: Callable[[dict[str, Any]], Coroutine],
-                       request_id: str = '',
+                       task_id: str = '',
                        user_name: str = '') -> asyncio.Future:
         task_name = coroutine.__name__
         task = self.run_coroutine(coroutine)
-        await self.broadcast_task(task_name, request_id, user_name, task)
+        await self.broadcast_task(task_name, task_id, user_name, task)
 
-        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(task_name, request_id, user_name, tk)))
+        task.add_done_callback(lambda tk: self.run_coroutine(self.broadcast_task(task_name, task_id, user_name, tk)))
 
         for coro_callback in coro_callbacks:
-            task.add_done_callback(lambda tk: self.run_on_task_info(coro_callback, tk))
+            task.add_done_callback(lambda tk: self.run_on_task_info(coro_callback, task_id, tk))
 
         return task
 
     @classmethod
-    async def broadcast_task(cls, name: str, request_id: str, user_name: str, task: asyncio.Future):
+    async def broadcast_task(cls, name: str, task_id: str, user_name: str, task: asyncio.Future):
         """
-        Sends the task info to all consumers to which the user is connected,
+        Caches and sends the task event info to all consumers to which the user is connected,
         specifying a message type per task status.
         """
         task_info = cls.get_task_info(task)
         task_info['registered_task'] = name
-        task_info['request_id'] = request_id
+        task_info['task_id'] = task_id
         task_info['http_status'] = status.HTTP_200_OK
-        message_type = f"task.{task_info['status'].lower()}"
+
+        user_task_cache = TaskCache(user_name)
+        user_task_cache.cache_task_event(task_id, task_info)
+
+        task_event = {'type': f"task.{task_info['status'].lower()}", 'content': task_info, 'timestamp': time.time()}
         channel_layer = get_channel_layer()
-        await channel_layer.group_send(f'{user_name}_{settings.CHANNEL_TASKS.channel_group}', {
-            'type': message_type, 'content': task_info, 'timestamp': time.time()})
+        await channel_layer.group_send(f'{user_name}_{settings.CHANNEL_TASKS.channel_group}', task_event)
 
     @staticmethod
     def get_task_info(task: asyncio.Future) -> dict[str, Any]:
-        """Extracts and returns the corresponding task info, with the current task status."""
-        task_info: dict[str, Any] = {'memory-id': id(task)}
+        """Extracts and returns the corresponding task status and result (if any)."""
+        task_info: dict[str, Any] = {}
 
         if not task.done():
             task_info['status'] = 'Started'
