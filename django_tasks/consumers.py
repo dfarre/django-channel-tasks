@@ -9,6 +9,7 @@ from rest_framework import exceptions, status
 from django_tasks.serializers import DocTaskSerializer, TaskRequestSerializer
 from django_tasks.doctask_scheduler import DocTaskScheduler, schedule_tasks
 from django_tasks.task_cache import TaskCache
+from django_tasks.websocket import close_codes
 
 
 class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
@@ -48,8 +49,8 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
 
     async def stop_unauthorized(self):
         if not self.scope['user'].is_authenticated:
-            logging.getLogger('django').warning('Unauthenticated user. Closing websocket.')
-            await self.close(code=3000)
+            logging.getLogger('django').warning('Unauthenticated user %s. Closing websocket.', self.scope['user'])
+            await self.close(code=close_codes.UNAUTHORIZED)
             raise StopConsumer()
 
     async def connect(self):

@@ -212,6 +212,6 @@ class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
         """
 
     def the_user_runs_the_action(self):
-        response = self.assert_admin_call('POST', '/admin/django_tasks/doctask/', status.HTTP_200_OK, {
+        self.assert_admin_call('POST', '/admin/django_tasks/doctask/', status.HTTP_200_OK, {
             'action': self.param,
             '_selected_action': [doctask.pk for doctask in self.models.DocTask.objects.all()]})

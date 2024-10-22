@@ -15,7 +15,7 @@ from django.core.cache import cache
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from django_tasks.websocket_client import LocalWebSocketClient
+from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 
 class ChannelTasksAdminSite(admin.AdminSite):
@@ -72,7 +72,7 @@ class AdminTaskAction:
     def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
         self.kwargs = kwargs
-        self.client = LocalWebSocketClient()
+        self.client = BackendWebSocketClient()
 
     def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
         @admin.action(**self.kwargs)

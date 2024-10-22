@@ -6,14 +6,14 @@ from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED
 
 from django_tasks import models, serializers
 from django_tasks.doctask_scheduler import DocTaskScheduler
-from django_tasks.websocket_client import LocalWebSocketClient
+from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 
 class WSTaskViewSet(ModelViewSet):
     http_method_names = ['post', 'delete', 'head', 'options', 'trace']
     queryset = models.DocTask.objects.all()
     serializer_class = serializers.DocTaskSerializer
-    ws_client = LocalWebSocketClient()
+    ws_client = BackendWebSocketClient()
     auth_header = 'Authorization'
 
     def create(self, request, *args, **kwargs):

@@ -14,7 +14,7 @@ from bdd_coder import tester
 from django_tasks.task_runner import TaskRunner
 
 from django_tasks.behaviour.tests.websocket_test_client import TestingWebSocketClient
-from django_tasks.websocket_client import LocalWebSocketClient
+from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 
 @pytest.mark.django_db
@@ -33,7 +33,7 @@ class BddTester(tester.BddTester):
     @pytest.fixture(autouse=True)
     def setup_ws_client(self, event_loop):
         timeout = 7
-        self.local_ws_client = LocalWebSocketClient(timeout=timeout)
+        self.local_ws_client = BackendWebSocketClient(timeout=timeout)
         self.testing_ws_client = TestingWebSocketClient(timeout)
         self.event_collection_task = self.testing_ws_client.collect_events(event_loop)
 

@@ -9,6 +9,8 @@ from typing import Optional, Any
 from rest_framework import status
 from django.conf import settings
 
+from django_tasks.websocket import close_codes
+
 
 def catch_websocket_errors(client_method):
     @functools.wraps(client_method)
@@ -22,7 +24,7 @@ def catch_websocket_errors(client_method):
     return safe_client_method
 
 
-class LocalWebSocketClient:
+class BackendWebSocketClient:
     """Wrapper for handy usage of `websocket.WebSocket` within the backend, able to:
       * Handle WSGI requests asyncronously through websocket, returning the first websocket message
         received for a specific request.
@@ -54,7 +56,9 @@ class LocalWebSocketClient:
             return self.bad_gateway_message(header['Request-ID'], send_error)
 
         response = self.get_first_response(header['Request-ID'])
-        self.disconnect()
+        self.disconnect(
+            close_codes.BAD_GATEWAY if response['http_status'] == status.HTTP_502_BAD_GATEWAY
+            else close_codes.OK)
 
         return response
 
@@ -69,8 +73,8 @@ class LocalWebSocketClient:
         return self.ws.connect(self.local_url, header=header, **self.connect_kwargs)
 
     @catch_websocket_errors
-    def disconnect(self):
-        return self.ws.close()
+    def disconnect(self, close_code: int):
+        return self.ws.close(status=close_code)
 
     @catch_websocket_errors
     def send_json(self, json_data):
