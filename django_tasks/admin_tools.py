@@ -11,10 +11,10 @@ from channels.db import database_sync_to_async
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin, messages
-from django.core.cache import cache
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
+from django_tasks.task_cache import TaskCache
 from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 
@@ -23,7 +23,7 @@ class ChannelTasksAdminSite(admin.AdminSite):
         context = super().each_context(request)
         context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
         context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
-        context['cached_task_events'] = cache.get(f'{request.user.username}.task_events', {})
+        context['cached_task_events'] = TaskCache(request.user).get_index()
         return context
 
 

@@ -39,12 +39,6 @@ class BddTester(tester.BddTester):
 
     @pytest.fixture(autouse=True)
     def setup_django(self, settings):
-        # os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-        # settings.ALLOWED_HOSTS = ['*']
-        # settings.SESSION_COOKIE_DOMAIN = 'testserver'
-        # settings.SESSION_COOKIE_SAMESITE = False
-        # settings.SESSION_COOKIE_SECURE = False
-        # settings.SESSION_SAVE_EVERY_REQUEST = True
         self.settings = settings
 
         from django_tasks import models, wsgi
