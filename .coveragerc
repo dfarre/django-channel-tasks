@@ -3,6 +3,16 @@ branch = true
 parallel = true
 
 [report]
+# Coverage of the ASGI unit is not measured by pytest-cov, so the corresponding modules are omitted
+omit =
+    asgi.py
+    asgi_setup.py
+    consumers.py
+    channels_auth.py
+    doctask_scheduler.py
+    tasks.py
+    task_inspector.py
+    entrypoint.py
 exclude_lines =
     raise NotImplementedError
     raise AssertionError

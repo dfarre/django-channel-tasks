@@ -39,7 +39,7 @@ class TaskViewSet(AsyncModelViewSet):
     queryset = models.DocTask.objects.all()
     serializer_class = serializers.DocTaskSerializer
 
-    async def create(self, request, *args, **kwargs):
+    async def create(self, request, *args, **kwargs):  # NO COVER
         drf_response = await super().acreate(request, *args, **kwargs)
 
         await DocTaskScheduler.schedule_doctask(drf_response.data)
@@ -47,7 +47,7 @@ class TaskViewSet(AsyncModelViewSet):
         return drf_response
 
     @action(detail=False, methods=['post'])
-    async def schedule(self, request, *args, **kwargs):
+    async def schedule(self, request, *args, **kwargs):  # NO COVER
         """Async DRF action that schedules an array of tasks."""
         many_serializer, _ = self.serializer_class.create_doctask_group(
             request.data, context=self.get_serializer_context())
