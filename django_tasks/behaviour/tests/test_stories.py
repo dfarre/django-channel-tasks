@@ -113,8 +113,12 @@ class TaskAdminUserCreation(base.BddTester):
         assert user.is_staff is True
         assert user.is_active is True
 
+    def the_user_logs_in(self):
+        logged_in = self.client.login(**self.credentials)
+        assert logged_in
 
-class RestApiWithTokenAuth(TaskAdminUserCreation):
+
+class TestRestApiWithTokenAuth(TaskAdminUserCreation):
     """
     Staff users may obtain a token through Django admin site, and use it to schedule
     concurrent tasks through REST API.
@@ -134,7 +138,7 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
         """
 
     @base.BddTester.gherkin()
-    def single_task_execution_post_with_result_storage(self):
+    def test_single_task_execution_post_with_result_storage(self):
         """
         When a failed `task` is posted with duration $(0.1)
         Then $(0) cancelled $(1) error $(0) success messages are broadcasted
@@ -174,7 +178,7 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
     def the_user_may_obtain_an_api_token(self):
         response = self.assert_admin_call(
             'POST', '/admin/authtoken/token/add/', status.HTTP_200_OK,
-            data=f"user={self.get_output('user').pk}&_save=Save".encode(),
+            {'user': self.get_output('user').pk, '_save': 'Save'},
         )
         soup = self.get_soup(response.content)
 
@@ -191,12 +195,8 @@ class RestApiWithTokenAuth(TaskAdminUserCreation):
         tasks = response.json()
         assert len(tasks) >= 1
 
-    def the_user_logs_in(self):
-        logged_in = self.client.login(**self.credentials)
-        assert logged_in
 
-
-class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
+class TestAsyncAdminSiteActions(TaskAdminUserCreation):
     """
     This covers:
     * The admin tools module
@@ -205,13 +205,13 @@ class TestAsyncAdminSiteActions(RestApiWithTokenAuth):
     @base.BddTester.gherkin()
     def test_database_access_async_actions_run_ok(self):
         """
-        Given single task execution post with result storage
-        When the user runs the $(database_access_test) action
-        And the user runs the $(store_database_access_test) action
-        And the user runs the $(delete_test) action
+        Given a task admin is created by command
+        And the user logs in
+        When the user runs the $(doctask_access_test) action
+        And the user runs the $(doctask_deletion_test) action
         """
 
     def the_user_runs_the_action(self):
         self.assert_admin_call('POST', '/admin/django_tasks/doctask/', status.HTTP_200_OK, {
             'action': self.param,
-            '_selected_action': [doctask.pk for doctask in self.models.DocTask.objects.all()]})
+            '_selected_action': self.models.DocTask.objects.first().pk})

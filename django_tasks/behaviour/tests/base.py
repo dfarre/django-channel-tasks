@@ -6,7 +6,7 @@ import pytest
 
 from adrf.test import AsyncAPIClient
 from rest_framework.test import APIClient
-from django.test.client import Client, AsyncClient
+from django.test.client import Client
 
 from bdd_coder import decorators
 from bdd_coder import tester
@@ -53,12 +53,12 @@ class BddTester(tester.BddTester):
 
         self.client = Client()
         self.api_client = APIClient()
-        self.async_client = AsyncClient()
         self.async_api_client = AsyncAPIClient()
 
     def assert_admin_call(self, method, path, expected_http_code, data=None):
+        bytes_data = '&'.join([f'{k}={v}' for k, v in (data or {}).items()]).encode()
         response = getattr(self.client, method.lower())(
-            path=path, data=data, content_type='application/x-www-form-urlencoded', follow=True,
+            path=path, data=bytes_data, content_type='application/x-www-form-urlencoded', follow=True,
         )
         assert response.status_code == expected_http_code
 

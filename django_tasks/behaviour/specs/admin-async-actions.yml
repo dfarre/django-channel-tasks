@@ -6,7 +6,7 @@ Story: |-
 
 Scenarios:
   Database access async actions run ok:
-    - Given single task execution post with result storage
-    - When the user runs the $(database_access_test) action
-    - And the user runs the $(store_database_access_test) action
-    - And the user runs the $(delete_test) action
+    - Given a task admin is created by command
+    - And the user logs in
+    - When the user runs the $(doctask_access_test) action
+    - And the user runs the $(doctask_deletion_test) action
