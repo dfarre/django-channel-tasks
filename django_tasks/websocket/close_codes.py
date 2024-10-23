@@ -1,4 +1,4 @@
-"""Named websocket close codes."""
+"""Gathers and names websocket close codes (Websocket ref: https://datatracker.ietf.org/doc/html/rfc6455)."""
 import websocket
 
 OK = websocket.STATUS_NORMAL
