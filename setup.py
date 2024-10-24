@@ -10,9 +10,6 @@ with open('README.md') as readme:
     long_description = readme.read()
 
 
-tests_require = ['pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio', 'pytest-timeout',
-                 'bdd-coder==2.2.3.dev3', 'beautifulsoup4']
-
 setuptools.setup(
     name=ini['version']['name'],
     version=ini['version']['value'],
@@ -52,6 +49,7 @@ setuptools.setup(
     extras_require={'dev': ['ipdb', 'ipython'],
                     'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]',
                              'types-beautifulsoup4', 'types-setuptools'],
-                    'test': tests_require},
-    tests_require=tests_require,
+                    'test': [
+                        'pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio', 'pytest-timeout',
+                        'bdd-coder==2.2.3.dev3', 'beautifulsoup4']},
 )
