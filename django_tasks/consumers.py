@@ -15,10 +15,12 @@ from django_tasks.websocket import close_codes
 class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
     @property
     def user_group(self) -> str:
+        """The name of the group of consumers that is assigned to the user."""
         return f"{self.scope['user'].username}_{settings.CHANNEL_TASKS.channel_group}"
 
     @property
     def request_id(self) -> str:
+        """The request ID provided in the corresponding header, if any."""
         for name, value in self.scope.get('headers', []):
             if name == b'request-id':
                 return value.decode()
@@ -45,15 +47,18 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json(content=event)
 
     async def group_send(self, event):
+        """Distributes the given `event` through the group of the user of this instance."""
         await self.channel_layer.group_send(self.user_group, event)
 
     async def stop_unauthorized(self):
+        """Stops the consumer if the user is not authenticated."""
         if not self.scope['user'].is_authenticated:
             logging.getLogger('django').warning('Unauthenticated user %s. Closing websocket.', self.scope['user'])
             await self.close(code=close_codes.UNAUTHORIZED)
             raise StopConsumer()
 
     async def connect(self):
+        """Performs authentication and set-up actions on connection."""
         await self.stop_unauthorized()
         await super().connect()
         self.user_task_cache = TaskCache(self.scope['user'].username)
@@ -62,6 +67,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
             'Connected user "%s" through channel %s.', self.scope['user'].username, self.channel_name)
 
     async def disconnect(self, close_code):
+        """Performs clean-up actions on disconnection."""
         await self.channel_layer.group_discard(self.user_group, self.channel_name)
         logging.getLogger('django').debug(
             'Disconnected channel %s. User: %s. CloseCode: %s',
@@ -100,6 +106,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         self.user_task_cache.clear_task_cache(request_data['content']['task_id'])
 
     async def receive_json(self, request_data):
+        """Performs a supported action if valid data is provided, else sends a 400 message."""
         serializer = TaskRequestSerializer(data=request_data)
 
         try:
@@ -110,6 +117,7 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
             await getattr(self, serializer.data['action'])(serializer.data)
 
     async def send_bad_request_message(self, error: exceptions.ValidationError):
+        """Broadcasts an HTTP 400 message through the user's group of consumers."""
         await self.group_send({
             'type': 'task.badrequest', 'content': {
                 'details': error.get_full_details(),

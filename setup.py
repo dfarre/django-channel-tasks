@@ -46,9 +46,10 @@ setuptools.setup(
         'channels', 'channels-redis', 'tzdata', 'psycopg[pool]', 'websocket-client',
         'django-sass-compiler',
     ],
-    extras_require={'dev': ['ipdb', 'ipython'],
+    extras_require={'dev': ['ipdb', 'ipython', 'flake8'],
                     'mypy': ['mypy', 'django-stubs', 'djangorestframework-stubs[compatible-mypy]',
                              'types-beautifulsoup4', 'types-setuptools'],
+                    'docs': ['sphinx', 'pydeps', 'pydot', 'pygraphviz'],
                     'test': [
                         'pytest', 'pytest-cov', 'pytest-django', 'pytest-asyncio', 'pytest-timeout',
                         'bdd-coder==2.2.3.dev3', 'beautifulsoup4']},

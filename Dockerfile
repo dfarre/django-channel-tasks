@@ -1,7 +1,7 @@
 FROM unit:1.31.0-python3.11
 
 RUN apt-get -y update
-RUN apt-get -y install git python3-pip python3-dev python3-venv postgresql-client locales gettext
+RUN apt-get -y install git python3-pip python3-dev python3-venv postgresql-client locales gettext graphviz graphviz-dev
 RUN sed -i '/C.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 WORKDIR /www
