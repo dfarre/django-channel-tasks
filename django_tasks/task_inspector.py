@@ -1,3 +1,7 @@
+"""
+This module provides the tools to identify and validate task functions specified by their dotted path.
+See its main function :py:func:`task_inspector.get_coro_info`.
+"""
 import collections
 import inspect
 import importlib
@@ -55,6 +59,13 @@ class TaskCoroInfo:
 
 
 def get_coro_info(dotted_path: str, **inputs: dict[str, Any]) -> TaskCoroInfo:
+    """
+    Tries to obtain a registered task coroutine matching the given inputs; raises a
+    :py:class:`rest_framework.exceptions.ValidationError` on failure.
+
+    :param dotted_path: The full import dotted path of the coroutine function.
+    :param inputs: Input parameters for the coroutine function.
+    """
     coro_info = TaskCoroInfo(dotted_path, **inputs)
 
     if coro_info.errors:

@@ -21,7 +21,7 @@ htmlcov
 bdd_runs.log*
 wsgi.log
 
-django_tasks.png
+django_tasks_*.png
 
 django_tasks/static/css/bootstrap-isolated.min.css
 django_tasks/static/bootstrap
