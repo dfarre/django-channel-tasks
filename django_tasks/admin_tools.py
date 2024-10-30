@@ -19,6 +19,11 @@ from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 
 class ChannelTasksAdminSite(admin.AdminSite):
+    """The base admin site class."""
+    site_title = 'Django Channel Tasks Admin'
+    site_header = 'Stored Tasks'
+    index_title = 'Index'
+
     def each_context(self, request: HttpRequest):
         context = super().each_context(request)
         context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
