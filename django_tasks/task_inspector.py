@@ -1,6 +1,6 @@
 """
 This module provides the tools to identify and validate task functions specified by their dotted path.
-See its main function :py:func:`task_inspector.get_coro_info`.
+See its main function :py:func:`django_tasks.task_inspector.get_coro_info`.
 """
 import collections
 import inspect
