@@ -7,7 +7,7 @@ from django.conf import settings
 from rest_framework import exceptions, status
 
 from django_tasks.serializers import DocTaskSerializer, TaskRequestSerializer
-from django_tasks.doctask_scheduler import DocTaskScheduler, schedule_tasks
+from django_tasks.scheduler import DocTaskScheduler, schedule_tasks
 from django_tasks.task_cache import TaskCache
 from django_tasks.websocket import close_codes
 

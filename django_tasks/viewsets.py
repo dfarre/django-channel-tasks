@@ -1,3 +1,4 @@
+"""This module provides the DRF view sets, which are employed in ASGI and WSGI endpoints."""
 from adrf.viewsets import ModelViewSet as AsyncModelViewSet
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -5,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED
 
 from django_tasks import models, serializers
-from django_tasks.doctask_scheduler import DocTaskScheduler
+from django_tasks.scheduler import DocTaskScheduler
 from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 

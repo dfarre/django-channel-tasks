@@ -9,7 +9,7 @@ omit =
     asgi_setup.py
     consumers.py
     channels_auth.py
-    doctask_scheduler.py
+    scheduler.py
     tasks.py
     task_inspector.py
     entrypoint.py
