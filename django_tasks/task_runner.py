@@ -1,3 +1,4 @@
+"""This module provides the :py:class:`django_tasks.task_runner.TaskRunner` class."""
 from __future__ import annotations
 
 import asyncio

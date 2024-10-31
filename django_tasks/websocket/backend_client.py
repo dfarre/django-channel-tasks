@@ -1,10 +1,15 @@
+"""
+This module provides the :py:class:`django_tasks.websocket.backend_client.BackendWebSocketClient` class,
+which manages communications between WSGI and ASGI systems.
+"""
+from __future__ import annotations
+from typing import Optional, Any, Callable
+
 import functools
 import json
 import logging
 import uuid
 import websocket
-
-from typing import Optional, Any
 
 from rest_framework import status
 from django.conf import settings
@@ -12,9 +17,13 @@ from django.conf import settings
 from django_tasks.websocket import close_codes
 
 
-def catch_websocket_errors(client_method):
+def catch_websocket_errors(client_method: Callable) -> Callable:
+    """
+    Method decorator for :py:class:`django_tasks.websocket.backend_client.BackendWebSocketClient`.
+    Decorated methods will catch any :py:class:`websocket.WebSocketException` and return it instead of raising.
+    """
     @functools.wraps(client_method)
-    def safe_client_method(client, *args, **kwargs) -> tuple[bool, Any]:
+    def safe_client_method(client: BackendWebSocketClient, *args, **kwargs) -> tuple[bool, Any]:
         try:
             return_value = client_method(client, *args, **kwargs)
             return True, return_value
@@ -25,16 +34,25 @@ def catch_websocket_errors(client_method):
 
 
 class BackendWebSocketClient:
-    """Wrapper for handy usage of `websocket.WebSocket` within the backend, able to:
-      * Handle WSGI requests asyncronously through websocket, returning the first websocket message
-        received for a specific request.
     """
-    local_route = ('tasks' if not settings.CHANNEL_TASKS.proxy_route
-                   else f'{settings.CHANNEL_TASKS.proxy_route}-local/tasks')
-    local_url = f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/'
-    headers = {'Content-Type': 'application/json'}
-    max_response_msg_collect = 2
-    default_timeout = 0.1
+    Wrapper for handy usage of :py:class:`websocket.WebSocket` within the backend, able to handle WSGI requests
+    asyncronously through websocket, returning the first websocket messages received from the ASGI endpoint for a
+    specific request.
+    """
+    local_route: str = (
+        'tasks' if not settings.CHANNEL_TASKS.proxy_route else f'{settings.CHANNEL_TASKS.proxy_route}-local/tasks')
+
+    #: The configured URL for local access to the ASGI endpoint.
+    local_url: str = f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/'
+
+    #: Default headers for the ASGI endpoint.
+    default_headers: dict[str, str] = {'Content-Type': 'application/json'}
+
+    # Default websocket timeout, in seconds. It should be as less as possible to ensure responses are quick.
+    default_timeout: float = 0.1
+
+    # Maximum number of response messages to collect for a request.
+    max_response_msg_collect: int = 2
 
     def __init__(self, **connect_kwargs):
         self.connect_kwargs = connect_kwargs
@@ -42,9 +60,12 @@ class BackendWebSocketClient:
         self.ws = websocket.WebSocket()
         websocket.setdefaulttimeout(self.connect_kwargs['timeout'])
 
-    def perform_request(self, action: str, content: dict, headers: Optional[dict] = None) -> dict:
+    def perform_request(self,
+                        action: str,
+                        content: dict[str, Any],
+                        headers: Optional[dict[str, str]] = None) -> dict[str, Any]:
         header = headers or {}
-        header.update(self.headers)
+        header.update(self.default_headers)
         header['Request-ID'] = uuid.uuid4().hex
 
         connect_ok, connect_error = self.connect(header)
@@ -63,30 +84,43 @@ class BackendWebSocketClient:
         return response
 
     @staticmethod
-    def bad_gateway_message(request_id: str, error: websocket.WebSocketException):
+    def bad_gateway_message(request_id: str, error: websocket.WebSocketException) -> dict[str, Any]:
+        """Constructs and returns the bad gateway message.
+
+        :param request_id: The universal ID of the request that raised the error.
+        :param error: The web-socket error raised during the request.
+        """
         return {'http_status': status.HTTP_502_BAD_GATEWAY,
                 'request_id': request_id,
                 'details': repr(error)}
 
     @catch_websocket_errors
     def connect(self, header: dict):
+        """Tries to connect with the given headers."""
         return self.ws.connect(self.local_url, header=header, **self.connect_kwargs)
 
     @catch_websocket_errors
     def disconnect(self, close_code: int):
+        """Tries to disconnect with the given close code."""
         return self.ws.close(status=close_code)
 
     @catch_websocket_errors
     def send_json(self, json_data):
+        """Tries to send the given JSON data."""
         return self.ws.send(json.dumps(json_data))
 
     @catch_websocket_errors
     def receive(self):
+        """Tries to receive a message."""
         return self.ws.recv()
 
-    def get_first_response(self, request_id: str):
-        response = {'request_id': request_id, 'first_messages': []}
-        http_statuses = []
+    def get_first_response(self, request_id: str) -> dict[str, Any]:
+        """
+        Having performed a request with the given ID, collects and returns the first response messages
+        to that request.
+        """
+        response: dict[str, Any] = {'request_id': request_id, 'first_messages': []}
+        http_statuses: list[int] = []
 
         for _ in range(self.max_response_msg_collect):
             ok, raw_msg = self.receive()
