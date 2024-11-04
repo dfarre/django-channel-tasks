@@ -5,6 +5,8 @@ import logging
 
 from django.core.cache import cache
 
+from django_tasks.typing import TaskMessageJSON
+
 
 class TaskCache:
     """Handles the task event cache of a user, using the configured Django cache."""
@@ -29,7 +31,7 @@ class TaskCache:
         else:
             logging.getLogger('django').warning('No cache found for %s.', task_id)
 
-    def cache_task_event(self, task_id: str, event_content: dict):
+    def cache_task_event(self, task_id: str, event_content: TaskMessageJSON):
         """Stores the given task event data in the user's cache."""
         current_index = self.get_index()
         current_index[task_id].append(event_content)

@@ -65,14 +65,14 @@
             document.getElementById('task-alerts-display').appendChild(alert_group);
         }
 
-        var msg_type = alertData.status.toLowerCase();
+        var msg_type = alertData.details[0].status.toLowerCase();
         var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
 
         if (msg_type == 'success') {
-            alert.getElementsByTagName('code')[0].innerHTML = alertData.output;
+            alert.getElementsByTagName('code')[0].innerHTML = alertData.details[0].output;
         }
         if (msg_type == 'error') {
-            alert.getElementsByTagName('pre')[0].innerHTML = alertData['exception-repr'];
+            alert.getElementsByTagName('pre')[0].innerHTML = alertData.details[0]['exception-repr'];
         }
 
         alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);

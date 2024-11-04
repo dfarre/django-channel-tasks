@@ -7,13 +7,14 @@ import logging
 import time
 import threading
 
-from typing import Any, Callable, Coroutine
+from typing import Callable, Coroutine
 
 from channels.layers import get_channel_layer
 from rest_framework import status
 from django.conf import settings
 
 from django_tasks.task_cache import TaskCache
+from django_tasks.typing import TaskStatusJSON, TaskMessageJSON
 
 
 class TaskRunner:
@@ -76,17 +77,17 @@ class TaskRunner:
         return asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, self.worker_event_loop))
 
     def run_on_task_info(self,
-                         async_callback: Callable[[str, dict[str, Any]], Coroutine],
+                         async_callback: Callable[[str, TaskStatusJSON], Coroutine],
                          task_id: str,
                          task: asyncio.Future) -> asyncio.Future:
         """
         Runs the given async callback on the task result, taking the task ID and yielded task data as arguments.
         """
-        return self.run_coroutine(async_callback(task_id, self.get_task_info(task)))
+        return self.run_coroutine(async_callback(task_id, self.get_task_status(task)))
 
     async def schedule(self,
                        coroutine: Coroutine,
-                       *coro_callbacks: Callable[[str, dict[str, Any]], Coroutine],
+                       *coro_callbacks: Callable[[str, TaskStatusJSON], Coroutine],
                        task_id: str = '',
                        user_name: str = '') -> asyncio.Future:
         """
@@ -125,22 +126,20 @@ class TaskRunner:
 
         Note that this class is not responsible of validating these parameters.
         """
-        task_info = cls.get_task_info(task)
-        task_info['registered_task'] = name
-        task_info['task_id'] = task_id
-        task_info['http_status'] = status.HTTP_200_OK
+        status_data = cls.get_task_status(task)
+        task_info: TaskMessageJSON = {'registered_task': name, 'task_id': task_id, 'details': [status_data]}
 
         user_task_cache = TaskCache(user_name)
         user_task_cache.cache_task_event(task_id, task_info)
 
-        task_event = {'type': f"task.{task_info['status'].lower()}", 'content': task_info, 'timestamp': time.time()}
+        task_event = {'type': f"task.{status_data['status'].lower()}", 'content': task_info, 'timestamp': time.time()}
         channel_layer = get_channel_layer()
         await channel_layer.group_send(f'{user_name}_{settings.CHANNEL_TASKS.channel_group}', task_event)
 
     @staticmethod
-    def get_task_info(task: asyncio.Future) -> dict[str, Any]:
-        """Extracts and returns the corresponding task status and result (if any)."""
-        task_info: dict[str, Any] = {}
+    def get_task_status(task: asyncio.Future) -> TaskStatusJSON:
+        """Extracts and returns the corresponding task status and result (if any result)."""
+        task_info: TaskStatusJSON = {'http_status': status.HTTP_200_OK}
 
         if not task.done():
             task_info['status'] = 'Started'
