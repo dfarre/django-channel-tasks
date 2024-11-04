@@ -1,10 +1,11 @@
+from django.apps import apps
 from django.core.wsgi import get_wsgi_application
 
 from django_tasks import tasks
-from django_tasks.admin_tools import register_task
 
 application = get_wsgi_application()
 
-register_task(tasks.sleep_test)
-register_task(tasks.doctask_deletion_test)
-register_task(tasks.doctask_access_test)
+RegisteredTask = apps.get_model('django_tasks', 'RegisteredTask')
+RegisteredTask.register(tasks.sleep_test)
+RegisteredTask.register(tasks.doctask_deletion_test)
+RegisteredTask.register(tasks.doctask_access_test)

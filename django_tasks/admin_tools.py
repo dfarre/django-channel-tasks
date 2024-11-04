@@ -1,10 +1,13 @@
+"""
+This module provides the base :py:class:`django.contrib.admin.AdminSite` class featuring background task management,
+along with the tools for scheduling tasks as Django Admin actions.
+"""
 import asyncio
 import functools
-import inspect
 import logging
 import os
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from channels.db import database_sync_to_async
 
@@ -16,19 +19,20 @@ from django.http import HttpRequest
 
 from django_tasks.task_cache import TaskCache
 from django_tasks.websocket.backend_client import BackendWebSocketClient
+from django_tasks.typing import WSResponseJSON
 
 
 class ChannelTasksAdminSite(admin.AdminSite):
     """The base admin site class."""
     site_title = 'Django Channel Tasks Admin'
-    site_header = 'Stored Tasks'
+    site_header = 'Channel Tasks'
     index_title = 'Index'
 
     def each_context(self, request: HttpRequest):
         context = super().each_context(request)
         context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
         context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
-        context['cached_task_events'] = TaskCache(request.user).get_index()
+        context['cached_task_events'] = TaskCache(request.user.username).get_index()
         return context
 
 
@@ -60,26 +64,14 @@ class ModelTask:
                 return output
 
 
-def register_task(callable: Callable):
-    """To be employed as a mark decorator."""
-    assert inspect.iscoroutinefunction(callable), 'The function must be a coroutine'
-    RegisteredTask = apps.get_model('django_tasks', 'RegisteredTask')
-    instance, created = RegisteredTask.objects.get_or_create(
-        dotted_path=f'{inspect.getmodule(callable).__spec__.name}.{callable.__name__}'
-    )
-    msg = 'Registered new task %s' if created else 'Task %s already registered'
-    logging.getLogger('django').info(msg, instance)
-
-    return callable
-
-
 class AdminTaskAction:
     def __init__(self, task_name: str, **kwargs):
         self.task_name = task_name
         self.kwargs = kwargs
         self.client = BackendWebSocketClient()
 
-    def __call__(self, post_schedule_callable: Callable[[Any, HttpRequest, QuerySet], Any]):
+    def __call__(self,
+                 post_schedule_callable: Callable[[admin.ModelAdmin, HttpRequest, QuerySet, WSResponseJSON], Any]):
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
@@ -95,14 +87,3 @@ class AdminTaskAction:
             return post_schedule_callable(modeladmin, request, queryset, ws_response)
 
         return action_callable
-
-
-class ExtraContextModelAdmin(admin.ModelAdmin):
-    def changelist_view(self, request: HttpRequest, extra_context: Optional[dict] = None):
-        extra_context = extra_context or {}
-        self.add_changelist_extra_context(request, extra_context)
-
-        return super().changelist_view(request, extra_context=extra_context)
-
-    def add_changelist_extra_context(self, request: HttpRequest, extra_context: dict):
-        raise NotImplementedError

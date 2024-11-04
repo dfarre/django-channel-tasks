@@ -7,6 +7,7 @@ from rest_framework.serializers import ChoiceField, JSONField, SlugRelatedField,
 from django_tasks import models
 
 from django_tasks.task_inspector import get_task_coro
+from django_tasks.typing import TaskJSON
 
 
 class TaskRequestSerializer(Serializer):
@@ -26,7 +27,7 @@ class DocTaskSerializer(ModelSerializer):
         fields = ('registered_task', 'inputs', *read_only_fields)
 
     @classmethod
-    def get_task_group_serializer(cls, json_content: list, *args, **kwargs) -> DocTaskSerializer:
+    def get_task_group_serializer(cls, json_content: list[TaskJSON], *args, **kwargs) -> DocTaskSerializer:
         """
         Creates and returns a valid serializer instance for the given array of doc-task data.
         Raises a :py:class:`rest_framework.exceptions.ValidationError` on failure.
@@ -39,7 +40,7 @@ class DocTaskSerializer(ModelSerializer):
 
     @classmethod
     def create_doctask_group(cls,
-                             json_content: list,
+                             json_content: list[TaskJSON],
                              *args, **kwargs) -> tuple[DocTaskSerializer, list[models.DocTask]]:
         """
         Creates an array of :py:class:`django_tasks.models.DocTask` instances for the given array of

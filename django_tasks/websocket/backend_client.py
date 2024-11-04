@@ -3,7 +3,7 @@ This module provides the :py:class:`django_tasks.websocket.backend_client.Backen
 which manages communications between WSGI and ASGI systems.
 """
 from __future__ import annotations
-from typing import Optional, Any, Callable
+from typing import Any, Callable, Optional
 
 import functools
 import json
@@ -14,6 +14,7 @@ import websocket
 from rest_framework import status
 from django.conf import settings
 
+from django_tasks.typing import JSON, WSResponseJSON
 from django_tasks.websocket import close_codes
 
 
@@ -39,6 +40,7 @@ class BackendWebSocketClient:
     asyncronously through websocket, returning the first websocket messages received from the ASGI endpoint for a
     specific request.
     """
+    #: URL path for local access to the ASGI endpoint
     local_route: str = (
         'tasks' if not settings.CHANNEL_TASKS.proxy_route else f'{settings.CHANNEL_TASKS.proxy_route}-local/tasks')
 
@@ -48,10 +50,11 @@ class BackendWebSocketClient:
     #: Default headers for the ASGI endpoint.
     default_headers: dict[str, str] = {'Content-Type': 'application/json'}
 
-    # Default websocket timeout, in seconds. It should be as less as possible to ensure responses are quick.
+    #: Default websocket timeout, in seconds. It should be as less as possible for quick responses, since
+    #: the client will wait this time for new messages.
     default_timeout: float = 0.1
 
-    # Maximum number of response messages to collect for a request.
+    #: Maximum number of response messages to collect for a request.
     max_response_msg_collect: int = 2
 
     def __init__(self, **connect_kwargs):
@@ -62,8 +65,8 @@ class BackendWebSocketClient:
 
     def perform_request(self,
                         action: str,
-                        content: dict[str, Any],
-                        headers: Optional[dict[str, str]] = None) -> dict[str, Any]:
+                        content: JSON,
+                        headers: Optional[dict[str, str]] = None) -> WSResponseJSON:
         header = headers or {}
         header.update(self.default_headers)
         header['Request-ID'] = uuid.uuid4().hex
@@ -84,18 +87,20 @@ class BackendWebSocketClient:
         return response
 
     @staticmethod
-    def bad_gateway_message(request_id: str, error: websocket.WebSocketException) -> dict[str, Any]:
+    def bad_gateway_message(request_id: str, error: websocket.WebSocketException) -> WSResponseJSON:
         """Constructs and returns the bad gateway message.
 
         :param request_id: The universal ID of the request that raised the error.
         :param error: The web-socket error raised during the request.
         """
-        return {'http_status': status.HTTP_502_BAD_GATEWAY,
-                'request_id': request_id,
-                'details': repr(error)}
+        return {
+            'request_id': request_id,
+            'http_status': status.HTTP_502_BAD_GATEWAY,
+            'details': [repr(error)],
+        }
 
     @catch_websocket_errors
-    def connect(self, header: dict):
+    def connect(self, header: dict[str, str]):
         """Tries to connect with the given headers."""
         return self.ws.connect(self.local_url, header=header, **self.connect_kwargs)
 
@@ -105,7 +110,7 @@ class BackendWebSocketClient:
         return self.ws.close(status=close_code)
 
     @catch_websocket_errors
-    def send_json(self, json_data):
+    def send_json(self, json_data: JSON):
         """Tries to send the given JSON data."""
         return self.ws.send(json.dumps(json_data))
 
@@ -114,12 +119,14 @@ class BackendWebSocketClient:
         """Tries to receive a message."""
         return self.ws.recv()
 
-    def get_first_response(self, request_id: str) -> dict[str, Any]:
+    def get_first_response(self, request_id: str) -> WSResponseJSON:
         """
         Having performed a request with the given ID, collects and returns the first response messages
         to that request.
         """
-        response: dict[str, Any] = {'request_id': request_id, 'first_messages': []}
+        response: WSResponseJSON = {
+            'request_id': request_id, 'details': [], 'http_status': status.HTTP_502_BAD_GATEWAY
+        }
         http_statuses: list[int] = []
 
         for _ in range(self.max_response_msg_collect):
@@ -134,8 +141,8 @@ class BackendWebSocketClient:
             except json.JSONDecodeError:
                 is_response = False
             else:
-                task_id = msg.get('content', {}).pop('task_id', '').split('.')
-                reqid = msg.get('content', {}).pop('request_id', '')
+                task_id = msg.get('content', {}).get('task_id', '').split('.')
+                reqid = msg.get('content', {}).get('request_id', '')
 
                 if len(task_id) == 2 and task_id[0] == request_id or reqid and reqid == request_id:
                     logging.getLogger('django').debug('Received response message to request %s: %s', request_id, msg)
@@ -143,12 +150,13 @@ class BackendWebSocketClient:
                     is_response = False
 
             if is_response:
-                http_statuses.append(msg['content']['http_status'])
-                response['first_messages'].append(msg['content'])
+                http_statuses.append(msg['content']['details'][0]['http_status'])
+                response['details'].extend(msg['content']['details'])
             else:
                 logging.getLogger('django').debug(
-                    'Discarded unknown message, received after request %s: %s', request_id, raw_msg)
+                    'Discarded unrelated message, received after request %s: %s', request_id, raw_msg)
 
-        response['http_status'] = max(http_statuses) if http_statuses else status.HTTP_502_BAD_GATEWAY
+        if http_statuses:
+            response['http_status'] = max(http_statuses)
 
         return response

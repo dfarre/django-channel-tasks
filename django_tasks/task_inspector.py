@@ -2,55 +2,56 @@
 This module provides the tools to import and validate task coroutine functions specified by their
 dotted path. See its main function :py:func:`django_tasks.task_inspector.get_task_coro`.
 """
+from __future__ import annotations
+
 import collections
 import inspect
 import importlib
 
-from typing import Any, Callable, Coroutine, Optional
+from typing import Any, Callable, Coroutine
 
 from rest_framework import exceptions
 
 
 class TaskCoroutine:
     def __init__(self, registered_task: str, **inputs: dict[str, Any]):
-        self.registered_task = registered_task.strip()
         self.inputs = inputs
-        self.module_path: str = ''
-        self.name: str = ''
-        self.callable: Callable = lambda: None
-
-        if '.' in self.registered_task:
-            self.module_path, self.name = self.registered_task.rsplit('.', 1)
-
         self.errors: dict[str, list[str]] = collections.defaultdict(list)
-        self.check()
+        self.callable = registered_task
+
+    @property
+    def callable(self) -> Callable:
+        return self._callable
+
+    @callable.setter
+    def callable(self, registered_task: str) -> None:
+        if '.' not in registered_task:
+            self.errors['registered_task'].append(f"Missing module in import path '{registered_task}'.")
+        else:
+            module_path, name = registered_task.strip().rsplit('.', 1)
+
+            try:
+                module = importlib.import_module(module_path)
+            except ImportError:
+                self.errors['registered_task'].append(f"Cannot import module '{module_path}'.")
+            else:
+                callable = getattr(module, name, None)
+                if inspect.iscoroutinefunction(callable):
+                    self.check_inputs(callable)
+                    self._callable = callable
+                else:
+                    self.errors['registered_task'].append(f"Referenced object {callable} is not a coroutine function.")
+
+        if self.errors:
+            raise ValueError(self.errors)
 
     @property
     def coroutine(self) -> Coroutine:
         """The coroutine instance ready to run in event loop."""
         return self.callable(**self.inputs)
 
-    def check(self):
-        self.check_coroutine()
-
-        if self.callable:
-            self.check_inputs()
-        else:
-            self.errors['name'].append(f"Coroutine '{self.registered_task}' not found.")
-
-    def check_coroutine(self):
-        try:
-            module = importlib.import_module(self.module_path)
-        except ImportError:
-            module = None
-
-        self.callable = getattr(module, self.name, None)
-
-        if not inspect.iscoroutinefunction(self.callable):
-            self.callable = None
-
-    def check_inputs(self):
-        params = inspect.signature(self.callable).parameters
+    def check_inputs(self, callable: Callable):
+        params = inspect.signature(callable).parameters
         required_keys = set(k for k, v in params.items() if v.default == inspect._empty)
         optional_keys = set(k for k, v in params.items() if v.default != inspect._empty)
 
@@ -73,9 +74,7 @@ def get_task_coro(registered_task: str, inputs: dict[str, Any]) -> TaskCoroutine
     :param registered_task: The full import dotted path of the coroutine function.
     :param inputs: Input parameters for the coroutine function.
     """
-    task_coro = TaskCoroutine(registered_task, **inputs)
-
-    if task_coro.errors:
-        raise exceptions.ValidationError(task_coro.errors)
-
-    return task_coro
+    try:
+        return TaskCoroutine(registered_task, **inputs)
+    except ValueError as exc:
+        raise exceptions.ValidationError from exc
