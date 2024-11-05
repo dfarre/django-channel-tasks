@@ -22,7 +22,7 @@ class WSTaskViewSet(ModelViewSet):
         ws_response = self.ws_client.perform_request('schedule_doctasks', [request.data], headers={
             self.auth_header: request.headers[self.auth_header],
         })
-        status = ws_response['http_status']
+        status = ws_response.pop('http_status')
         return Response(status=HTTP_201_CREATED if status == HTTP_200_OK else status, data=ws_response)
 
     @action(detail=False, methods=['post'])
@@ -31,7 +31,7 @@ class WSTaskViewSet(ModelViewSet):
         ws_response = self.ws_client.perform_request('schedule_doctasks', request.data, headers={
             self.auth_header: request.headers[self.auth_header],
         })
-        status = ws_response['http_status']
+        status = ws_response.pop('http_status')
         return Response(status=HTTP_201_CREATED if status == HTTP_200_OK else status, data=ws_response)
 
 

@@ -142,13 +142,14 @@ class BackendWebSocketClient:
                 is_response = False
             else:
                 if msg.get('content', {}).get('request_id') == request_id:
-                    return msg['content']
+                    bad_request_response: WSResponseJSON = msg['content']
+                    return bad_request_response
                 elif msg.get('content', {}).get('task_id'):
                     task_request_id, _ = msg['content']['task_id'].split('.')
                     if task_request_id == request_id:
                         logging.getLogger('django').debug(
                             'Received response message to request %s: %s', request_id, msg)
-                        http_statuses.append(msg['content']['detail']['http_status'])
+                        http_statuses.append(msg['content']['detail'].pop('http_status'))
                         response['details'].append(msg['content']['detail'])
                     else:
                         is_response = False

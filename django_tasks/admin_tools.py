@@ -32,7 +32,10 @@ class ChannelTasksAdminSite(admin.AdminSite):
         context = super().each_context(request)
         context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
         context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
-        context['cached_task_events'] = TaskCache(request.user.username).get_index()
+        username = getattr(request.user, 'username')
+        context['cached_task_events'] = (
+            TaskCache(username).get_index() if username and request.user.is_authenticated else {}
+        )
         return context
 
 
