@@ -18,10 +18,10 @@ setuptools.setup(
     description='Running background tasks through REST API and websocket, with channels-redis',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://bitbucket.org/coleopter/django-tasks',
+    url='https://github.com/dfarre/django-channel-tasks',
     classifiers=[
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.11',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Intended Audience :: Developers'],
