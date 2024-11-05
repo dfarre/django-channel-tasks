@@ -8,25 +8,27 @@ import collections
 import inspect
 import importlib
 
-from typing import Any, Callable, Coroutine
+from typing import Callable, Coroutine
 
 from rest_framework import exceptions
 
+from django_tasks.typing import JSON
+
 
 class TaskCoroutine:
-    def __init__(self, registered_task: str, **inputs: dict[str, Any]):
+    def __init__(self, registered_task: str, **inputs: JSON):
         self.inputs = inputs
         self.errors: dict[str, list[str]] = collections.defaultdict(list)
-        self.callable = registered_task
+        self.set_callable(registered_task)
 
     @property
-    def callable(self) -> Callable:
-        return self._callable
+    def coroutine(self) -> Coroutine:
+        """The coroutine instance ready to run in event loop."""
+        return self.callable(**self.inputs)
 
-    @callable.setter
-    def callable(self, registered_task: str) -> None:
+    def set_callable(self, registered_task: str) -> None:
         if '.' not in registered_task:
-            self.errors['registered_task'].append(f"Missing module in import path '{registered_task}'.")
+            self.errors['registered_task'].append(f"Missing module name in import path '{registered_task}'.")
         else:
             module_path, name = registered_task.strip().rsplit('.', 1)
 
@@ -38,14 +40,9 @@ class TaskCoroutine:
                 callable = getattr(module, name, None)
                 if inspect.iscoroutinefunction(callable):
                     self.check_inputs(callable)
-                    self._callable = callable
+                    self.callable: Callable[..., Coroutine] = callable
                 else:
                     self.errors['registered_task'].append(f"Referenced object {callable} is not a coroutine function.")
-
-    @property
-    def coroutine(self) -> Coroutine:
-        """The coroutine instance ready to run in event loop."""
-        return self.callable(**self.inputs)
 
     def check_inputs(self, callable: Callable):
         params = inspect.signature(callable).parameters
@@ -63,7 +60,7 @@ class TaskCoroutine:
             self.errors['inputs'].append(f'Unknown parameters {unknown_keys}.')
 
 
-def get_task_coro(registered_task: str, inputs: dict[str, Any]) -> TaskCoroutine:
+def get_task_coro(registered_task: str, inputs: dict[str, JSON]) -> TaskCoroutine:
     """
     Tries to obtain a registered task coroutine taking the given inputs; raises a
     :py:class:`rest_framework.exceptions.ValidationError` on failure.

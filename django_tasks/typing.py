@@ -28,7 +28,7 @@ WSResponseJSON = TypedDict('WSResponseJSON', {
     'request_id': str,
     'http_status': int,
     'details': list[JSON],
-})
+}, total=False)
 
 #: JSON-serializable type for cache-clear request content.
 CacheClearJSON = TypedDict('CacheClearJSON', {'task_id': str})

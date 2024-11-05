@@ -25,7 +25,8 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         """The request ID provided in the corresponding header, if any."""
         for name, value in self.scope.get('headers', []):
             if name == b'request-id':
-                return value.decode()
+                id_value: str = value.decode()
+                return id_value
         return ''
 
     async def task_started(self, event: EventJSON) -> None:
