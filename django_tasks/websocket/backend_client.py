@@ -132,27 +132,30 @@ class BackendWebSocketClient:
         for _ in range(self.max_response_msg_collect):
             ok, raw_msg = self.receive()
 
-            if not ok or not raw_msg:
+            if not ok:
                 break
 
-            is_response = True
+            is_response: bool = True
             try:
                 msg = json.loads(raw_msg)
             except json.JSONDecodeError:
                 is_response = False
             else:
-                task_id = msg.get('content', {}).get('task_id', '').split('.')
-                reqid = msg.get('content', {}).get('request_id', '')
-
-                if len(task_id) == 2 and task_id[0] == request_id or reqid and reqid == request_id:
-                    logging.getLogger('django').debug('Received response message to request %s: %s', request_id, msg)
+                if msg.get('content', {}).get('request_id') == request_id:
+                    return msg['content']
+                elif msg.get('content', {}).get('task_id'):
+                    task_request_id, _ = msg['content']['task_id'].split('.')
+                    if task_request_id == request_id:
+                        logging.getLogger('django').debug(
+                            'Received response message to request %s: %s', request_id, msg)
+                        http_statuses.append(msg['content']['detail']['http_status'])
+                        response['details'].append(msg['content']['detail'])
+                    else:
+                        is_response = False
                 else:
                     is_response = False
 
-            if is_response:
-                http_statuses.append(msg['content']['details'][0]['http_status'])
-                response['details'].extend(msg['content']['details'])
-            else:
+            if is_response is False:
                 logging.getLogger('django').debug(
                     'Discarded unrelated message, received after request %s: %s', request_id, raw_msg)
 

@@ -1,5 +1,3 @@
-import asyncio
-
 from typing import TypeAlias, TypedDict
 
 
@@ -15,6 +13,7 @@ EventJSON = TypedDict('EventJSON', {'type': str, 'content': JSON})
 
 #: JSON-serializable type for the task status data broadcasted by the task runner.
 TaskStatusJSON = TypedDict('TaskStatusJSON', {
+    'registered_task': str,
     'status': str,
     'http_status': int,
     'exception-repr': str,
@@ -22,13 +21,9 @@ TaskStatusJSON = TypedDict('TaskStatusJSON', {
 }, total=False)
 
 #: JSON-serializable type for the content of task events broadcasted by the task runner.
-TaskMessageJSON = TypedDict('TaskMessageJSON', {
-    'task_id': str,
-    'registered_task': str,
-    'details': list[TaskStatusJSON],
-}, total=False)
+TaskMessageJSON = TypedDict('TaskMessageJSON', {'task_id': str, 'detail': TaskStatusJSON})
 
-#: Type of the web-socket messages that respond to requests.
+#: Type for the web-socket responses.
 WSResponseJSON = TypedDict('WSResponseJSON', {
     'request_id': str,
     'http_status': int,
@@ -41,9 +36,5 @@ CacheClearJSON = TypedDict('CacheClearJSON', {'task_id': str})
 #: JSON-serializable type for a single-task schedule request content.
 TaskJSON = TypedDict('TaskJSON', {'registered_task': str, 'inputs': dict[str, JSON]})
 
-
-#: Type for DocTask index entries, which relate the database ID with the task future.
-DocTaskIndexEntry = TypedDict('DocTaskIndexEntry', {'id': int, 'future': asyncio.Future})
-
-#: Type for the DocTask index, which relates the database ID with the task future by task ID.
-DocTaskIndex: TypeAlias = dict[str, DocTaskIndexEntry]
+#: JSON-serializable type for a DocTask schedule request content.
+DocTaskJSON = TypedDict('DocTaskJSON', {'id': int, 'registered_task': str, 'inputs': dict[str, JSON]})
