@@ -11,7 +11,7 @@ from django_tasks.scheduler import DocTaskScheduler, schedule_tasks
 from django_tasks.task_cache import TaskCache
 from django_tasks.websocket import close_codes
 
-from django_tasks.typing import JSON, EventJSON, CacheClearJSON, TaskJSON
+from django_tasks.typing import JSON, EventJSON, CacheClearJSON, TaskJSON, WSResponseJSON
 
 
 class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
@@ -120,9 +120,9 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
 
     async def send_bad_request_message(self, error: exceptions.ValidationError) -> None:
         """Broadcasts an HTTP 400 message through the user's group of consumers."""
-        content = {'details': [], 'request_id': self.request_id}
-
-        for detail in error.get_full_details():
-            content['details'].append({**detail, 'http_status': status.HTTP_400_BAD_REQUEST})
-
+        content: WSResponseJSON = {
+            'http_status': status.HTTP_400_BAD_REQUEST,
+            'request_id': self.request_id,
+            'details': [{**detail} for detail in error.get_full_details()],
+        }
         await self.group_send({'type': 'task.badrequest', 'content': content})

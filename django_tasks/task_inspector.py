@@ -42,9 +42,6 @@ class TaskCoroutine:
                 else:
                     self.errors['registered_task'].append(f"Referenced object {callable} is not a coroutine function.")
 
-        if self.errors:
-            raise ValueError(self.errors)
-
     @property
     def coroutine(self) -> Coroutine:
         """The coroutine instance ready to run in event loop."""
@@ -74,7 +71,9 @@ def get_task_coro(registered_task: str, inputs: dict[str, Any]) -> TaskCoroutine
     :param registered_task: The full import dotted path of the coroutine function.
     :param inputs: Input parameters for the coroutine function.
     """
-    try:
-        return TaskCoroutine(registered_task, **inputs)
-    except ValueError as exc:
-        raise exceptions.ValidationError from exc
+    task_coro = TaskCoroutine(registered_task, **inputs)
+
+    if task_coro.errors:
+        raise exceptions.ValidationError(task_coro.errors)
+
+    return task_coro

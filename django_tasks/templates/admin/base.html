@@ -60,19 +60,19 @@
             var alert_group = document.getElementById('alert-group-template').cloneNode(true).firstElementChild;
             alert_group.setAttribute('id', alertData.task_id);
             alert_group.addEventListener('closed.bs.alert', () => this.dismissAlerts(alertData.task_id));
-            alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.registered_task}_${alertData.task_id}`;
-            alertData['registered_task'];
+            alert_group.getElementsByClassName('task-name')[0].innerHTML = `${alertData.detail.registered_task}_${alertData.task_id}`;
+            alertData.detail['registered_task'];
             document.getElementById('task-alerts-display').appendChild(alert_group);
         }
 
-        var msg_type = alertData.details[0].status.toLowerCase();
+        var msg_type = alertData.detail.status.toLowerCase();
         var alert = document.getElementById(`${msg_type}-alert-template`).cloneNode(true).firstElementChild;
 
         if (msg_type == 'success') {
-            alert.getElementsByTagName('code')[0].innerHTML = alertData.details[0].output;
+            alert.getElementsByTagName('code')[0].innerHTML = alertData.detail.output;
         }
         if (msg_type == 'error') {
-            alert.getElementsByTagName('pre')[0].innerHTML = alertData.details[0]['exception-repr'];
+            alert.getElementsByTagName('pre')[0].innerHTML = alertData.detail['exception-repr'];
         }
 
         alert_group.getElementsByClassName('task-alerts')[0].appendChild(alert);

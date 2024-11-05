@@ -127,7 +127,8 @@ class TaskRunner:
         Note that this class is not responsible of validating these parameters.
         """
         status_data = cls.get_task_status(task)
-        task_info: TaskMessageJSON = {'registered_task': name, 'task_id': task_id, 'details': [status_data]}
+        status_data['registered_task'] = name
+        task_info: TaskMessageJSON = {'task_id': task_id, 'detail': status_data}
 
         user_task_cache = TaskCache(user_name)
         user_task_cache.cache_task_event(task_id, task_info)
