@@ -5,6 +5,8 @@ from django.core.management import call_command
 
 from rest_framework import status
 
+from django_tasks.typing import JSON
+
 from . import base
 
 
@@ -32,7 +34,8 @@ class TestWebsocketScheduling(base.BddTester):
 
     def a_failed_and_some_ok_tasks_are_scheduled_through_ws(self):
         name = 'django_tasks.tasks.sleep_test'
-        task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
+        task_data: list[JSON] = [
+            dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = self.local_ws_client.perform_request(
             'schedule_tasks', task_data, headers={'Cookie': base.get_test_credential('cookie')})
@@ -75,12 +78,12 @@ class TestTaskRunner(base.BddTester):
         assert elapsed_time < 1
 
     async def the_different_task_statuses_are_correctly_stored(self):
-        failed_task_info = self.runner.get_task_info(self.get_output('failed'))
+        failed_task_info = self.runner.get_task_status(self.get_output('failed'))
         assert failed_task_info['status'] == 'Error'
         assert failed_task_info['exception-repr'].strip() == "Exception('Fake error')"
 
         await asyncio.sleep(0.01)
-        cancelled_task_info = self.runner.get_task_info(self.get_output('cancelled'))
+        cancelled_task_info = self.runner.get_task_status(self.get_output('cancelled'))
         assert cancelled_task_info['status'] == 'Cancelled'
 
 
