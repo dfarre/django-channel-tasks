@@ -14,7 +14,7 @@ from channels.db import database_sync_to_async
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin, messages
-from django.db.models import QuerySet
+from django.db.models import Model, QuerySet
 from django.http import HttpRequest
 
 from django_tasks.task_cache import TaskCache
@@ -23,28 +23,36 @@ from django_tasks.typing import WSResponseJSON
 
 
 class ChannelTasksAdminSite(admin.AdminSite):
-    """The base admin site class."""
+    """
+    The base :py:class:`django.contrib.admin.AdminSite` class, providing the necessary context to connect the
+    ASGI unit through websocket in order to handle task event notifications.
+    """
     site_title = 'Django Channel Tasks Admin'
     site_header = 'Channel Tasks'
     index_title = 'Index'
 
     def each_context(self, request: HttpRequest):
+        """
+        Overrides the Django method by adding to the returned context the web-socket URL of the backgroung task unit
+        and the cached task events of the user, if any; note this method may be called from the log-in page.
+        """
         context = super().each_context(request)
-        context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
-        context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
         username = getattr(request.user, 'username')
-        context['cached_task_events'] = (
-            TaskCache(username).get_index() if username and request.user.is_authenticated else {}
-        )
+
+        if username and request.user.is_authenticated:
+            context['cached_task_events'] = TaskCache(username).get_index()
+            context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
+            context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
+
         return context
 
 
 class ModelTask:
-    def __init__(self, app_name: str, model_name: str, instance_task):
+    def __init__(self, app_name: str, model_name: str, instance_task: Callable[[Model], Any]):
         self.model_class = apps.get_model(app_name, model_name)
         self.instance_task = instance_task
 
-    async def __call__(self, instance_ids):
+    async def __call__(self, instance_ids: list[int]):
         logging.getLogger('django').info(
             'Running %s on %s objects %s...',
             self.instance_task.__name__, self.model_class.__name__, instance_ids,
@@ -52,7 +60,7 @@ class ModelTask:
         outputs = await asyncio.gather(*[self.run(pk) for pk in instance_ids])
         return outputs
 
-    async def run(self, instance_id):
+    async def run(self, instance_id: int):
         try:
             instance = await self.model_class.objects.aget(pk=instance_id)
         except self.model_class.DoesNotExist:
