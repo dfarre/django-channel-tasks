@@ -2,7 +2,22 @@
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+import os
+import tomllib
+
 import django
+
+
+def get_version():
+    toml_path_chain = [os.path.dirname(__file__)] + 2*[os.path.pardir] + ['pyproject.toml']
+    toml_path = os.path.abspath(os.path.join(*toml_path_chain))
+
+    with open(toml_path, 'rb') as pyproject_toml:
+        pyproject = tomllib.load(pyproject_toml)
+
+    return pyproject['project']['version']
+
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -10,7 +25,7 @@ import django
 project = 'Django Channel Tasks'
 copyright = '2024, Daniel Farré Manzorro'
 author = 'Daniel Farré Manzorro'
-release = '0.9'
+release = get_version()
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
