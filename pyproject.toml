@@ -71,8 +71,8 @@ channel-tasks-admin = "django_tasks.entrypoint:manage_channel_tasks"
 
 [project.urls]
 "Homepage" = "https://github.com/dfarre/django-channel-tasks"
-"Bug Reports" = "https://github.com/dfarre/django-channel-tasks/issues"
 "Source" = "https://github.com/dfarre/django-channel-tasks"
+"Issue Tracker" = "https://github.com/dfarre/django-channel-tasks/issues"
 
 [tool.setuptools.package-data]
 "django_tasks" = [
