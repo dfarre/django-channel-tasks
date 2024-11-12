@@ -1,3 +1,4 @@
+"""Module that defines the custom `typing` types of this project."""
 from typing import TypeAlias, TypedDict
 
 
