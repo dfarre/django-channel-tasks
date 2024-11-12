@@ -17,3 +17,4 @@ Django Channel Tasks documentation
    django_tasks/viewsets.rst
    django_tasks/admin_tools.rst
    django_tasks/admin.rst
+   django_tasks/settings.rst
