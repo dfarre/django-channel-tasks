@@ -4,6 +4,7 @@ Django Channel Tasks documentation
 .. toctree::
    :maxdepth: 2
 
+   django_tasks/typing.rst
    django_tasks/task_runner.rst
    django_tasks/task_inspector.rst
    django_tasks/task_cache.rst
