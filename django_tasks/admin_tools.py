@@ -48,11 +48,25 @@ class ChannelTasksAdminSite(admin.AdminSite):
 
 
 class ModelTask:
+    """
+    Callable class whose instances are task coroutines that run concurrently on Django querysets, taking a
+    list of database IDs as single argument.
+    """
+
     def __init__(self, app_name: str, model_name: str, instance_task: Callable[[Model], Any]):
+        """
+        Constructs a coroutine task function that will run the given database-sync function concurrently
+        on a set of instances of the specified model.
+
+        :param name: Identifier of the Django App that defines the model.
+        :param model_name: Name of the model class.
+        :param instance_task: Synchronous task function to run on each instance.
+        """
         self.model_class = apps.get_model(app_name, model_name)
         self.instance_task = instance_task
 
-    async def __call__(self, instance_ids: list[int]):
+    async def __call__(self, instance_ids: list[int]) -> Any:
+        """Runs the coroutine concurrently on the corresponding model instances, and returns the list of outputs."""
         logging.getLogger('django').info(
             'Running %s on %s objects %s...',
             self.instance_task.__name__, self.model_class.__name__, instance_ids,
@@ -60,7 +74,7 @@ class ModelTask:
         outputs = await asyncio.gather(*[self.run(pk) for pk in instance_ids])
         return outputs
 
-    async def run(self, instance_id: int):
+    async def run(self, instance_id: int) -> Any:
         try:
             instance = await self.model_class.objects.aget(pk=instance_id)
         except self.model_class.DoesNotExist:
@@ -76,13 +90,30 @@ class ModelTask:
 
 
 class AdminTaskAction:
+    """
+    Callable class whose instances are decorators that produce `django.contrib.admin` action functions that
+    schedule, through web-socket, background tasks that will run on the Django queryset selected by the admin user.
+    """
+
     def __init__(self, task_name: str, **kwargs):
+        """Constructor.
+
+        :param task_name: Dotted path of a registered task that must take a list of database IDs as single argument.
+        :param kwargs: Keyword arguments that are passed directly to the `django.contrib.admin.action` decorator.
+        """
         self.task_name = task_name
         self.kwargs = kwargs
         self.client = BackendWebSocketClient()
 
     def __call__(self,
-                 post_schedule_callable: Callable[[admin.ModelAdmin, HttpRequest, QuerySet, WSResponseJSON], Any]):
+                 post_schedule_callable: Callable[[admin.ModelAdmin, HttpRequest, QuerySet, WSResponseJSON], Any]
+                 ) -> Callable[[admin.ModelAdmin, HttpRequest, QuerySet], Any]:
+        """Decorator function.
+
+        :param post_schedule_callable: The decorated function. It takes the same arguments as a regular
+          `django.contrib.admin` action function plus the JSON object obtained as response to the web-socket
+          schedule request.
+        """
         @admin.action(**self.kwargs)
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
