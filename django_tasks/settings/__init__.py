@@ -1,3 +1,8 @@
+"""
+This module defines the :py:class:`django_tasks.settings.SettingsJson` class, and the Django settings module
+`django_tasks.settings.base` for any kind of deployment, from testing to production, which is configured
+from a :py:class:`~django_tasks.settings.SettingsJson` instance.
+"""
 import json
 import os
 
@@ -7,6 +12,7 @@ from django_tasks.typing import JSON
 
 
 class SettingsJson:
+    """Class in charge of providing Django setting values as specified in a JSON settings file."""
     json_key: str = 'CHANNEL_TASKS_SETTINGS_PATH'
     secret_key_key: str = 'DJANGO_SECRET_KEY'
     default_installed_apps: list[str] = [
