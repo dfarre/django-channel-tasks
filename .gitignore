@@ -28,3 +28,5 @@ django_tasks/static/django_extensions
 django_tasks/static/rest_framework
 
 media
+
+sphinx/source/images/pydeps.png

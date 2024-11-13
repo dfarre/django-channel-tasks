@@ -135,7 +135,7 @@ class BackendWebSocketClient:
         for _ in range(self.max_response_msg_collect):
             ok, raw_msg = self.receive()
 
-            if not ok:
+            if not ok or not raw_msg:
                 break
 
             is_response: bool = True
