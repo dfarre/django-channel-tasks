@@ -1,6 +1,10 @@
 Django Channel Tasks
 ====================
 A background task runner using the `channels-redis` package, ready to be deployed with Nginx and `Nginx Unit <https://unit.nginx.org/howto/djangochannels/>`_.
+It features:
+
+  * A REST API allowing to run defined tasks and store the results in PostgreSQL.
+  * A simple implementation of asynchronous Django Admin tasks, scheduled through websocket.
 
 
 Dependency graph
