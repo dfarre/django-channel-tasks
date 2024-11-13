@@ -63,6 +63,9 @@ class BackendWebSocketClient:
         self.ws = websocket.WebSocket()
         websocket.setdefaulttimeout(self.connect_kwargs['timeout'])
 
+    def __repr__(self):
+        return f'<BackendWebSocketClient: {self.connect_kwargs}>'
+
     def perform_request(self,
                         action: str,
                         content: JSON,
