@@ -11,11 +11,21 @@ from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 
 class WSTaskViewSet(ModelViewSet):
+    """DRF model viewset for :py:class:`django_tasks.models.DocTask`.
+
+    This is currently implemented for running, from a `sync` context, operations that imply modifying the database
+    from an `async` context; this class implements sync views that act as a proxy between WSGI and ASGI applications
+    within the backend.
+    """
     http_method_names = ['post', 'delete', 'head', 'options', 'trace']
     queryset = models.DocTask.objects.all()
     serializer_class = serializers.DocTaskSerializer
-    ws_client = BackendWebSocketClient()
+
+    #: Name of the header to include to authorize against the ASGI application.
     auth_header = 'Authorization'
+
+    #: The :py:class:`django_tasks.websocket.backend_client.BackendWebSocketClient` instance employed by this class.
+    ws_client = BackendWebSocketClient()
 
     def create(self, request, *args, **kwargs):
         """DRF action that schedules a doc-task through local Websocket."""
@@ -36,11 +46,19 @@ class WSTaskViewSet(ModelViewSet):
 
 
 class TaskViewSet(AsyncModelViewSet):
+    """Asynchronous DRF model viewset for :py:class:`django_tasks.models.DocTask`.
+
+    This is currently implemented for fetching operations only.
+    """
     http_method_names = ['get', 'head', 'options', 'trace']
     queryset = models.DocTask.objects.all()
     serializer_class = serializers.DocTaskSerializer
 
     async def create(self, request, *args, **kwargs):  # NO COVER
+        """
+        Experimental async view for scheduling a single task, not currently implemented since it
+        produces blocking behaviour.
+        """
         drf_response = await super().acreate(request, *args, **kwargs)
 
         await DocTaskScheduler.schedule_doctask(drf_response.data)
@@ -49,7 +67,10 @@ class TaskViewSet(AsyncModelViewSet):
 
     @action(detail=False, methods=['post'])
     async def schedule(self, request, *args, **kwargs):  # NO COVER
-        """Async DRF action that schedules an array of tasks."""
+        """
+        Experimental async DRF action for scheduleing an array of tasks, not currently implemented
+        since it produces blocking behaviour.
+        """
         many_serializer, _ = self.serializer_class.create_doctask_group(
             request.data, context=self.get_serializer_context())
         drf_response = Response(data=many_serializer.data, status=HTTP_201_CREATED)

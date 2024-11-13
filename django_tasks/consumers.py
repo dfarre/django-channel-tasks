@@ -1,3 +1,7 @@
+"""
+This module defines the consumer class :py:class:`django_tasks.consumers.TaskEventsConsumer` for background
+task management.
+"""
 import logging
 
 from channels.db import database_sync_to_async
