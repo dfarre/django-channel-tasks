@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "django-channel-tasks"
 version = "0.9.2.dev0"
-description = "Running background tasks through REST API and websocket, with channels-redis"
+description = "Running background tasks through websocket, using channels-redis, from Django Admin or REST API."
 readme = "README.md"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
