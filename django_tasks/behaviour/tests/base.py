@@ -3,8 +3,8 @@ import pprint
 
 import bs4
 import pytest
+import requests
 
-from adrf.test import AsyncAPIClient
 from rest_framework.test import APIClient
 from django.test.client import Client
 
@@ -47,7 +47,6 @@ class BddTester(tester.BddTester):
 
         self.client = Client()
         self.api_client = APIClient()
-        self.async_api_client = AsyncAPIClient()
 
     def assert_admin_call(self, method, path, expected_http_code, data=None):
         bytes_data = '&'.join([f'{k}={v}' for k, v in (data or {}).items()]).encode()
@@ -64,15 +63,16 @@ class BddTester(tester.BddTester):
         response = getattr(self.api_client, method.lower())(
             path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {get_test_credential("token")}'},
         )
-        assert response.status_code == expected_http_code, response.json()
+        assert response.status_code == expected_http_code, response.content.decode()
 
         return response
 
     async def assert_async_rest_api_call(self, method, api_path, expected_http_code, data=None):
-        response = await getattr(self.async_api_client, method.lower())(
-            path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {get_test_credential("token")}'},
+        response = getattr(requests, method.lower())(
+            f'http://127.0.0.1:8001/api/{api_path}',
+            data=data, headers={'Authorization': f'Token {get_test_credential("token")}'},
         )
-        assert response.status_code == expected_http_code, response.json()
+        assert response.status_code == expected_http_code, response.content.decode()
 
         return response
 

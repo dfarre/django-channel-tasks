@@ -64,6 +64,7 @@ test = [
     "pytest-timeout",
     "bdd-coder==2.2.3.dev3",
     "beautifulsoup4",
+    "requests",
 ]
 
 [project.scripts]
