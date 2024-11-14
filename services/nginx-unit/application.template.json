@@ -5,7 +5,7 @@
     "module": "django_tasks.asgi",
     "user": "$CHANNEL_TASKS_USER",
     "environment": {
-        "DJANGO_SETTINGS_MODULE": "$DJANGO_SETTINGS_MODULE",
+        "DJANGO_SETTINGS_MODULE": "django_tasks.settings.asgi",
         "DJANGO_SECRET_KEY": "$DJANGO_SECRET_KEY",
         "CHANNEL_TASKS_SETTINGS_PATH": "$CHANNEL_TASKS_SETTINGS_PATH",
         "CHANNEL_TASKS_DB_PASSWORD": "$CHANNEL_TASKS_DB_PASSWORD",

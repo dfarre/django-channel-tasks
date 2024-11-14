@@ -1,7 +1,5 @@
 import logging
 
-from typing import Any
-
 from django_tasks.settings import SettingsJson
 
 
@@ -11,60 +9,32 @@ DEBUG = CHANNEL_TASKS.debug
 SECRET_KEY = CHANNEL_TASKS.secret_key
 ALLOWED_HOSTS = CHANNEL_TASKS.allowed_hosts
 
+LANGUAGE_CODE = CHANNEL_TASKS.language_code
+TIME_ZONE = CHANNEL_TASKS.time_zone
+
 DATABASES = CHANNEL_TASKS.databases
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = CHANNEL_TASKS.default_auto_field
 
 INSTALLED_APPS = CHANNEL_TASKS.sort_installed_apps()
+
+MIDDLEWARE = CHANNEL_TASKS.middleware
+
+TEMPLATES = CHANNEL_TASKS.templates
 
 CHANNEL_LAYERS = CHANNEL_TASKS.channel_layers
 CACHES = CHANNEL_TASKS.caches
 
-DJANGO_LOG_LEVEL = CHANNEL_TASKS.log_level
-REQUEST_LOGGING_DATA_LOG_LEVEL = logging.INFO
-LOGGING = dict(
-    version=1,
-    disable_existing_loggers=False,
-    handlers={
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'thread-logname',
-        },
-        'console-debug': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-    },
-    formatters={
-        'verbose': {
-            'format': '{levelname} {asctime} {threadName} ({pathname}) {funcName}:L{lineno} ★ {message}',
-            'style': '{',
-        },
-        'thread-logname': {
-            'format': '{levelname} {asctime} ({threadName}) {name} ★ {message}',
-            'style': '{',
-        },
-    },
-    loggers={
-        'django': {
-            'level': DJANGO_LOG_LEVEL,
-            'handlers': ['console-debug'],
-        },
-        'django.request': {
-            'handlers': ['console'],
-            'level': DJANGO_LOG_LEVEL,
-            'propagate': False,
-        },
-        'django.channels': {
-            'handlers': ['console'],
-            'level': DJANGO_LOG_LEVEL,
-            'propagate': False,
-        },
-    },
-)
+AUTHENTICATION_BACKENDS = CHANNEL_TASKS.authentication_backends
+AUTH_PASSWORD_VALIDATORS = CHANNEL_TASKS.auth_password_validators
 
-STATIC_URL = '/static/'
+REST_FRAMEWORK = CHANNEL_TASKS.rest_framework
+
+REQUEST_LOGGING_DATA_LOG_LEVEL = logging.INFO
+LOGGING = CHANNEL_TASKS.logging
+
+STATIC_URL = CHANNEL_TASKS.static_url
 STATIC_ROOT = CHANNEL_TASKS.static_root
-MEDIA_URL = '/media/'
+MEDIA_URL = CHANNEL_TASKS.media_url
 MEDIA_ROOT = CHANNEL_TASKS.media_root
 
 (EMAIL_HOST,
@@ -72,75 +42,3 @@ MEDIA_ROOT = CHANNEL_TASKS.media_root
  EMAIL_USE_TLS,
  EMAIL_HOST_USER,
  EMAIL_HOST_PASSWORD) = CHANNEL_TASKS.email_settings
-
-MIDDLEWARE: list[str] = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'request_logging.middleware.LoggingMiddleware',
-]
-
-ROOT_URLCONF = 'django_tasks.urls'
-
-TEMPLATES: list[dict[str, Any]] = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
-
-ASGI_APPLICATION = 'django_tasks.asgi.application'
-WSGI_APPLICATION = 'django_tasks.wsgi.application'
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
-AUTHENTICATION_BACKENDS: list[str] = [
-    'django.contrib.auth.backends.ModelBackend',
-]
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'Europe/Madrid'
-
-REST_FRAMEWORK = dict(
-    DEFAULT_RENDERER_CLASSES=(
-        'rest_framework.renderers.JSONRenderer',
-    ),
-    DEFAULT_PAGINATION_CLASS='rest_framework.pagination.PageNumberPagination',
-    DEFAULT_FILTER_BACKENDS=(
-        'django_filters.rest_framework.DjangoFilterBackend',
-    ),
-    DEFAULT_AUTHENTICATION_CLASSES=(
-        'rest_framework.authentication.TokenAuthentication',
-    ),
-    DEFAULT_PERMISSION_CLASSES=(
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    TEST_REQUEST_DEFAULT_FORMAT='json',
-)

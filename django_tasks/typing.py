@@ -1,5 +1,5 @@
-"""Module that defines the custom `typing` types of this project."""
-from typing import TypeAlias, TypedDict
+"""Module that defines the custom `typing` types of this project, and some type assertion functions."""
+from typing import Any, TypeAlias, TypedDict
 
 
 #: Union type of all the flat JSON-serializable objects, lacking substructure.
@@ -39,3 +39,15 @@ TaskJSON = TypedDict('TaskJSON', {'registered_task': str, 'inputs': dict[str, JS
 
 #: JSON-serializable type for a DocTask schedule request content.
 DocTaskJSON = TypedDict('DocTaskJSON', {'id': int, 'registered_task': str, 'inputs': dict[str, JSON]})
+
+
+def is_string_key_dict(value: Any) -> bool:
+    return isinstance(value, dict) and all(isinstance(k, str) for k in value)
+
+
+def is_string_key_dict_list(value: Any) -> bool:
+    return isinstance(value, list) and all(is_string_key_dict(v) for v in value)
+
+
+def is_string_list(value: Any) -> bool:
+    return isinstance(value, list) and all(isinstance(v, str) for v in value)
