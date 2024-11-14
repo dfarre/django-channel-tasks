@@ -1,20 +1,26 @@
 """
-This module defines the :py:class:`django_tasks.settings.SettingsJson` class, and the Django settings module
-`django_tasks.settings.base` for any kind of deployment, from testing to production, which is configured
-from a :py:class:`~django_tasks.settings.SettingsJson` instance.
+This module defines the :py:class:`django_tasks.settings.SettingsJson` class, and the Django settings modules
+`django_tasks.settings.asgi`, `django_tasks.settings.wsgi` for the corresponding types of deployment; these
+modules are intended for both testing and production deployments, and are configured from
+a :py:class:`~django_tasks.settings.SettingsJson` instance.
 """
+import importlib.util
 import json
 import os
 
 from django.core.exceptions import ImproperlyConfigured
 
-from django_tasks.typing import JSON
+from django_tasks.typing import JSON, is_string_key_dict, is_string_key_dict_list, is_string_list
 
 
 class SettingsJson:
-    """Class in charge of providing Django setting values as specified in a JSON settings file."""
+    """
+    Class in charge of providing Django setting values, as specified in a JSON settings file whose values override
+    the default values provided here.
+    """
     json_key: str = 'CHANNEL_TASKS_SETTINGS_PATH'
     secret_key_key: str = 'DJANGO_SECRET_KEY'
+    channel_tasks_appname: str = 'django_tasks'
     default_installed_apps: list[str] = [
         'django.contrib.auth',
         'django.contrib.contenttypes',
@@ -25,10 +31,114 @@ class SettingsJson:
         'django.contrib.messages',
         'django_extensions',
         'django_filters',
-        'django_tasks',
+        channel_tasks_appname,
         'django.contrib.admin',
         'django_sass_compiler',
     ]
+    default_drf: dict[str, JSON] = dict(
+        DEFAULT_RENDERER_CLASSES=[
+            'rest_framework.renderers.JSONRenderer',
+        ],
+        DEFAULT_PAGINATION_CLASS='rest_framework.pagination.PageNumberPagination',
+        DEFAULT_FILTER_BACKENDS=[
+            'django_filters.rest_framework.DjangoFilterBackend',
+        ],
+        DEFAULT_AUTHENTICATION_CLASSES=[
+            'rest_framework.authentication.TokenAuthentication',
+        ],
+        DEFAULT_PERMISSION_CLASSES=[
+            'rest_framework.permissions.IsAuthenticated',
+        ],
+        TEST_REQUEST_DEFAULT_FORMAT='json',
+    )
+    default_middleware: list[str] = [
+        'django.middleware.security.SecurityMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.middleware.common.CommonMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        'request_logging.middleware.LoggingMiddleware',
+    ]
+    default_auth_password_validators: list[dict[str, JSON]] = [
+        {
+            'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        },
+    ]
+    default_authentication_backends: list[str] = [
+        'django.contrib.auth.backends.ModelBackend',
+    ]
+
+    @classmethod
+    def get_default_templates(cls) -> list[dict[str, JSON]]:
+        return [
+            {
+                'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                'DIRS': [f"{os.path.dirname(importlib.util.find_spec(cls.channel_tasks_appname).origin)}/templates"],
+                'APP_DIRS': True,
+                'OPTIONS': {
+                    'context_processors': [
+                        'django.template.context_processors.debug',
+                        'django.template.context_processors.request',
+                        'django.contrib.auth.context_processors.auth',
+                        'django.contrib.messages.context_processors.messages',
+                    ],
+                },
+            },
+        ]
+
+    @staticmethod
+    def get_default_logging(log_level: str) -> dict[str, JSON]:
+        return dict(
+            version=1,
+            disable_existing_loggers=False,
+            handlers={
+                'console': {
+                    'class': 'logging.StreamHandler',
+                    'formatter': 'thread-logname',
+                },
+                'console-debug': {
+                    'class': 'logging.StreamHandler',
+                    'formatter': 'verbose',
+                },
+            },
+            formatters={
+                'verbose': {
+                    'format': '{levelname} {asctime} {threadName} ({pathname}) {funcName}:L{lineno} ★ {message}',
+                    'style': '{',
+                },
+                'thread-logname': {
+                    'format': '{levelname} {asctime} ({threadName}) {name} ★ {message}',
+                    'style': '{',
+                },
+            },
+            loggers={
+                'django': {
+                    'level': log_level,
+                    'handlers': ['console-debug'],
+                },
+                'django.request': {
+                    'handlers': ['console'],
+                    'level': log_level,
+                    'propagate': False,
+                },
+                'django.channels': {
+                    'handlers': ['console'],
+                    'level': log_level,
+                    'propagate': False,
+                },
+            },
+        )
 
     def __init__(self):
         self.json_path: str = os.getenv(self.json_key, '')
@@ -94,7 +204,7 @@ class SettingsJson:
         """
         value = self.jsonlike.get(key, default)
 
-        if not (isinstance(value, list) and all(isinstance(a, str) for a in value)):
+        if not is_string_list(value):
             raise self.wrong_type_error(key, 'list[str]')
 
         return value
@@ -106,8 +216,20 @@ class SettingsJson:
         """
         value = self.jsonlike.get(key, default)
 
-        if not (isinstance(value, dict) and all(isinstance(k, str) for k in value)):
+        if not is_string_key_dict(value):
             raise self.wrong_type_error(key, 'dict[str]')
+
+        return value
+
+    def get_dict_list(self, key: str, default: list[dict[str, JSON]]) -> list[dict[str, JSON]]:
+        """
+        Returns a type-checked list of string-key dictionaries from the `key` entry,
+        or raises :py:class:`django.core.exceptions.ImproperlyConfigured`.
+        """
+        value = self.jsonlike.get(key, default)
+
+        if not is_string_key_dict_list(value):
+            raise self.wrong_type_error(key, 'list[dict[str]]')
 
         return value
 
@@ -140,6 +262,38 @@ class SettingsJson:
         return self.get_string('log-level', 'INFO')
 
     @property
+    def logging(self) -> dict[str, JSON]:
+        return self.get_dict('logging', self.get_default_logging(self.log_level))
+
+    @property
+    def middleware(self) -> list[str]:
+        return self.get_string_list('middleware', self.default_middleware)
+
+    @property
+    def templates(self) -> list[dict[str, JSON]]:
+        return self.get_dict_list('templates', self.get_default_templates())
+
+    @property
+    def language_code(self) -> str:
+        return self.get_string('language-code', 'en-gb')
+
+    @property
+    def time_zone(self) -> str:
+        return self.get_string('time-zone', 'UTC')
+
+    @property
+    def auth_password_validators(self) -> list[dict[str, JSON]]:
+        return self.get_dict_list('auth-password-validators', self.default_auth_password_validators)
+
+    @property
+    def authentication_backends(self) -> list[str]:
+        return self.get_string_list('authentication-backends', self.default_authentication_backends)
+
+    @property
+    def rest_framework(self) -> dict[str, JSON]:
+        return self.get_dict('rest-framework', self.default_drf)
+
+    @property
     def expose_doctask_api(self) -> bool:
         return self.get_boolean('expose-doctask-api', False)
 
@@ -153,6 +307,10 @@ class SettingsJson:
         db_settings['default'].setdefault('PASSWORD', os.getenv('CHANNEL_TASKS_DB_PASSWORD', ''))
 
         return db_settings
+
+    @property
+    def default_auto_field(self) -> str:
+        return self.get_string('default-auto-field', 'django.db.models.BigAutoField')
 
     @property
     def channel_layers(self) -> dict[str, JSON]:
@@ -194,6 +352,14 @@ class SettingsJson:
     @property
     def media_root(self) -> str:
         return self.get_string('media-root', '/www/django_tasks/media')
+
+    @property
+    def static_url(self) -> str:
+        return self.get_string('static-url', '/static/')
+
+    @property
+    def media_url(self) -> str:
+        return self.get_string('media-url', '/media/')
 
     @property
     def email_settings(self) -> tuple[str, int, bool, str, str]:

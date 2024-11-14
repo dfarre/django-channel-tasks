@@ -161,12 +161,12 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = self.assert_rest_api_call(
-            'POST', 'tasks/schedule/', status.HTTP_201_CREATED, data=task_data)
+            'POST', 'doctasks/schedule/', status.HTTP_201_CREATED, data=task_data)
 
         return response.json(),
 
     async def the_different_task_results_are_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'doctasks', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'doctasklist', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) >= 5
 
@@ -174,7 +174,7 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         duration = float(self.param)
         data = dict(registered_task='django_tasks.tasks.sleep_test',
                     inputs={'duration': duration, 'raise_error': True})
-        response = self.assert_rest_api_call('POST', 'tasks', status.HTTP_201_CREATED, data=data)
+        response = self.assert_rest_api_call('POST', 'doctasks', status.HTTP_201_CREATED, data=data)
 
         return response.json(),
 
@@ -194,7 +194,7 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         return messages['success'][0].split()[2].strip('“”'),
 
     async def the_task_result_is_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'doctasks', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'doctasklist', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) >= 1
 
