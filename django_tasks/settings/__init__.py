@@ -18,10 +18,18 @@ class SettingsJson:
     Class in charge of providing Django setting values, as specified in a JSON settings file whose values override
     the default values provided here.
     """
+    #: Name of the environment variable that holds the path to the settings JSON file.
     json_key: str = 'CHANNEL_TASKS_SETTINGS_PATH'
+
+    #: Name of the environment variable that holds the Django secret key.
     secret_key_key: str = 'DJANGO_SECRET_KEY'
+
+    #: Name of the channel-tasks Django app.
     channel_tasks_appname: str = 'django_tasks'
-    default_installed_apps: list[str] = [
+
+    #: List of identifiers of the Django apps that must be intalled. The "install-apps" setting may be
+    #: specified with an array of additional apps to install.
+    required_installed_apps: list[str] = [
         'django.contrib.auth',
         'django.contrib.contenttypes',
         'django.contrib.sessions',
@@ -29,12 +37,13 @@ class SettingsJson:
         'rest_framework.authtoken',
         'adrf',
         'django.contrib.messages',
-        'django_extensions',
         'django_filters',
         channel_tasks_appname,
         'django.contrib.admin',
         'django_sass_compiler',
     ]
+
+    #: Default DRF settings, may be overriden with care using the "rest-framework" setting.
     default_drf: dict[str, JSON] = dict(
         DEFAULT_RENDERER_CLASSES=[
             'rest_framework.renderers.JSONRenderer',
@@ -51,7 +60,10 @@ class SettingsJson:
         ],
         TEST_REQUEST_DEFAULT_FORMAT='json',
     )
-    default_middleware: list[str] = [
+
+    #: Sequence of middleware specifications required for secure deployments. The "append-middleware" setting
+    #: may be specified with an array of additional middleware.
+    required_middleware: list[str] = [
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.common.CommonMiddleware',
@@ -59,8 +71,9 @@ class SettingsJson:
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
-        'request_logging.middleware.LoggingMiddleware',
     ]
+
+    #: Default auth password validators, may be overriden with care using "auth-password-validators".
     default_auth_password_validators: list[dict[str, JSON]] = [
         {
             'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -75,12 +88,17 @@ class SettingsJson:
             'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
         },
     ]
+
+    #: Default auth backends, may be overriden with care using "authentication-backends".
     default_authentication_backends: list[str] = [
         'django.contrib.auth.backends.ModelBackend',
     ]
 
     @classmethod
     def get_default_templates(cls) -> list[dict[str, JSON]]:
+        """Returns the Django TEMPLATES setting value that will be set by default.
+
+        This value may be overriden, with care, using the "templates" setting."""
         return [
             {
                 'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -234,19 +252,31 @@ class SettingsJson:
         return value
 
     @property
-    def server_name(self) -> str:
-        return self.get_string('server-name', 'localhost')
-
-    @property
     def allowed_hosts(self) -> list[str]:
+        """Will be set as the Django ALLOWED_HOSTS setting value.
+
+        Only the loopback address, for local websocket connections, and the configured "server-name" will
+        be allowed."""
         return ['127.0.0.1', self.server_name]
 
     @property
+    def server_name(self) -> str:
+        """The configured "server-name" value. Defaults to localhost."""
+        return self.get_string('server-name', 'localhost')
+
+    @property
     def install_apps(self) -> list[str]:
+        """The configured "install-apps" value. Defaults to empty array (no additional apps)."""
         return self.get_string_list('install-apps', [])
 
     @property
+    def installed_apps(self) -> list[str]:
+        """Will be set as the Django INSTALLED_APPS setting value."""
+        return self.required_installed_apps + self.install_apps
+
+    @property
     def debug(self) -> bool:
+        """Will be set as the Django DEBUG setting value. Defaults to `False` (the secure value)."""
         return self.get_boolean('debug', False)
 
     @property
@@ -259,43 +289,52 @@ class SettingsJson:
 
     @property
     def log_level(self) -> str:
+        """The configured "log-level" value. Defaults to INFO."""
         return self.get_string('log-level', 'INFO')
 
     @property
     def logging(self) -> dict[str, JSON]:
+        """Will be set as the Django LOGGING setting value, taking the configured "log-level" setting."""
         return self.get_dict('logging', self.get_default_logging(self.log_level))
 
     @property
     def middleware(self) -> list[str]:
-        return self.get_string_list('middleware', self.default_middleware)
+        """Will be set as the Django MIDDLEWARE setting value, taking the "append-middleware" setting."""
+        return self.required_middleware + self.get_string_list('append-middleware', [])
 
     @property
     def templates(self) -> list[dict[str, JSON]]:
+        """Will be set as the Django TEMPLATES setting value."""
         return self.get_dict_list('templates', self.get_default_templates())
 
     @property
     def language_code(self) -> str:
+        """Will be set as the Django LANGUAGE_CODE setting value, from the "language-code" setting.
+
+        Defaults to en-GB."""
         return self.get_string('language-code', 'en-gb')
 
     @property
     def time_zone(self) -> str:
+        """Will be set as the Django TIME_ZONE setting value, from the "time-zone" setting.
+
+        Defaults to UCT."""
         return self.get_string('time-zone', 'UTC')
 
     @property
     def auth_password_validators(self) -> list[dict[str, JSON]]:
+        """Will be set as the Django AUTH_PASSWORD_VALIDATORS setting value."""
         return self.get_dict_list('auth-password-validators', self.default_auth_password_validators)
 
     @property
     def authentication_backends(self) -> list[str]:
+        """Will be set as the Django AUTHENTICATION_BACKENDS setting value."""
         return self.get_string_list('authentication-backends', self.default_authentication_backends)
 
     @property
     def rest_framework(self) -> dict[str, JSON]:
+        """Will be set as the REST_FRAMEWORK setting value."""
         return self.get_dict('rest-framework', self.default_drf)
-
-    @property
-    def expose_doctask_api(self) -> bool:
-        return self.get_boolean('expose-doctask-api', False)
 
     @property
     def databases(self) -> dict[str, dict[str, JSON]]:
@@ -310,10 +349,12 @@ class SettingsJson:
 
     @property
     def default_auto_field(self) -> str:
+        """Will be set as the Django DEFAULT_AUTO_FIELD setting value."""
         return self.get_string('default-auto-field', 'django.db.models.BigAutoField')
 
     @property
     def channel_layers(self) -> dict[str, JSON]:
+        """Will be set as the CHANNEL_LAYERS setting value."""
         return {
             'default': {
                 'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -325,6 +366,7 @@ class SettingsJson:
 
     @property
     def caches(self) -> dict[str, JSON]:
+        """Will be set as the CACHES setting value."""
         return {
             'default': {
                 'BACKEND': 'django.core.cache.backends.redis.RedisCache',
@@ -338,27 +380,27 @@ class SettingsJson:
         return self.get_string('redis-host', '127.0.0.1')
 
     @property
-    def channel_group(self) -> str:
-        return self.get_string('redis-channel-group', 'tasks')
-
-    @property
     def redis_port(self) -> int:
         return self.get_int('redis-port', 6379)
 
     @property
     def static_root(self) -> str:
+        """Will be set as the Django STATIC_ROOT setting value."""
         return self.get_string('static-root', '/www/django_tasks/static')
 
     @property
     def media_root(self) -> str:
+        """Will be set as the Django MEDIA_ROOT setting value."""
         return self.get_string('media-root', '/www/django_tasks/media')
 
     @property
     def static_url(self) -> str:
+        """Will be set as the Django STATIC_URL setting value."""
         return self.get_string('static-url', '/static/')
 
     @property
     def media_url(self) -> str:
+        """Will be set as the Django MEDIA_URL setting value."""
         return self.get_string('media-url', '/media/')
 
     @property
@@ -371,16 +413,35 @@ class SettingsJson:
 
     @property
     def email_host(self) -> str:
+        """Will be set as the Django EMAIL_HOST setting value.
+
+        Defaults to empty string."""
         return self.get_string('email-host', '')
 
     @property
     def email_port(self) -> int:
+        """Will be set as the Django EMAIL_PORT setting value.
+
+        Defaults to 0."""
         return self.get_int('email-port', 0)
 
     @property
     def email_use_tls(self) -> bool:
+        """Will be set as the Django EMAIL_USE_TLS setting value.
+
+        Defaults to `False`."""
         return self.get_boolean('email-use-tls', False)
 
-    def sort_installed_apps(self, *apps: str) -> list[str]:
-        return self.default_installed_apps + [
-            k for k in apps if k not in self.default_installed_apps] + self.install_apps
+    @property
+    def channel_group(self) -> str:
+        """Channel-tasks setting: name for the background task consumer groups.
+
+        Defaults to 'tasks'."""
+        return self.get_string('redis-channel-group', 'tasks')
+
+    @property
+    def expose_rest_api(self) -> bool:
+        """Channel-tasks setting: whether to deploy the DRF API.
+
+        Defaults to `False`."""
+        return self.get_boolean('expose-rest-api', False)

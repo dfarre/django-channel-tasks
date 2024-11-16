@@ -1,7 +1,7 @@
 """
 This modules provides a basic Django admin site instance :py:const:`django_tasks.admin.site` that will display the
 :py:class:`django_tasks.models.RegisteredTask`, :py:class:`django_tasks.models.DocTask` models, and that is capable of
-implementing async actions on any other configured Django model (database table).
+implementing background task actions on any configured Django model (database table).
 """
 import logging
 

@@ -22,6 +22,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Development Status :: 4 - Beta",
+    "Framework :: Django :: 5.1",
 ]
 dependencies = [
     "Django",
