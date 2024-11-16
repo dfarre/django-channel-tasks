@@ -1,3 +1,4 @@
+"""This module defines Django views for deployments with Nginx."""
 import os
 
 from django import http, urls, views

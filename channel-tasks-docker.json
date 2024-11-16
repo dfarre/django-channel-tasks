@@ -1,7 +1,11 @@
 {
-    "expose-doctask-api": true,
+    "expose-rest-api": true,
     "install-apps": [
+        "django_extensions",
         "django.contrib.postgres"
+    ],
+    "append-middleware": [
+        "request_logging.middleware.LoggingMiddleware"
     ],
     "log-level": "DEBUG",
     "debug": true,
