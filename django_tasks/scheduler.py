@@ -4,9 +4,8 @@ This module provides the tools for scheduling arrays of tasks, with or without t
 import asyncio
 import logging
 
+from asgiref.sync import sync_to_async
 from typing import Optional
-
-from channels.db import database_sync_to_async
 
 from django_tasks import models
 from django_tasks.task_runner import TaskRunner
@@ -38,7 +37,7 @@ class DocTaskScheduler:
 
     @classmethod
     async def store_doctask_result(cls, task_id: str, task_info: TaskStatusJSON) -> None:
-        doctask = await database_sync_to_async(cls.retrieve_doctask)(task_id)
+        doctask = await sync_to_async(cls.retrieve_doctask)(task_id)
 
         if doctask:
             await doctask.on_completion(task_info)
@@ -54,7 +53,7 @@ class DocTaskScheduler:
             task_coro.coroutine, cls.store_doctask_result, task_id=task_id, user_name=user_name
         )
         cls.doctask_index[task_id] = valid_data['id']
-        logging.getLogger('django').info('Scheduled doc-task %s callable=%s.', valid_data, callable)
+        logging.getLogger('django').info('Scheduled doc-task %s callable=%s.', valid_data, task_coro.callable)
         return task
 
     @classmethod

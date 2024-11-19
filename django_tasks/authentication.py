@@ -1,25 +1,34 @@
 import logging
 
-from channels.db import database_sync_to_async
+from asgiref.sync import sync_to_async
 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
 
+class AsyncTokenAuthentication(TokenAuthentication):
+    @sync_to_async
+    def authenticate_credentials(self, key: str):
+        return super().authenticate_credentials(key)
+
+    @sync_to_async
+    def authenticate(self, request):
+        return super().authenticate(request)
+
+
 class DRFTokenAuthMiddleware:
-    """Middleware that tries to authenticate by DRF Token."""
+    """ASGI application middleware that tries to authenticate by DRF Token."""
 
     def __init__(self, asgi_app):
         self.asgi_app = asgi_app
-        self.token_auth = TokenAuthentication()
+        self.token_auth = AsyncTokenAuthentication()
 
     async def __call__(self, scope, receive, send):
         token_key = self.get_token_key(scope)
 
         if token_key:
             try:
-                user, token = await database_sync_to_async(
-                    self.token_auth.authenticate_credentials)(token_key)
+                user, token = await self.token_auth.authenticate_credentials(token_key)
             except AuthenticationFailed:
                 logging.getLogger('django').warning('Invalid token %s.', token_key)
             else:

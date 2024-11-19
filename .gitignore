@@ -19,6 +19,7 @@ htmlcov
 .DS_Store
 
 bdd_runs.log*
+unit-access.log*
 wsgi.log
 
 django_tasks/static/css/bootstrap-isolated.min.css

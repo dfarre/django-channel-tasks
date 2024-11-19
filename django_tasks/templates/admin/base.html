@@ -46,7 +46,7 @@
     // WebSocket bound methods
     function dismissAlerts(taskID) {
         if (this.readyState === WebSocket.OPEN) {
-            this.send(JSON.stringify({'action': 'clear_task_cache', 'content': {'task_id': taskID}}));
+            this.send(JSON.stringify({'task_id': taskID}));
         } else {
             console.warn('Coud not open websocket in order to clear backend-cached alerts:', this);
         }

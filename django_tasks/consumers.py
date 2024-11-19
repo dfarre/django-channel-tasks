@@ -1,24 +1,30 @@
 """
-This module defines the consumer class :py:class:`django_tasks.consumers.TaskEventsConsumer` for background
-task management.
+This module defines the consumer classes for background task management.
 """
+import abc
+import json
 import logging
+import uuid
 
-from channels.db import database_sync_to_async
+from asgiref.sync import sync_to_async
+
 from channels.exceptions import StopConsumer
+from channels.consumer import AsyncConsumer
+from channels.generic.http import AsyncHttpConsumer
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
-from rest_framework import exceptions, status
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
 
-from django_tasks.serializers import DocTaskSerializer, TaskRequestSerializer
+from django_tasks.serializers import DocTaskSerializer
 from django_tasks.scheduler import DocTaskScheduler, schedule_tasks
 from django_tasks.task_cache import TaskCache
-from django_tasks.websocket import close_codes
+from django_tasks.websocket.close_codes import WSCloseCode
 
-from django_tasks.typing import JSON, EventJSON, CacheClearJSON, TaskJSON, WSResponseJSON
+from django_tasks.typing import JSON, EventJSON, DocTaskJSON, TaskJSON, WSResponseJSON
 
 
-class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
+class TaskGroupConsumer(AsyncConsumer, metaclass=abc.ABCMeta):
     @property
     def user_group(self) -> str:
         """The name of the group of consumers that is assigned to the user."""
@@ -26,12 +32,81 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
 
     @property
     def request_id(self) -> str:
-        """The request ID provided in the corresponding header, if any."""
+        """
+        The request ID provided in the corresponding header, or a newly generated ID if the header is missing.
+        This value will be returned to clients as an identifier of the request; websocket clients must provide
+        it in the Request-ID header in order to be able to check the returned ID value in subsequent messages.
+        """
         for name, value in self.scope.get('headers', []):
             if name == b'request-id':
                 id_value: str = value.decode()
                 return id_value
-        return ''
+
+        return uuid.uuid4().hex
+
+    @abc.abstractmethod
+    async def receive_json(self, request_content: JSON) -> int:
+        """Process the received, already parsed, JSON request content, and return an HTTP status code."""
+
+    @abc.abstractmethod
+    async def send_bad_request_response(self, error: ValidationError) -> None:
+        """Send a 400 message in case of validation error."""
+
+
+class TaskScheduleConsumer(TaskGroupConsumer):
+    async def receive_json(self, request_content: JSON) -> int:
+        """Processes task schedule websocket requests."""
+        logging.getLogger('django').debug(
+            'Processing task schedule through channel %s. Data: %s', self.channel_name, request_content)
+        try:
+            many_serializer = await DocTaskSerializer.get_valid_task_group_serializer(request_content)
+        except ValidationError as error:
+            await self.send_bad_request_response(error)
+            return status.HTTP_400_BAD_REQUEST
+        else:
+            data: list[TaskJSON] = await many_serializer.adata
+            await schedule_tasks(self.request_id, self.scope['user'].username, *data)
+            return status.HTTP_200_OK
+
+
+class DocTaskScheduleConsumer(TaskGroupConsumer):
+    async def receive_json(self, request_content: JSON) -> int:
+        """Processes doc-task schedule websocket requests."""
+        logging.getLogger('django').debug(
+            'Processing DocTask schedule through channel %s. Data: %s', self.channel_name, request_content)
+        try:
+            many_serializer, doctasks = await DocTaskSerializer.create_doctask_group(request_content)
+        except ValidationError as error:
+            await self.send_bad_request_response(error)
+            return status.HTTP_400_BAD_REQUEST
+        else:
+            data: list[DocTaskJSON] = await many_serializer.adata
+            await DocTaskScheduler.schedule_doctasks(self.request_id, self.scope['user'].username, *data)
+            return status.HTTP_201_CREATED
+
+
+class TaskCacheClearConsumer(TaskGroupConsumer):
+    async def receive_json(self, request_content: JSON) -> int:
+        """Clears a specific task cache."""
+        logging.getLogger('django').debug(
+            'Processing cache clear through channel %s. Data: %s', self.channel_name, request_content)
+        await sync_to_async(self.user_task_cache.clear_task_cache)(request_content['task_id'])
+        return status.HTTP_200_OK
+
+
+class TaskWebSocketConsumer(TaskGroupConsumer, AsyncJsonWebsocketConsumer):
+    async def send_bad_request_response(self, error: ValidationError) -> None:
+        """Broadcasts an HTTP 400 message through the user's group of consumers."""
+        content: WSResponseJSON = {
+            'http_status': status.HTTP_400_BAD_REQUEST,
+            'request_id': self.request_id,
+            'details': [{**detail} for detail in error.get_full_details()],
+        }
+        await self.group_send({'type': 'task.badrequest', 'content': content})
+
+    async def group_send(self, event: EventJSON) -> None:
+        """Distributes the given `event` through the group of the user of this instance."""
+        await self.channel_layer.group_send(self.user_group, event)
 
     async def task_started(self, event: EventJSON) -> None:
         """Echoes the task.started document."""
@@ -53,15 +128,11 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         """Echoes the task.badrequest document."""
         await self.send_json(content=event)
 
-    async def group_send(self, event: EventJSON) -> None:
-        """Distributes the given `event` through the group of the user of this instance."""
-        await self.channel_layer.group_send(self.user_group, event)
-
     async def stop_unauthorized(self) -> None:
         """Stops the consumer if the user is not authenticated."""
         if not self.scope['user'].is_authenticated:
             logging.getLogger('django').warning('Unauthenticated user %s. Closing websocket.', self.scope['user'])
-            await self.close(code=close_codes.UNAUTHORIZED)
+            await self.close(code=WSCloseCode.UNAUTHORIZED)
             raise StopConsumer()
 
     async def connect(self) -> None:
@@ -77,57 +148,45 @@ class TaskEventsConsumer(AsyncJsonWebsocketConsumer):
         """Performs clean-up actions on disconnection."""
         await self.channel_layer.group_discard(self.user_group, self.channel_name)
         logging.getLogger('django').debug(
-            'Disconnected channel %s. User: %s. CloseCode: %s',
-            self.channel_name, self.scope['user'].username, close_code)
+            'Disconnected channel %s. User: %s. Reason: %s',
+            self.channel_name, self.scope['user'].username, repr(WSCloseCode(close_code)))
 
-    async def schedule_tasks(self, request_content: list[TaskJSON]) -> None:
-        """Processes task schedule websocket requests."""
-        logging.getLogger('django').debug(
-            'Processing task schedule through channel %s. Data: %s', self.channel_name, request_content)
+
+class TaskScheduleWebSocketConsumer(TaskScheduleConsumer, TaskWebSocketConsumer):
+    """The websocket consumer for task schedule requests."""
+
+
+class DocTaskScheduleWebSocketConsumer(DocTaskScheduleConsumer, TaskWebSocketConsumer):
+    """The websocket consumer for doc-task schedule requests."""
+
+
+class CacheClearWebSocketConsumer(TaskCacheClearConsumer, TaskWebSocketConsumer):
+    """The websocket consumer for cache-clear requests."""
+
+
+class TaskHttpConsumer(TaskGroupConsumer, AsyncHttpConsumer):
+    async def handle(self, body: bytes):
         try:
-            many_serializer = await database_sync_to_async(
-                DocTaskSerializer.get_task_group_serializer)(request_content)
-        except exceptions.ValidationError as error:
-            await self.send_bad_request_message(error)
+            request_content: JSON = json.loads(body)
+        except json.JSONDecodeError as error:
+            await self.send_bad_request_response(ValidationError({'non_field_errors': repr(error)}))
         else:
-            await schedule_tasks(self.request_id, self.scope['user'].username, *many_serializer.data)
+            http_status = await self.receive_json(request_content)
+            if http_status < 400:
+                await self.send_response(http_status, json.dumps({'request_id': self.request_id}).encode())
 
-    async def schedule_doctasks(self, request_content: list[TaskJSON]) -> None:
-        """Processes doc-task schedule websocket requests."""
-        logging.getLogger('django').debug(
-            'Processing DocTask schedule through channel %s. Data: %s', self.channel_name, request_content)
-        try:
-            many_serializer, doctasks = await database_sync_to_async(
-                DocTaskSerializer.create_doctask_group)(request_content)
-        except exceptions.ValidationError as error:
-            await self.send_bad_request_message(error)
-        else:
-            await DocTaskScheduler.schedule_doctasks(
-                self.request_id, self.scope['user'].username, *many_serializer.data)
-
-    @database_sync_to_async
-    def clear_task_cache(self, request_content: CacheClearJSON) -> None:
-        """Clears a specific task cache."""
-        logging.getLogger('django').debug(
-            'Processing cache clear through channel %s. Data: %s', self.channel_name, request_content)
-        self.user_task_cache.clear_task_cache(request_content['task_id'])
-
-    async def receive_json(self, request_data: JSON) -> None:
-        """Performs a supported action if valid data is provided, else sends a 400 message."""
-        serializer = TaskRequestSerializer(data=request_data)
-
-        try:
-            serializer.is_valid(raise_exception=True)
-        except exceptions.ValidationError as error:
-            await self.send_bad_request_message(error)
-        else:
-            await getattr(self, serializer.data['action'])(serializer.data['content'])
-
-    async def send_bad_request_message(self, error: exceptions.ValidationError) -> None:
+    async def send_bad_request_response(self, error: ValidationError) -> None:
         """Broadcasts an HTTP 400 message through the user's group of consumers."""
         content: WSResponseJSON = {
-            'http_status': status.HTTP_400_BAD_REQUEST,
             'request_id': self.request_id,
             'details': [{**detail} for detail in error.get_full_details()],
         }
-        await self.group_send({'type': 'task.badrequest', 'content': content})
+        await self.send_response(status.HTTP_400_BAD_REQUEST, json.dumps(content).encode())
+
+
+class TaskScheduleHttpConsumer(TaskScheduleConsumer, TaskHttpConsumer):
+    """The HTTP consumer for task schedule requests."""
+
+
+class DocTaskScheduleHttpConsumer(DocTaskScheduleConsumer, TaskHttpConsumer):
+    """The HTTP consumer for doc-task schedule requests."""
