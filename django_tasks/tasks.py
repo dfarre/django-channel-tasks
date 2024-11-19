@@ -18,19 +18,19 @@ async def sleep_test(duration, raise_error=False):
 
 
 async def doctask_access_test(instance_ids: list[int]):
-    def instance_function(doctask):
+    def log_retrieved(doctask):
         time.sleep(1)
         logging.getLogger('django').info('Retrieved %s', repr(doctask))
         time.sleep(1)
 
-    await ModelTask('django_tasks', 'DocTask', instance_function)(instance_ids)
+    await ModelTask('django_tasks', 'DocTask', log_retrieved)(instance_ids)
     await asyncio.sleep(4)
 
 
 async def doctask_deletion_test(instance_ids: list[int]):
-    def instance_function(doctask):
+    def delete_doctasks(doctask):
         doctask.delete()
         logging.getLogger('django').info('Deleted %s', repr(doctask))
         time.sleep(1)
 
-    await ModelTask('django_tasks', 'DocTask', instance_function)(instance_ids)
+    await ModelTask('django_tasks', 'DocTask', delete_doctasks)(instance_ids)

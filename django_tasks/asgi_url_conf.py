@@ -1,4 +1,5 @@
 """Django root URL configuration for ASGI deployments."""
-from django_tasks import drf_urls
+from django_tasks import urls
 
-urlpatterns = list(drf_urls.get_asgi_urls())
+
+urlpatterns = list(urls.get_asgi_urls())

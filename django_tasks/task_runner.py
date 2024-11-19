@@ -57,6 +57,7 @@ class TaskRunner:
                 f"TaskRunner instances must be created by its 'get' classmethod (so not by '{caller_name}')")
 
         self.worker_event_loop = asyncio.new_event_loop()
+        self.worker_event_loop.set_debug(settings.DEBUG)
         self.worker_thread = threading.Thread(target=self.worker_event_loop.run_forever, daemon=True)
         self.__class__.instances.append(self)
         logging.getLogger('django').debug('New task runner: %s.', self)

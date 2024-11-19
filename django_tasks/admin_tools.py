@@ -7,9 +7,8 @@ import functools
 import logging
 import os
 
+from asgiref.sync import sync_to_async
 from typing import Any, Callable
-
-from channels.db import database_sync_to_async
 
 from django.apps import apps
 from django.conf import settings
@@ -41,7 +40,7 @@ class ChannelTasksAdminSite(admin.AdminSite):
 
         if username and request.user.is_authenticated:
             context['cached_task_events'] = TaskCache(username).get_index()
-            context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/')
+            context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/clear-cache')
             context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
 
         return context
@@ -82,7 +81,7 @@ class ModelTask:
                 'Instance of %s with pk=%s not found.', self.model_class.__name__, instance_id)
         else:
             try:
-                output = await database_sync_to_async(self.instance_task)(instance)
+                output = await sync_to_async(self.instance_task)(instance)
             except Exception:
                 logging.getLogger('django').exception('Got exception:')
             else:
@@ -118,7 +117,7 @@ class AdminTaskAction:
         @functools.wraps(post_schedule_callable)
         def action_callable(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset):
             objects_repr = str(queryset) if queryset.count() > 1 else str(queryset.first())
-            ws_response = self.client.perform_request('schedule_tasks', [dict(
+            ws_response = self.client.perform_request('schedule', [dict(
                 registered_task=self.task_name,
                 inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}
             )], headers={'Cookie': request.headers['Cookie']})

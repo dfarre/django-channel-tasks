@@ -9,13 +9,14 @@ import functools
 import json
 import logging
 import uuid
+
 import websocket
 
 from rest_framework import status
 from django.conf import settings
 
 from django_tasks.typing import JSON, WSResponseJSON
-from django_tasks.websocket import close_codes
+from django_tasks.websocket.close_codes import WSCloseCode
 
 
 def catch_websocket_errors(client_method: Callable) -> Callable:
@@ -74,18 +75,18 @@ class BackendWebSocketClient:
         header.update(self.default_headers)
         header['Request-ID'] = uuid.uuid4().hex
 
-        connect_ok, connect_error = self.connect(header)
+        connect_ok, connect_error = self.connect(action, header)
         if not connect_ok:
             return self.bad_gateway_message(header['Request-ID'], connect_error)
 
-        send_ok, send_error = self.send_json(dict(action=action, content=content))
+        send_ok, send_error = self.send_json(content)
         if not send_ok:
             return self.bad_gateway_message(header['Request-ID'], send_error)
 
         response = self.get_first_response(header['Request-ID'])
         self.disconnect(
-            close_codes.BAD_GATEWAY if response['http_status'] == status.HTTP_502_BAD_GATEWAY
-            else close_codes.OK)
+            WSCloseCode.BAD_GATEWAY if response['http_status'] == status.HTTP_502_BAD_GATEWAY
+            else WSCloseCode.NORMAL)
 
         return response
 
@@ -103,9 +104,9 @@ class BackendWebSocketClient:
         }
 
     @catch_websocket_errors
-    def connect(self, header: dict[str, str]):
-        """Tries to connect with the given headers."""
-        return self.ws.connect(self.local_url, header=header, **self.connect_kwargs)
+    def connect(self, action: str, header: dict[str, str]):
+        """Tries to connect to the corresponding endpoint with the given headers."""
+        return self.ws.connect(self.local_url + action, header=header, **self.connect_kwargs)
 
     @catch_websocket_errors
     def disconnect(self, close_code: int):

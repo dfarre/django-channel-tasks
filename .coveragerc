@@ -8,7 +8,7 @@ omit =
     asgi.py
     asgi_setup.py
     consumers.py
-    channels_auth.py
+    authentication.py
     scheduler.py
     tasks.py
     task_inspector.py
