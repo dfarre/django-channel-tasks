@@ -5,8 +5,9 @@ parallel = true
 [report]
 # Coverage of the ASGI unit is not measured by pytest-cov, so the corresponding modules are omitted
 omit =
+    asgi_url_conf.py
     asgi.py
-    asgi_setup.py
+    routing.py
     consumers.py
     authentication.py
     scheduler.py

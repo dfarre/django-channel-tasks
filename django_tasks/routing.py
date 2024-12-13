@@ -13,7 +13,8 @@ adrf_application = get_asgi_application()
 application = ProtocolTypeRouter({
     'http': URLRouter([
         urls.re_path(r'^adrf/', adrf_application),
-        urls.re_path(r'^api/', DRFTokenAuthMiddleware(AuthMiddlewareStack(URLRouter(list(urls.get_http_channels_urls()))))),
+        urls.re_path(r'^api/', DRFTokenAuthMiddleware(
+            AuthMiddlewareStack(URLRouter(list(urls.get_http_channels_urls()))))),
     ]),
     'websocket': AllowedHostsOriginValidator(
         DRFTokenAuthMiddleware(AuthMiddlewareStack(URLRouter(list(urls.get_websocket_urls()))))

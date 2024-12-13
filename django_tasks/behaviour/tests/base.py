@@ -69,7 +69,7 @@ class BddTester(tester.BddTester):
 
     async def assert_async_rest_api_call(self, method, api_path, expected_http_code, data=None):
         response = getattr(requests, method.lower())(
-            f'http://127.0.0.1:8001/api/{api_path}',
+            f'http://127.0.0.1:8001/{api_path}',
             data=data, headers={'Authorization': f'Token {get_test_credential("token")}'},
         )
         assert response.status_code == expected_http_code, response.content.decode()

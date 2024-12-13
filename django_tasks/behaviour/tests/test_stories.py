@@ -38,7 +38,7 @@ class TestWebsocketScheduling(base.BddTester):
             dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = self.local_ws_client.perform_request(
-            'schedule_tasks', task_data, headers={'Cookie': base.get_test_credential('cookie')})
+            'schedule', task_data, headers={'Cookie': base.get_test_credential('cookie')})
         assert response['http_status'] == status.HTTP_200_OK
 
 
@@ -166,7 +166,7 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         return response.json(),
 
     async def the_different_task_results_are_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'doctasklist', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'adrf/doctasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) >= 5
 
@@ -194,7 +194,7 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         return messages['success'][0].split()[2].strip('“”'),
 
     async def the_task_result_is_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'doctasklist', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'adrf/doctasks', status.HTTP_200_OK)
         tasks = response.json()
         assert len(tasks) >= 1
 
