@@ -5,6 +5,7 @@ from django.core.management import call_command
 
 from rest_framework import status
 
+from django_tasks.behaviour.tests.request_cases import HttpEndpointCaseSet, get_test_credential
 from django_tasks.typing import JSON
 
 from . import base
@@ -13,9 +14,12 @@ from . import base
 def teardown_module():
     """
     Called by Pytest at teardown of the test module, employed here to
-    log final scenario results
+    log final scenario results, and to write request-response documentation sources.
     """
     base.BddTester.gherkin.log()
+
+    HttpEndpointCaseSet('asgi_get', *base.asgi_response_cases).write_rst()
+    HttpEndpointCaseSet('wsgi_post', *base.wsgi_response_cases).write_rst()
 
 
 class TestWebsocketScheduling(base.BddTester):
@@ -38,7 +42,7 @@ class TestWebsocketScheduling(base.BddTester):
             dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = self.local_ws_client.perform_request(
-            'schedule', task_data, headers={'Cookie': base.get_test_credential('cookie')})
+            'schedule', task_data, headers={'Cookie': get_test_credential('cookie')})
         assert response['http_status'] == status.HTTP_200_OK
 
 
@@ -161,7 +165,7 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = self.assert_rest_api_call(
-            'POST', 'doctasks/schedule/', status.HTTP_201_CREATED, data=task_data)
+            'POST', 'api/doctasks/schedule', status.HTTP_201_CREATED, data=task_data)
 
         return response.json(),
 
@@ -174,7 +178,7 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         duration = float(self.param)
         data = dict(registered_task='django_tasks.tasks.sleep_test',
                     inputs={'duration': duration, 'raise_error': True})
-        response = self.assert_rest_api_call('POST', 'doctasks', status.HTTP_201_CREATED, data=data)
+        response = self.assert_rest_api_call('POST', 'api/doctasks', status.HTTP_201_CREATED, data=data)
 
         return response.json(),
 

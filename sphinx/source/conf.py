@@ -35,6 +35,7 @@ exclude_patterns = []
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
+    'sphinxcontrib.httpdomain',
 ]
 
 # -- Options for HTML output -------------------------------------------------

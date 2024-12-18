@@ -60,7 +60,7 @@ Consumers
 Authorization
 -------------
 
-.. automodule:: django_tasks.channels_auth
+.. automodule:: django_tasks.authentication
    :members:
 
 

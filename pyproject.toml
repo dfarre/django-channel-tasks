@@ -53,6 +53,7 @@ mypy = [
 ]
 docs = [
     "sphinx",
+    "sphinxcontrib-httpdomain",
     "pydeps",
     "pydot",
     "pygraphviz",

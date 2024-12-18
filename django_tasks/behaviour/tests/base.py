@@ -3,9 +3,7 @@ import pprint
 
 import bs4
 import pytest
-import requests
 
-from rest_framework.test import APIClient
 from django.test.client import Client
 
 from bdd_coder import decorators
@@ -13,8 +11,14 @@ from bdd_coder import tester
 
 from django_tasks.task_runner import TaskRunner
 
+
+from django_tasks.behaviour.tests.request_cases import RequestResponseCase, WsgiRequestResponseCase
 from django_tasks.behaviour.tests.websocket_test_client import TestingWebSocketClient
 from django_tasks.websocket.backend_client import BackendWebSocketClient
+
+
+asgi_response_cases = []
+wsgi_response_cases = []
 
 
 @pytest.mark.django_db
@@ -46,7 +50,6 @@ class BddTester(tester.BddTester):
         self.wsgi = wsgi
 
         self.client = Client()
-        self.api_client = APIClient()
 
     def assert_admin_call(self, method, path, expected_http_code, data=None):
         bytes_data = '&'.join([f'{k}={v}' for k, v in (data or {}).items()]).encode()
@@ -57,24 +60,25 @@ class BddTester(tester.BddTester):
 
         return response
 
-    def assert_rest_api_call(self, method, api_path, expected_http_code, data=None):
+    def assert_rest_api_call(self, method, uri, expected_http_code, data=None):
         self.client.logout()
 
-        response = getattr(self.api_client, method.lower())(
-            path=f'/api/{api_path}', data=data, headers={'Authorization': f'Token {get_test_credential("token")}'},
-        )
-        assert response.status_code == expected_http_code, response.content.decode()
+        case = WsgiRequestResponseCase(method, uri, data)
+        case.perform()
+        wsgi_response_cases.append(case)
 
-        return response
+        assert case.response.status_code == expected_http_code, case.response.content.decode()
 
-    async def assert_async_rest_api_call(self, method, api_path, expected_http_code, data=None):
-        response = getattr(requests, method.lower())(
-            f'http://127.0.0.1:8001/{api_path}',
-            data=data, headers={'Authorization': f'Token {get_test_credential("token")}'},
-        )
-        assert response.status_code == expected_http_code, response.content.decode()
+        return case.response
 
-        return response
+    async def assert_async_rest_api_call(self, method, uri, expected_http_code, data=None):
+        case = RequestResponseCase(method, uri, data)
+        case.perform()
+        asgi_response_cases.append(case)
+
+        assert case.response.status_code == expected_http_code, case.response.content.decode()
+
+        return case.response
 
     async def fake_task_coro_ok(self, duration):
         await asyncio.sleep(duration)
@@ -111,8 +115,3 @@ class BddTester(tester.BddTester):
                 f'Collected events in {timeout}s: {pprint.pformat(self.testing_ws_client.events)}.')
         else:
             self.testing_ws_client.expected_events = {}
-
-
-def get_test_credential(name: str):
-    with open(f'.test_{name}.txt') as secret_file:
-        return secret_file.read().strip()
