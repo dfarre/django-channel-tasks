@@ -77,10 +77,8 @@ channel-tasks-admin = "django_tasks.entrypoint:manage_channel_tasks"
 "Source" = "https://github.com/dfarre/django-channel-tasks"
 "Issue Tracker" = "https://github.com/dfarre/django-channel-tasks/issues"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["django_tasks/*"]
-exclude = ["django_tasks/behaviour"]
+[tool.setuptools]
+packages = ["django_tasks"]
 
 [tool.setuptools.package-data]
 "django_tasks" = [
