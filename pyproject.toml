@@ -8,7 +8,7 @@ version = "1.0.0.dev1"
 description = "Running background tasks through websocket, using channels-redis, from Django Admin or REST API."
 readme = "README.md"
 requires-python = ">=3.11"
-license = {file = "LICENSE"}
+license-files = ["LICENSE"]
 authors = [
   {name = "Daniel Farré Manzorro", email = "d.farre.m@gmail.com" }
 ]
