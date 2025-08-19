@@ -2,7 +2,7 @@ FROM unit:python3.13
 
 RUN apt-get -y update &&\
  apt-get -y install git python3-pip python3-dev locales gettext graphviz graphviz-dev\
-  postgresql-all postgresql-client nano wget unzip &&\
+  postgresql-all postgresql-client nano wget unzip rsync &&\
  sed -i '/C.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 ARG CHANNEL_TASKS_PACKAGE

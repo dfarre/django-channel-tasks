@@ -19,6 +19,7 @@ services:
       - db
     environment:
       - CHANNEL_TASKS_WSGI_PORT
+      - BOOTSTRAP_VERSION
       - TASK_ADMIN_USER
       - TASK_ADMIN_EMAIL
       - LC_ALL=C.UTF-8
