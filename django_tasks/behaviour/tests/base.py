@@ -1,4 +1,5 @@
 import asyncio
+import collections
 import pprint
 
 import bs4
@@ -12,13 +13,12 @@ from bdd_coder import tester
 from django_tasks.task_runner import TaskRunner
 
 
-from django_tasks.behaviour.tests.request_cases import RequestResponseCase, WsgiRequestResponseCase
+from django_tasks.behaviour.tests.request_cases import AsgiRequestResponseCase, WsgiRequestResponseCase
 from django_tasks.behaviour.tests.websocket_test_client import TestingWebSocketClient
 from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 
-asgi_response_cases = []
-wsgi_response_cases = []
+response_cases = collections.defaultdict(list)
 
 
 @pytest.mark.django_db
@@ -65,16 +65,16 @@ class BddTester(tester.BddTester):
 
         case = WsgiRequestResponseCase(method, uri, data)
         case.perform()
-        wsgi_response_cases.append(case)
+        response_cases[f'wsgi-{case.action}'].append(case)
 
         assert case.response.status_code == expected_http_code, case.response.content.decode()
 
         return case.response
 
     async def assert_async_rest_api_call(self, method, uri, expected_http_code, data=None):
-        case = RequestResponseCase(method, uri, data)
+        case = AsgiRequestResponseCase(method, uri, data)
         case.perform()
-        asgi_response_cases.append(case)
+        response_cases[f'asgi-{case.action}'].append(case)
 
         assert case.response.status_code == expected_http_code, case.response.content.decode()
 

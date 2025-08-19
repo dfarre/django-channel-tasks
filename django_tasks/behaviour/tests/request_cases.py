@@ -1,3 +1,4 @@
+import abc
 import json
 
 import requests
@@ -14,20 +15,17 @@ def get_test_credential(name: str):
         return secret_file.read().strip()
 
 
-class RequestResponseCase:
+class RequestResponseCase(metaclass=abc.ABCMeta):
     """An HTTP request-response example, for testing and documentation purposes."""
 
     #: The base URL for all requests.
-    base_url: str = 'http://127.0.0.1:8003'
+    base_url: str = ''
 
     #: Headers included in all requests.
     default_request_headers: dict[str, str] = {
         'Authorization': f'Token {get_test_credential("token")}',
         'Content-Type': 'application/json',
     }
-
-    #: The client instance to employ to perform requests.
-    client = requests
 
     def __init__(self, method: str, uri: str, data: JSON = None, **headers: str):
         self.method = method.strip().lower()
@@ -36,6 +34,10 @@ class RequestResponseCase:
         self.headers = headers
         self.headers.update(self.default_request_headers)
         self.perform()
+
+    @abc.abstractmethod
+    def perform_request(self):
+        """Perform the request, return the response."""
 
     @property
     def response(self):
@@ -46,11 +48,27 @@ class RequestResponseCase:
         return self._status_code
 
     @property
+    def response_json(self) -> JSON:
+        return self._response_json
+
+    def perform(self):
+        """Performs the request and sets all required properties from the obtained response."""
+        self._response = self.perform_request()
+        self._status_code = HttpStatus(self.response.status_code)
+        self._response_json = (json.loads(self.response.content)
+                               if self.response.headers.get('content-type') == 'application/json'
+                               else None)
+
+    @property
     def url(self) -> str:
         return f'{self.base_url}/{self.uri}'
 
+    @property
+    def action(self) -> str:
+        return f"{self.method}-{(self.uri.split('?')[0] if '?' in self.uri else self.uri).replace('/', '')}"
+
     def generate_rst_lines(self, name: str | int = 'example'):
-        yield f'**Request {name}**:\n\n'
+        yield f'*Request {name}*:\n\n'
         yield '.. sourcecode:: http\n\n'
         yield f'   {self.method.upper()} /{self.uri} HTTP/1.1\n'
 
@@ -62,27 +80,34 @@ class RequestResponseCase:
             for data_line in json.dumps(self.data, indent=4).splitlines():
                 yield f'   {data_line}\n'
 
-        yield f'\n**Response {name}**:\n\n'
+        yield f'\n*Response {name}*:\n\n'
         yield '.. sourcecode:: http\n\n'
         yield f'   HTTP/1.1 {self.status_code} {self.status_code.name}\n'
 
         for key, header in self.response.headers.items():
             yield f'   {key.capitalize()}: {header}\n'
 
-        if getattr(self.response, 'data', None):
+        if self.response_json:
             yield '   \n'
-            for data_line in json.dumps(self.response.data, indent=4).splitlines():
+            for data_line in json.dumps(self.response_json, indent=4).splitlines():
                 yield f'   {data_line}\n'
+        elif self.response.content:
+            yield '   \n'
+            yield f'   {self.response.content}\n'
 
-    def perform(self):
-        """Response property setter."""
-        self._response = getattr(self.client, self.method)(self.url, data=self.data, headers=self.headers)
-        self._status_code = HttpStatus(self.response.status_code)
+
+class AsgiRequestResponseCase(RequestResponseCase):
+    base_url = 'http://127.0.0.1:8001'
+
+    def perform_request(self):
+        return getattr(requests, self.method)(self.url, data=json.dumps(self.data).encode(), headers=self.headers)
 
 
 class WsgiRequestResponseCase(RequestResponseCase):
     base_url = ''
-    client = APIClient()
+
+    def perform_request(self):
+        return getattr(APIClient(), self.method)(self.url, data=self.data, headers=self.headers)
 
 
 class HttpEndpointCaseSet:

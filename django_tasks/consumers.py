@@ -15,6 +15,7 @@ from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.conf import settings
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from rest_framework.settings import api_settings
 
 from django_tasks.serializers import DocTaskSerializer
 from django_tasks.scheduler import DocTaskScheduler, schedule_tasks
@@ -24,7 +25,7 @@ from django_tasks.websocket.close_codes import WSCloseCode
 from django_tasks.typing import JSON, EventJSON, DocTaskJSON, TaskJSON, WSResponseJSON
 
 
-class TaskGroupConsumer(AsyncConsumer, metaclass=abc.ABCMeta):
+class TaskGroupConsumer(AsyncConsumer):
     @property
     def user_group(self) -> str:
         """The name of the group of consumers that is assigned to the user."""
@@ -44,6 +45,8 @@ class TaskGroupConsumer(AsyncConsumer, metaclass=abc.ABCMeta):
 
         return uuid.uuid4().hex
 
+
+class TaskGroupJsonConsumer(TaskGroupConsumer, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     async def receive_json(self, request_content: JSON) -> int:
         """Process the received, already parsed, JSON request content, and return an HTTP status code."""
@@ -53,7 +56,17 @@ class TaskGroupConsumer(AsyncConsumer, metaclass=abc.ABCMeta):
         """Send a 400 message in case of validation error."""
 
 
-class TaskScheduleConsumer(TaskGroupConsumer):
+class HttpConsumer(AsyncHttpConsumer):
+    async def handle(self, body: bytes):
+        handler = getattr(self, 'handle_' + self.scope['method'].lower(), None)
+
+        if handler is None:
+            await self.send_response(status.HTTP_405_METHOD_NOT_ALLOWED, body=b'')
+        else:
+            await handler(body)
+
+
+class TaskScheduleConsumer(TaskGroupJsonConsumer):
     async def receive_json(self, request_content: JSON) -> int:
         """Processes task schedule websocket requests."""
         logging.getLogger('django').debug(
@@ -69,7 +82,7 @@ class TaskScheduleConsumer(TaskGroupConsumer):
             return status.HTTP_200_OK
 
 
-class DocTaskScheduleConsumer(TaskGroupConsumer):
+class DocTaskScheduleConsumer(TaskGroupJsonConsumer):
     async def receive_json(self, request_content: JSON) -> int:
         """Processes doc-task schedule websocket requests."""
         logging.getLogger('django').debug(
@@ -85,7 +98,7 @@ class DocTaskScheduleConsumer(TaskGroupConsumer):
             return status.HTTP_201_CREATED
 
 
-class TaskCacheClearConsumer(TaskGroupConsumer):
+class TaskCacheClearConsumer(TaskGroupJsonConsumer):
     async def receive_json(self, request_content: JSON) -> int:
         """Clears a specific task cache."""
         logging.getLogger('django').debug(
@@ -94,13 +107,13 @@ class TaskCacheClearConsumer(TaskGroupConsumer):
         return status.HTTP_200_OK
 
 
-class TaskWebSocketConsumer(TaskGroupConsumer, AsyncJsonWebsocketConsumer):
+class TaskWebSocketConsumer(TaskGroupJsonConsumer, AsyncJsonWebsocketConsumer):
     async def send_bad_request_response(self, error: ValidationError) -> None:
         """Broadcasts an HTTP 400 message through the user's group of consumers."""
         content: WSResponseJSON = {
             'http_status': status.HTTP_400_BAD_REQUEST,
             'request_id': self.request_id,
-            'details': [{**detail} for detail in error.get_full_details()],
+            'details': error.get_full_details(),
         }
         await self.group_send({'type': 'task.badrequest', 'content': content})
 
@@ -164,8 +177,8 @@ class CacheClearWebSocketConsumer(TaskCacheClearConsumer, TaskWebSocketConsumer)
     """The websocket consumer for cache-clear requests."""
 
 
-class TaskHttpConsumer(TaskGroupConsumer, AsyncHttpConsumer):
-    async def handle(self, body: bytes):
+class TaskJsonHttpConsumer(TaskGroupJsonConsumer, HttpConsumer):
+    async def handle_post(self, body: bytes):
         try:
             request_content: JSON = json.loads(body)
         except json.JSONDecodeError as error:
@@ -173,20 +186,24 @@ class TaskHttpConsumer(TaskGroupConsumer, AsyncHttpConsumer):
         else:
             http_status = await self.receive_json(request_content)
             if http_status < 400:
-                await self.send_response(http_status, json.dumps({'request_id': self.request_id}).encode())
+                content: WSResponseJSON = {'request_id': self.request_id}
+                await self.send_json_response(http_status, content)
 
     async def send_bad_request_response(self, error: ValidationError) -> None:
         """Broadcasts an HTTP 400 message through the user's group of consumers."""
         content: WSResponseJSON = {
-            'request_id': self.request_id,
-            'details': [{**detail} for detail in error.get_full_details()],
+            'request_id': self.request_id, 'details': error.get_full_details(),
         }
-        await self.send_response(status.HTTP_400_BAD_REQUEST, json.dumps(content).encode())
+        await self.send_json_response(status.HTTP_400_BAD_REQUEST, content)
+
+    async def send_json_response(self, status_code: int, content: WSResponseJSON) -> None:
+        await self.send_response(status_code, json.dumps(content).encode(),
+                                 headers={b'Content-Type': b'application/json'})
 
 
-class TaskScheduleHttpConsumer(TaskScheduleConsumer, TaskHttpConsumer):
+class TaskScheduleHttpConsumer(TaskScheduleConsumer, TaskJsonHttpConsumer):
     """The HTTP consumer for task schedule requests."""
 
 
-class DocTaskScheduleHttpConsumer(DocTaskScheduleConsumer, TaskHttpConsumer):
+class DocTaskScheduleHttpConsumer(DocTaskScheduleConsumer, TaskJsonHttpConsumer):
     """The HTTP consumer for doc-task schedule requests."""

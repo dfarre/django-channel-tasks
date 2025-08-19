@@ -22,3 +22,6 @@ Scenarios:
     - Given a task admin is created by command
     - When the user logs in
     - Then the user may obtain an API `token`
+  Many tasks POST client error:
+    - When an authenticated user specifies a task array with several `errors`
+    - Then a 400 response is returned with all error details

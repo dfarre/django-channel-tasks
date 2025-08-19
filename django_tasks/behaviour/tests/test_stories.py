@@ -18,8 +18,8 @@ def teardown_module():
     """
     base.BddTester.gherkin.log()
 
-    HttpEndpointCaseSet('asgi_get', *base.asgi_response_cases).write_rst()
-    HttpEndpointCaseSet('wsgi_post', *base.wsgi_response_cases).write_rst()
+    for file_name, cases in base.response_cases.items():
+        HttpEndpointCaseSet(file_name, *cases).write_rst()
 
 
 class TestWebsocketScheduling(base.BddTester):
@@ -160,19 +160,26 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         Then the user may obtain an API `token`
         """
 
-    def a_failed_and_some_ok_tasks_are_posted(self):
+    @base.BddTester.gherkin()
+    def test_many_tasks_post_client_error(self):
+        """
+        When an authenticated user specifies a task array with several `errors`
+        Then a 400 response is returned with all error details
+        """
+
+    async def a_failed_and_some_ok_tasks_are_posted(self):
         name = 'django_tasks.tasks.sleep_test'
         task_data = [dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
-        response = self.assert_rest_api_call(
+        response = await self.assert_async_rest_api_call(
             'POST', 'api/doctasks/schedule', status.HTTP_201_CREATED, data=task_data)
 
         return response.json(),
 
     async def the_different_task_results_are_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'adrf/doctasks', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'adrf/doctasks?limit=2&offset=1', status.HTTP_200_OK)
         tasks = response.json()
-        assert len(tasks) >= 5
+        assert tasks['count'] >= 5
 
     def a_failed_task_is_posted_with_duration(self):
         duration = float(self.param)
@@ -198,9 +205,53 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         return messages['success'][0].split()[2].strip('“”'),
 
     async def the_task_result_is_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'adrf/doctasks', status.HTTP_200_OK)
+        response = await self.assert_async_rest_api_call('GET', 'adrf/doctasks?limit=1', status.HTTP_200_OK)
         tasks = response.json()
-        assert len(tasks) >= 1
+        assert tasks['count'] >= 1
+
+    async def an_authenticated_user_specifies_a_task_array_with_several_errors(self):
+        response = await self.assert_async_rest_api_call(
+            'POST', 'api/doctasks/schedule', status.HTTP_400_BAD_REQUEST, data=[
+                {
+                    "registered_task": "django_tasks.foo.sleep_test",
+                    "inputs": {
+                        "duration": 4,
+                        "raise_error": False,
+                    },
+                },
+                {
+                    "registered_task": "django_tasks.tasks.sleep_test",
+                    "inputs": {
+                        "wrong_key": True,
+                    },
+                }])
+
+        return response.json(),
+
+    def a_400_response_is_returned_with_all_error_details(self):
+        error_details: list[JSON] = self.get_output('errors').get('details', [])
+        assert error_details == [
+            {
+                "registered_task": [
+                    {
+                        "message": "Object with dotted_path=django_tasks.foo.sleep_test does not exist.",
+                        "code": "does_not_exist"
+                    }
+                ]
+            },
+            {
+                "inputs": [
+                    {
+                        "message": "Missing required parameters {'duration'}.",
+                        "code": "invalid"
+                    },
+                    {
+                        "message": "Unknown parameters {'wrong_key'}.",
+                        "code": "invalid"
+                    }
+                ]
+            }
+        ]
 
 
 class TestAsyncAdminSiteActions(TaskAdminUserCreation):

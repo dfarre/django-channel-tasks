@@ -13,7 +13,7 @@ class TestingWebSocketClient:
     """Wrapper for handy usage of `websocket.WebSocketApp` for testing."""
     local_route = ('tasks' if not settings.CHANNEL_TASKS.proxy_route
                    else f'{settings.CHANNEL_TASKS.proxy_route}-local/tasks')
-    local_url = f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/'
+    local_url = f'ws://127.0.0.1:{settings.CHANNEL_TASKS.local_port}/{local_route}/clear-cache'
     header = {'Content-Type': 'application/json'}
 
     def __init__(self, timeout=8):
