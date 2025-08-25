@@ -29,13 +29,13 @@ dependencies = [
     "django-filter",
     "django-extensions",
     "django-request-logging",
+    "django-jazzmin",
     "adrf",
     "channels",
     "channels-redis",
     "tzdata",
     "psycopg[pool]",
     "websocket-client",
-    "django-sass-compiler",
 ]
 
 [project.optional-dependencies]
@@ -84,7 +84,7 @@ packages = ["django_tasks"]
 "django_tasks" = [
     "templates/task_alerts.html",
     "templates/admin/base.html",
-    "static/css/bootstrap-isolated.min.css",
+    "static/js/task_alerts.js",
 ]
 
 [tool.setuptools.data-files]

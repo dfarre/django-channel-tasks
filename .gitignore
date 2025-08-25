@@ -27,6 +27,8 @@ django_tasks/static/bootstrap
 django_tasks/static/admin
 django_tasks/static/django_extensions
 django_tasks/static/rest_framework
+django_tasks/static/vendor
+django_tasks/static/jazzmin
 
 media
 
