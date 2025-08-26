@@ -17,7 +17,7 @@ class Command(BaseCommand):
         alphabet = string.ascii_letters + string.digits
         password = ''.join(secrets.choice(alphabet) for i in range(15))
         user.set_password(password)
-        group, _ = Group.objects.get_or_create(name='TaskAdmins')
+        group, _ = Group.objects.get_or_create(name='CoreAdmins')
         group.permissions.add(*Permission.objects.filter(
             content_type__in=ContentType.objects.filter(app_label='django_tasks')))
         group.permissions.add(*Permission.objects.filter(
@@ -25,7 +25,7 @@ class Command(BaseCommand):
             name='Can add Token'))
         user.groups.add(group)
         user.save()
-        self.stdout.write(("Created user " if created else "Updated existing user ") +
+        self.stdout.write(("Created staff user " if created else "Updated existing staff user ") +
                           f"{user} with email {options['email']} and NEW password, "
                           f"belonging to the {group} group.")
         return password

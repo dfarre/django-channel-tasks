@@ -107,7 +107,7 @@ class TaskAdminUserCreation(base.BddTester):
 
     def a_task_admin_user_is_created_by_command(self, django_user_model):
         self.credentials['password'] = call_command(
-            'create_task_admin', self.credentials['username'], 'fake@gmail.com'
+            'create_core_admin', self.credentials['username'], 'fake@gmail.com'
         )
         user = django_user_model.objects.get(username=self.credentials['username'])
 
