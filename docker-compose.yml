@@ -20,8 +20,8 @@ services:
     environment:
       - CHANNEL_TASKS_WSGI_PORT
       - BOOTSTRAP_VERSION
-      - TASK_ADMIN_USER
-      - TASK_ADMIN_EMAIL
+      - CHANNEL_TASKS_ADMIN_USER
+      - CHANNEL_TASKS_ADMIN_EMAIL
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
       - LANGUAGE=C:en

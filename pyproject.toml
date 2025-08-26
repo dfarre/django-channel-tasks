@@ -91,7 +91,6 @@ packages = ["django_tasks"]
 "./channel-tasks-docker" = [
     "docker-compose.yml",
     "Dockerfile",
-    "setup-channel-tasks-docker/install-bootstrap.sh",
     "setup-channel-tasks-docker/init-django.sh",
     "setup-channel-tasks-docker/django-runserver.sh",
     "channel-tasks-unit.template.json",
