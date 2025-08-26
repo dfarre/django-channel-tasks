@@ -1,3 +1,3 @@
 #!/bin/bash
-./setup-channel-tasks-docker/init-django.sh
-./setup-channel-tasks-docker/django-runserver.sh
+./shell-scripts/init-django-channel-tasks.sh
+./shell-scripts/django-runservers.sh

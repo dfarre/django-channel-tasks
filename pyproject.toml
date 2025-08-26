@@ -89,22 +89,10 @@ packages = ["django_tasks"]
 
 [tool.setuptools.data-files]
 "./channel-tasks-docker" = [
-    "docker-compose.yml",
-    "Dockerfile",
-    "setup-channel-tasks-docker/init-django.sh",
-    "setup-channel-tasks-docker/django-runserver.sh",
+    "shell-scripts/django-runservers.sh",
     "channel-tasks-unit.template.json",
 ]
-"./channel-tasks-unit" = [
-    "services/nginx-unit/application.template.json",
-    "services/nginx-unit/listener.template.json",
-    "services/nginx-unit/routes.template.json",
-]
-"channel-tasks-services" = [
-    "services/channel-tasks-docker.template.service",
-    "services/channel-tasks.template.service",
-]
 "./bin" = [
-    "services/restart-channel-tasks-docker.sh",
-    "services/setup-channel-tasks.sh",
+    "shell-scripts/init-django-channel-tasks.sh",
+    "shell-scripts/manage-unit.sh",
 ]

@@ -1,7 +1,0 @@
-{
-    "pass": "routes/$CHANNEL_TASKS_APP_NAME",
-    "forwarded": {
-        "client_ip": "X-Forwarded-For",
-        "source": ["$CHANNEL_TASKS_LISTENER_ADDRESS"]
-    }
-}

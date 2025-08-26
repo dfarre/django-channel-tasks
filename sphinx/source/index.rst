@@ -10,6 +10,5 @@ Contents:
    admin_tasks.rst
    websocket_api.rst
    rest_api.rst
-   nginx_deployments.rst
    dependencies.rst
    source_docs.rst
