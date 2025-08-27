@@ -27,11 +27,12 @@
         "djangochannels": {
             "type": "python $CHANNEL_TASKS_PYTHON_VERSION",
             "home": "$CHANNEL_TASKS_PYTHON_HOME",
-            "path": ["/usr", "$CHANNEL_TASKS_PYTHON_HOME", "$CHANNEL_TASKS_PYTHON_HOME/lib/python$CHANNEL_TASKS_PYTHON_VERSION/site-packages", "$CHANNEL_TASKS_ASGI_PATH"],
+            "path": ["/usr", "$CHANNEL_TASKS_PYTHON_HOME", "$CHANNEL_TASKS_PYTHON_HOME/lib/python$CHANNEL_TASKS_PYTHON_VERSION/site-packages"],
             "module": "django_tasks.routing",
             "user": "$CHANNEL_TASKS_USER",
             "environment": {
-                "DJANGO_SETTINGS_MODULE": "django_tasks.settings.asgi",
+                "DJANGO_SETTINGS_MODULE": "$DJANGO_SETTINGS_MODULE",
+                "ASGI_DJANGO_SETTINGS_MODULE": "$ASGI_DJANGO_SETTINGS_MODULE",
                 "DJANGO_SECRET_KEY": "$DJANGO_SECRET_KEY",
                 "CHANNEL_TASKS_SETTINGS_PATH": "$CHANNEL_TASKS_SETTINGS_PATH",
                 "CHANNEL_TASKS_DB_PASSWORD": "$CHANNEL_TASKS_DB_PASSWORD"
@@ -39,6 +40,6 @@
         }
     },
     "access_log": {
-        "path": "/www/unit-access.log"
+        "path": "$CHANNEL_TASKS_DOCKER_VOLUME/unit-access.log"
     }
 }
