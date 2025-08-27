@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-channel-tasks"
-version = "1.1.0.dev1"
+version = "1.1.0.dev2"
 description = "Running background tasks through websocket, using channels-redis, from Django Admin or REST API."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -78,7 +78,16 @@ channel-tasks-admin = "django_tasks.entrypoint:manage_channel_tasks"
 "Issue Tracker" = "https://github.com/dfarre/django-channel-tasks/issues"
 
 [tool.setuptools]
-packages = ["django_tasks"]
+packages = [
+    "django_tasks",
+    "django_tasks.management.commands",
+    "django_tasks.migrations",
+    "django_tasks.settings",
+    "django_tasks.websocket",
+    "django_tasks.templates",
+    "django_tasks.templates.admin",
+    "django_tasks.static.js",
+]
 
 [tool.setuptools.package-data]
 "django_tasks" = [
