@@ -4,6 +4,7 @@ along with the tools for scheduling tasks as Django Admin actions.
 """
 import asyncio
 import functools
+import itertools
 import logging
 import os
 
@@ -19,6 +20,29 @@ from django.http import HttpRequest
 from django_tasks.task_cache import TaskCache
 from django_tasks.websocket.backend_client import BackendWebSocketClient
 from django_tasks.typing import WSResponseJSON
+
+
+ADMIN_LEVEL_NAMES = ['INFO', 'SUCCESS', 'WARNING', 'ERROR']
+ADMIN_LEVELS = {getattr(messages, k): k for k in ADMIN_LEVEL_NAMES}
+
+
+def log_outputs(outputs):
+    logger = logging.getLogger('django')
+
+    for output, level in outputs:
+        getattr(logger, ADMIN_LEVELS[level].lower(), logger.info)(output)
+
+
+def get_outputs_summary(*outputs, max_messages=200):
+    summary = {level_name: [
+        output for output, level in itertools.chain(*outputs) if ADMIN_LEVELS[level] == level_name
+    ] for level_name in ADMIN_LEVEL_NAMES}
+
+    for k in summary:
+        text = ' '.join(summary[k][:max_messages])
+        summary[k] = f'{text} ... (TRUNCATED ELEMENTS) ...' if len(summary[k]) > max_messages else text
+
+    return '\n'.join([f'{k}: {v}' for k, v in summary.items() if v])
 
 
 class ChannelTasksAdminSite(admin.AdminSite):

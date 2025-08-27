@@ -34,3 +34,10 @@ async def doctask_deletion_test(instance_ids: list[int]):
         time.sleep(1)
 
     await ModelTask('django_tasks', 'DocTask', delete_doctasks)(instance_ids)
+
+
+def register_django_tasks(apps):
+    RegisteredTask = apps.get_model('django_tasks', 'RegisteredTask')
+    RegisteredTask.register(sleep_test)
+    RegisteredTask.register(doctask_access_test)
+    RegisteredTask.register(doctask_deletion_test)

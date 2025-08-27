@@ -1,9 +1,13 @@
+import sys
 import logging
 
 from django_tasks.settings import SettingsJson
 
 
 CHANNEL_TASKS = SettingsJson()
+
+for name, value in CHANNEL_TASKS.other_settings.items():
+    setattr(sys.modules[__name__], name, value)
 
 DEBUG = CHANNEL_TASKS.debug
 SECRET_KEY = CHANNEL_TASKS.secret_key

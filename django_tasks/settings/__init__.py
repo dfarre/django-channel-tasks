@@ -255,11 +255,15 @@ class SettingsJson:
         return value
 
     @property
+    def other_settings(self) -> str:
+        """Dictionary of additional settings, empty by default."""
+        return self.get_dict('other-settings', {})
+
+    @property
     def allowed_hosts(self) -> list[str]:
         """Will be set as the Django ALLOWED_HOSTS setting value.
 
-        Only the loopback address, for local websocket connections, and the configured "server-name" will
-        be allowed."""
+        Only the loopback address, for local websocket connections, and the configured "server-name" will be allowed."""
         return ['127.0.0.1', self.server_name]
 
     @property

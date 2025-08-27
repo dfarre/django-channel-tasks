@@ -26,5 +26,8 @@
             "NAME": "postgres"
         }
     },
-    "redis-host": "redis"
+    "redis-host": "redis",
+    "other-settings": {
+        "ENVIRONMENT": "docker"
+    }
 }
