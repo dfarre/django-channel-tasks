@@ -2,6 +2,7 @@
 This module provides the base :py:class:`django.contrib.admin.AdminSite` class featuring background task management,
 along with the tools for scheduling tasks as Django Admin actions.
 """
+import abc
 import asyncio
 import functools
 import itertools
@@ -14,6 +15,7 @@ from typing import Any, Callable
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin, messages
+from django.core import mail
 from django.db.models import Model, QuerySet
 from django.http import HttpRequest
 
@@ -154,3 +156,50 @@ class AdminTaskAction:
             return post_schedule_callable(modeladmin, request, queryset, ws_response)
 
         return action_callable
+
+
+class ModelAction(metaclass=abc.ABCMeta):
+    def __init__(self, short_description, name=''):
+        self.short_description = short_description
+        self.__name__ = name or self.__class__.__name__.lower()
+
+    def __call__(self, modeladmin, request, queryset):
+        outputs, response = self.run(modeladmin, request, queryset)
+        all_outputs = list(outputs)
+        ok_outputs = [o for o, level in all_outputs if level == messages.SUCCESS]
+        self.ok_message(modeladmin, request, ok_outputs)
+
+        msg = ''.join(f'\n    {ADMIN_LEVELS[level]}: {output}' for output, level in all_outputs)
+        mail.mail_admins(
+            f'Admin Action performed - {request.POST["action"]}',
+            f'{request.method} {request.build_absolute_uri()} {queryset}\n{msg}')
+
+        return response
+
+    def ok_message(self, modeladmin, request, ok_outputs):
+        """Send success message given `ok_outputs` list of messages"""
+
+    @abc.abstractmethod
+    def run(self, modeladmin, request, queryset):
+        """Return (output, level) sequence, response"""
+
+
+class ModelMethodAction(ModelAction):
+    def __init__(self, method_name, short_description='', name=''):
+        super().__init__(short_description or method_name, name or method_name)
+        self.method_name = method_name
+
+    def run(self, modeladmin, request, queryset):
+        return self.outputs(modeladmin, request, queryset), None
+
+    def outputs(self, modeladmin, request, queryset):
+        for instance in queryset:
+            for output, level in getattr(instance, self.method_name)():
+                if level > 29:
+                    modeladmin.message_user(request, output, level)
+                yield output, level
+
+    def ok_message(self, modeladmin, request, ok_outputs):
+        if ok_outputs:
+            message = '. '.join([o.strip('.') for o in ok_outputs])
+            modeladmin.message_user(request, message, messages.SUCCESS)
