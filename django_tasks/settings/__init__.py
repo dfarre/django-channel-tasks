@@ -585,6 +585,11 @@ class SettingsJson:
         return self.get_string('redis-channel-group', 'tasks')
 
     @property
-    def expose_rest_api(self) -> bool:
-        """Channel-tasks setting: whether to deploy the DRF API. Defaults to `False`."""
-        return self.get_boolean('expose-rest-api', False)
+    def expose_doctask_admin_site(self) -> bool:
+        """Whether to expose the Django admin site. Defaults to `False`."""
+        return self.get_boolean('expose-doctask-admin-site', False)
+
+    @property
+    def expose_doctask_rest_api(self) -> bool:
+        """Whether to expose the DRF API. Defaults to `False`."""
+        return self.get_boolean('expose-doctask-rest-api', False)

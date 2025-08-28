@@ -25,23 +25,24 @@ class OptionalSlashRouter(SimpleRouter):
 
 
 def get_wsgi_urls():
-    if settings.CHANNEL_TASKS.expose_rest_api is True:
+    if settings.CHANNEL_TASKS.expose_doctask_rest_api is True:
         drf_router = OptionalSlashRouter()
         drf_router.register('doctasks', WSDocTaskViewSet, basename='doctask')
         yield path('api/', django.urls.include(drf_router.urls))
 
-    yield path('admin/', admin.site.urls)
+    if settings.CHANNEL_TASKS.expose_doctask_admin_site is True:
+        yield path('admin/', admin.site.urls)
 
 
 def get_asgi_urls():
-    if settings.CHANNEL_TASKS.expose_rest_api is True:
+    if settings.CHANNEL_TASKS.expose_doctask_rest_api is True:
         drf_router = OptionalSlashRouter()
         drf_router.register('adrf/doctasks', DocTaskViewSet, basename='doctask')
         yield from drf_router.urls
 
 
 def get_http_channels_urls():
-    if settings.CHANNEL_TASKS.expose_rest_api is True:
+    if settings.CHANNEL_TASKS.expose_doctask_rest_api is True:
         yield path('doctasks/schedule', DocTaskScheduleHttpConsumer.as_asgi())
         yield path('tasks/schedule', TaskScheduleHttpConsumer.as_asgi())
 

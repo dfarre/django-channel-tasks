@@ -1,5 +1,6 @@
 {
-    "expose-rest-api": true,
+    "expose-doctask-rest-api": true,
+    "expose-doctask-admin-site": true,
     "install-apps": [
         "django_extensions",
         "django.contrib.postgres"
