@@ -42,6 +42,4 @@ class TestingWebSocketClient:
 
     @property
     def expected_events_collected(self) -> bool:
-        # FIXME: should not ignore 'started' status messages
-        return all(len(self.events[event_type]) == count
-                   for event_type, count in self.expected_events.items() if event_type != 'started')
+        return all(len(self.events[event_type]) == count for event_type, count in self.expected_events.items())

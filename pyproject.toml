@@ -83,6 +83,7 @@ packages = [
     "django_tasks.management.commands",
     "django_tasks.migrations",
     "django_tasks.settings",
+    "django_tasks.testing",
     "django_tasks.websocket",
     "django_tasks.templates",
     "django_tasks.templates.admin",

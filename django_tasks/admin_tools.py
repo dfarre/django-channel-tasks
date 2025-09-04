@@ -69,7 +69,9 @@ class ChannelTasksAdminSite(admin.AdminSite):
             context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/clear-cache')
             context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
             context['bootstrap_version'] = os.getenv('BOOTSTRAP_VERSION', '5.3.7')
-            context['bootstrap_version_integrity'] = os.getenv('BOOTSTRAP_VERSION_INTEGRITY', 'sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q')
+            context['bootstrap_version_integrity'] = os.getenv(
+                'BOOTSTRAP_VERSION_INTEGRITY',
+                'sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q')
 
         return context
 

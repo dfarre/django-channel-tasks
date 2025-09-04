@@ -4,6 +4,7 @@ import pprint
 
 import bs4
 import pytest
+import pytest_asyncio
 
 from django.test.client import Client
 
@@ -12,9 +13,8 @@ from bdd_coder import tester
 
 from django_tasks.task_runner import TaskRunner
 
-
-from django_tasks.request_cases import AsgiRequestResponseCase, WsgiRequestResponseCase
-from django_tasks.behaviour.tests.websocket_test_client import TestingWebSocketClient
+from django_tasks.testing.request_cases import AsgiRequestResponseCase, WsgiRequestResponseCase
+from django_tasks.testing.websocket_test_client import TestingWebSocketClient
 from django_tasks.websocket.backend_client import BackendWebSocketClient
 
 
@@ -34,12 +34,12 @@ class BddTester(tester.BddTester):
     task_durations = [0.995, 0.95, 0.94, 0.8]
     credentials = dict(username='Alice', password='AlicePassWd')
 
-    @pytest.fixture(autouse=True)
-    def setup_ws_client(self, event_loop):
+    @pytest_asyncio.fixture(autouse=True)
+    async def setup_ws_client(self, event_loop_policy):
         timeout = 7
         self.local_ws_client = BackendWebSocketClient(timeout=timeout)
         self.testing_ws_client = TestingWebSocketClient(timeout)
-        self.event_collection_task = self.testing_ws_client.collect_events(event_loop)
+        self.event_collection_task = self.testing_ws_client.collect_events(event_loop_policy.get_event_loop())
 
     @pytest.fixture(autouse=True)
     def setup_django(self, settings):
