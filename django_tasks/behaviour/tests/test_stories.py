@@ -5,7 +5,7 @@ from django.core.management import call_command
 
 from rest_framework import status
 
-from django_tasks.behaviour.tests.request_cases import HttpEndpointCaseSet, get_test_credential
+from django_tasks.request_cases import HttpEndpointCaseSet, get_test_credential
 from django_tasks.typing import JSON
 
 from . import base

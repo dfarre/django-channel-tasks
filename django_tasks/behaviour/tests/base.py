@@ -13,7 +13,7 @@ from bdd_coder import tester
 from django_tasks.task_runner import TaskRunner
 
 
-from django_tasks.behaviour.tests.request_cases import AsgiRequestResponseCase, WsgiRequestResponseCase
+from django_tasks.request_cases import AsgiRequestResponseCase, WsgiRequestResponseCase
 from django_tasks.behaviour.tests.websocket_test_client import TestingWebSocketClient
 from django_tasks.websocket.backend_client import BackendWebSocketClient
 
