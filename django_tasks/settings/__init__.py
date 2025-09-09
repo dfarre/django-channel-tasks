@@ -64,7 +64,7 @@ class SettingsJson:
         TEST_REQUEST_DEFAULT_FORMAT='json',
     )
 
-    #: Sequence of middleware specifications required for secure deployments. The "append-middleware" setting
+    #: Sequence of middleware specifications required for secure deployments. The "insert-middleware" setting
     #: may be specified with an array of additional middleware.
     required_middleware: list[str] = [
         'django.middleware.security.SecurityMiddleware',
@@ -447,8 +447,17 @@ class SettingsJson:
 
     @property
     def middleware(self) -> list[str]:
-        """Will be set as the Django MIDDLEWARE setting value, taking the "append-middleware" setting."""
-        return self.required_middleware + self.get_string_list('append-middleware', [])
+        """Will be set as the Django MIDDLEWARE setting value, taking the "insert-middleware" setting."""
+        configured_middleware = [*self.required_middleware]
+        for middleware in self.get_dict_list('insert-middleware', []):
+            if not isinstance(middleware.get('name'), str):
+                raise self.wrong_type_error('insert-middleware>name', 'str')
+
+            if not isinstance(middleware.get('position'), int):
+                raise self.wrong_type_error('insert-middleware>position', 'int')
+
+            configured_middleware.insert(middleware['position'], middleware['name'])
+        return configured_middleware
 
     @property
     def templates(self) -> list[dict[str, JSON]]:

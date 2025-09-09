@@ -5,8 +5,8 @@
         "django_extensions",
         "django.contrib.postgres"
     ],
-    "append-middleware": [
-        "request_logging.middleware.LoggingMiddleware"
+    "insert-middleware": [
+        {"name": "request_logging.middleware.LoggingMiddleware", "position": 100}
     ],
     "log-level": "DEBUG",
     "debug": true,
