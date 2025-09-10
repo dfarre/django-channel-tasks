@@ -34,6 +34,9 @@ class BddTester(tester.BddTester):
     task_durations = [0.995, 0.95, 0.94, 0.8]
     credentials = dict(username='Alice', password='AlicePassWd')
 
+    #: Name of an environment variable containing a test cookie.
+    cookie_envvar: str = 'DJANGO_TASKS_TEST_COOKIE'
+
     @pytest_asyncio.fixture(autouse=True)
     async def setup_ws_client(self, event_loop_policy):
         timeout = 7

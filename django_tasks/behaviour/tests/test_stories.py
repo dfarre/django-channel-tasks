@@ -1,11 +1,12 @@
 import asyncio
+import os
 import time
 
 from django.core.management import call_command
 
 from rest_framework import status
 
-from django_tasks.testing.request_cases import HttpEndpointCaseSet, get_test_credential
+from django_tasks.testing.request_cases import HttpEndpointCaseSet
 from django_tasks.typing import JSON
 
 from . import base
@@ -42,7 +43,7 @@ class TestWebsocketScheduling(base.BddTester):
             dict(registered_task=name, inputs={'duration': dn}) for dn in self.task_durations]
         task_data.append(dict(registered_task=name, inputs={'duration': 0.15, 'raise_error': True}))
         response = self.local_ws_client.perform_request(
-            'schedule', task_data, headers={'Cookie': get_test_credential('cookie')})
+            'schedule', task_data, headers={'Cookie': os.getenv(self.cookie_envvar, "")})
         assert response['http_status'] == status.HTTP_200_OK
 
 

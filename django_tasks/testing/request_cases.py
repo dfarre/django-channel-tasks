@@ -1,29 +1,27 @@
 import abc
 import json
+import os
 
 import requests
 
 from rest_framework.test import APIClient
 
-
 from django_tasks.http_status import HttpStatus
 from django_tasks.typing import JSON
 
 
-def get_test_credential(name: str):
-    with open(f'.test_{name}.txt') as secret_file:
-        return secret_file.read().strip()
-
 
 class RequestResponseCase(metaclass=abc.ABCMeta):
     """An HTTP request-response example, for testing and documentation purposes."""
+    #: Name of an environment variable containing a test API token.
+    token_envvar: str = 'DJANGO_TASKS_API_TEST_TOKEN'
 
     #: The base URL for all requests.
     base_url: str = ''
 
     #: Headers included in all requests.
     default_request_headers: dict[str, str] = {
-        'Authorization': f'Token {get_test_credential("token")}',
+        'Authorization': f'Token {os.getenv(token_envvar, "")}',
         'Content-Type': 'application/json',
     }
 
