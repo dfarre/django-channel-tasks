@@ -5,7 +5,7 @@ from rest_framework.routers import SimpleRouter
 
 from django_tasks.django_setup import django
 from django_tasks import admin
-from django_tasks.viewsets import WSDocTaskViewSet, DocTaskViewSet
+from django_tasks.viewsets import WSDocTaskViewSet
 from django_tasks.consumers import (
     TaskScheduleHttpConsumer,
     DocTaskScheduleHttpConsumer,
@@ -32,13 +32,6 @@ def get_wsgi_urls():
 
     if settings.CHANNEL_TASKS.expose_doctask_admin_site is True:
         yield path('admin/', admin.site.urls)
-
-
-def get_asgi_urls():
-    if settings.CHANNEL_TASKS.expose_doctask_rest_api is True:
-        drf_router = OptionalSlashRouter()
-        drf_router.register('adrf/doctasks', DocTaskViewSet, basename='doctask')
-        yield from drf_router.urls
 
 
 def get_http_channels_urls():

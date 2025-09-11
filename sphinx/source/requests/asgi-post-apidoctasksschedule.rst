@@ -1,11 +1,13 @@
-*Request example*:
+----
+
+*Request example 1*:
 
 .. sourcecode:: http
 
    POST /api/doctasks/schedule HTTP/1.1
-   Authorization: Token 71394aa521d07d0e3e339a3d1c3484ee6ef7986b
+   Authorization: Token *************************
    Content-type: application/json
-   
+
    [
        {
            "registered_task": "django_tasks.tasks.sleep_test",
@@ -40,28 +42,30 @@
        }
    ]
 
-*Response example*:
+*Response example 1*:
 
 .. sourcecode:: http
 
    HTTP/1.1 201 CREATED
    Content-type: application/json
-   Server: Unit/1.32.1
-   Date: Mon, 13 Jan 2025 20:40:39 GMT
+   Server: Unit/1.34.2
+   Date: Thu, 11 Sep 2025 22:37:35 GMT
    Transfer-encoding: chunked
-   
+
    {
-       "request_id": "ea63b1d5175440328c670e7da278ce88"
+       "request_id": "4976bbf34ea34d38a5d9ff747105186d"
    }
 
-*Request example*:
+----
+
+*Request example 2*:
 
 .. sourcecode:: http
 
    POST /api/doctasks/schedule HTTP/1.1
-   Authorization: Token 71394aa521d07d0e3e339a3d1c3484ee6ef7986b
+   Authorization: Token *************************
    Content-type: application/json
-   
+
    [
        {
            "registered_task": "django_tasks.foo.sleep_test",
@@ -78,18 +82,18 @@
        }
    ]
 
-*Response example*:
+*Response example 2*:
 
 .. sourcecode:: http
 
    HTTP/1.1 400 BAD_REQUEST
    Content-type: application/json
-   Server: Unit/1.32.1
-   Date: Mon, 13 Jan 2025 20:40:39 GMT
+   Server: Unit/1.34.2
+   Date: Thu, 11 Sep 2025 22:37:35 GMT
    Transfer-encoding: chunked
-   
+
    {
-       "request_id": "c323e4985ce4449488051f796882d675",
+       "request_id": "b5228213acb64955a6c75ee52d87ec74",
        "details": [
            {
                "registered_task": [
@@ -113,4 +117,3 @@
            }
        ]
    }
-

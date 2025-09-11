@@ -10,7 +10,6 @@ from django_tasks.http_status import HttpStatus
 from django_tasks.typing import JSON
 
 
-
 class RequestResponseCase(metaclass=abc.ABCMeta):
     """An HTTP request-response example, for testing and documentation purposes."""
     #: Name of an environment variable containing a test API token.
@@ -31,7 +30,6 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
         self.data = data
         self.headers = headers
         self.headers.update(self.default_request_headers)
-        self.perform()
 
     @abc.abstractmethod
     def perform_request(self):
@@ -65,8 +63,9 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
     def action(self) -> str:
         return f"{self.method}-{(self.uri.split('?')[0] if '?' in self.uri else self.uri).replace('/', '')}"
 
-    def generate_rst_lines(self, name: str | int = 'example'):
-        yield f'*Request {name}*:\n\n'
+    def generate_rst_lines(self, number: int):
+        yield '----\n\n'
+        yield f'*Request example {number}*:\n\n'
         yield '.. sourcecode:: http\n\n'
         yield f'   {self.method.upper()} /{self.uri} HTTP/1.1\n'
 
@@ -78,7 +77,7 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
             for data_line in json.dumps(self.data, indent=4).splitlines():
                 yield f'   {data_line}\n'
 
-        yield f'\n*Response {name}*:\n\n'
+        yield f'\n*Response example {number}*:\n\n'
         yield '.. sourcecode:: http\n\n'
         yield f'   HTTP/1.1 {self.status_code} {self.status_code.name}\n'
 
@@ -91,7 +90,7 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
                 yield f'   {data_line}\n'
         elif self.response.content:
             yield '   \n'
-            yield f'   {self.response.content}\n'
+            yield f'   {self.response.content.decode()}\n'
 
 
 class AsgiRequestResponseCase(RequestResponseCase):
@@ -119,6 +118,6 @@ class HttpEndpointCaseSet:
 
     def write_rst(self):
         with open(self.rst_path, 'w') as rst_file:
-            for request_response_case in self.cases:
-                rst_file.writelines(request_response_case.generate_rst_lines())
+            for i, request_response_case in enumerate(self.cases, start=1):
+                rst_file.writelines(request_response_case.generate_rst_lines(i))
                 rst_file.write('\n')

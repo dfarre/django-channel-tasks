@@ -1,5 +1,4 @@
 """This module provides the DRF view sets, which are employed in ASGI and WSGI endpoints."""
-from adrf.viewsets import ModelViewSet as AsyncModelViewSet
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -16,7 +15,7 @@ class WSDocTaskViewSet(ModelViewSet):
     DRF model viewset for :py:class:`django_tasks.models.DocTask` that connects to the background task ASGI unit
     through web-socket.
     """
-    http_method_names = ['post', 'delete', 'head', 'options', 'trace']
+    http_method_names = ['get', 'post', 'delete', 'head', 'options', 'trace']
     queryset = DocTask.objects.all()
     serializer_class = DocTaskSerializer
 
@@ -42,13 +41,3 @@ class WSDocTaskViewSet(ModelViewSet):
         })
         status = ws_response.pop('http_status')
         return Response(status=HTTP_201_CREATED if status == HTTP_200_OK else status, data=ws_response)
-
-
-class DocTaskViewSet(AsyncModelViewSet):
-    """Asynchronous DRF model viewset for :py:class:`django_tasks.models.DocTask`.
-
-    This is currently implemented for fetching operations only.
-    """
-    http_method_names = ['get', 'head', 'options', 'trace']
-    queryset = DocTask.objects.all()
-    serializer_class = DocTaskSerializer

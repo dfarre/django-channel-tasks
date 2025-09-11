@@ -154,14 +154,6 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
         """
 
     @base.BddTester.gherkin()
-    def test_a_task_admin_creates_an_api_token(self):
-        """
-        Given a task admin is created by command
-        When the user logs in
-        Then the user may obtain an API `token`
-        """
-
-    @base.BddTester.gherkin()
     def test_many_tasks_post_client_error(self):
         """
         When an authenticated user specifies a task array with several `errors`
@@ -177,8 +169,8 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
 
         return response.json(),
 
-    async def the_different_task_results_are_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'adrf/doctasks?limit=2&offset=1', status.HTTP_200_OK)
+    def the_different_task_results_are_correctly_stored_in_db(self):
+        response = self.assert_rest_api_call('GET', 'api/doctasks?limit=2&offset=1', status.HTTP_200_OK)
         tasks = response.json()
         assert tasks['count'] >= 5
 
@@ -205,8 +197,8 @@ class TestRestApiWithTokenAuth(TaskAdminUserCreation):
 
         return messages['success'][0].split()[2].strip('“”'),
 
-    async def the_task_result_is_correctly_stored_in_db(self):
-        response = await self.assert_async_rest_api_call('GET', 'adrf/doctasks?limit=1', status.HTTP_200_OK)
+    def the_task_result_is_correctly_stored_in_db(self):
+        response = self.assert_rest_api_call('GET', 'api/doctasks?limit=1', status.HTTP_200_OK)
         tasks = response.json()
         assert tasks['count'] >= 1
 

@@ -2,12 +2,9 @@
 from __future__ import annotations
 
 import logging
-
-from asgiref.sync import sync_to_async
 from typing import Any
 
-from adrf.serializers import ModelSerializer
-from rest_framework.serializers import SlugRelatedField
+from rest_framework.serializers import ModelSerializer, SlugRelatedField
 
 from django_tasks import models
 
@@ -26,7 +23,7 @@ class DocTaskSerializer(ModelSerializer):
         fields = ('registered_task', 'inputs', *read_only_fields)
 
     @classmethod
-    async def get_valid_task_group_serializer(cls, json_content: JSON, *args, **kwargs) -> DocTaskSerializer:
+    def get_valid_task_group_serializer(cls, json_content: JSON, *args, **kwargs) -> DocTaskSerializer:
         """
         Creates and returns a valid serializer instance for the given array of doc-task data.
         Raises a :py:class:`rest_framework.exceptions.ValidationError` on failure.
@@ -34,37 +31,37 @@ class DocTaskSerializer(ModelSerializer):
         kwargs.update(dict(many=True, data=json_content))
         many_serializer = cls(*args, **kwargs)
         logging.getLogger('django').debug('Validating task data: json_content=%s.', json_content)
-        await sync_to_async(many_serializer.is_valid)(raise_exception=True)
+        many_serializer.is_valid(raise_exception=True)
 
         return many_serializer
 
     @classmethod
-    async def create_doctask_group(cls,
-                                   json_content: JSON,
-                                   *args, **kwargs) -> tuple[DocTaskSerializer, list[models.DocTask]]:
+    def create_doctask_group(cls,
+                             json_content: JSON,
+                             *args, **kwargs) -> tuple[DocTaskSerializer, list[models.DocTask]]:
         """
         Creates an array of :py:class:`django_tasks.models.DocTask` instances for the given array of
         doc-task data.
         Raises a :py:class:`rest_framework.exceptions.ValidationError` on failure.
         """
-        many_serializer = await cls.get_valid_task_group_serializer(json_content, *args, **kwargs)
-        doctasks = await many_serializer.asave()
+        many_serializer = cls.get_valid_task_group_serializer(json_content, *args, **kwargs)
+        doctasks = many_serializer.save()
 
         return many_serializer, doctasks
 
     @classmethod
-    async def get_valid_task_data(cls, json_content: JSON, *args, **kwargs) -> TaskJSON:
+    def get_valid_task_data(cls, json_content: JSON, *args, **kwargs) -> TaskJSON:
         kwargs['data'] = json_content
         serializer = cls(*args, **kwargs)
         logging.getLogger('django').debug('Validating task data: %s.', json_content)
-        await sync_to_async(serializer.is_valid)(raise_exception=True)
-        data: TaskJSON = await serializer.adata
+        serializer.is_valid(raise_exception=True)
+        data: TaskJSON = serializer.data
         return data
 
     @classmethod
-    async def get_valid_task_array_data(cls, json_content: JSON, *args, **kwargs) -> list[TaskJSON]:
-        many_serializer = await cls.get_valid_task_group_serializer(json_content, *args, **kwargs)
-        data: list[TaskJSON] = await many_serializer.adata
+    def get_valid_task_array_data(cls, json_content: JSON, *args, **kwargs) -> list[TaskJSON]:
+        many_serializer = cls.get_valid_task_group_serializer(json_content, *args, **kwargs)
+        data: list[TaskJSON] = many_serializer.data
         return data
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:

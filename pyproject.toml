@@ -30,7 +30,7 @@ dependencies = [
     "django-extensions",
     "django-request-logging",
     "django-jazzmin",
-    "adrf",
+    "djangorestframework",
     "channels",
     "channels-redis",
     "tzdata",

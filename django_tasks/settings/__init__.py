@@ -35,7 +35,6 @@ class SettingsJson:
         'django.contrib.sessions',
         'django.contrib.staticfiles',
         'rest_framework.authtoken',
-        'adrf',
         'django.contrib.messages',
         'django_filters',
         channel_tasks_appname,

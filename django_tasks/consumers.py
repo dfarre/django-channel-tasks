@@ -57,6 +57,9 @@ class TaskGroupJsonConsumer(TaskGroupConsumer, metaclass=abc.ABCMeta):
 
 class HttpConsumer(AsyncHttpConsumer):
     async def handle(self, body: bytes):
+        if not self.scope['user'].is_authenticated:
+            return await self.send_response(status.HTTP_401_UNAUTHORIZED, body=b'')
+
         handler = getattr(self, 'handle_' + self.scope['method'].lower(), None)
 
         if handler is None:
@@ -71,12 +74,12 @@ class TaskScheduleConsumer(TaskGroupJsonConsumer):
         logging.getLogger('django').debug(
             'Processing task schedule through channel %s. Data: %s', self.channel_name, request_content)
         try:
-            many_serializer = await DocTaskSerializer.get_valid_task_group_serializer(request_content)
+            many_serializer = await sync_to_async(DocTaskSerializer.get_valid_task_group_serializer)(request_content)
         except ValidationError as error:
             await self.send_bad_request_response(error)
             return status.HTTP_400_BAD_REQUEST
         else:
-            data: list[TaskJSON] = await many_serializer.adata
+            data: list[TaskJSON] = many_serializer.data
             await schedule_tasks(self.request_id, self.scope['user'].username, *data)
             return status.HTTP_200_OK
 
@@ -87,12 +90,12 @@ class DocTaskScheduleConsumer(TaskGroupJsonConsumer):
         logging.getLogger('django').debug(
             'Processing DocTask schedule through channel %s. Data: %s', self.channel_name, request_content)
         try:
-            many_serializer, doctasks = await DocTaskSerializer.create_doctask_group(request_content)
+            many_serializer, doctasks = await sync_to_async(DocTaskSerializer.create_doctask_group)(request_content)
         except ValidationError as error:
             await self.send_bad_request_response(error)
             return status.HTTP_400_BAD_REQUEST
         else:
-            data: list[DocTaskJSON] = await many_serializer.adata
+            data: list[DocTaskJSON] = many_serializer.data
             await DocTaskScheduler.schedule_doctasks(self.request_id, self.scope['user'].username, *data)
             return status.HTTP_201_CREATED
 
