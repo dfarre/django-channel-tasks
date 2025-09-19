@@ -1,11 +1,11 @@
-----
+.. _post-to-api/doctasks/schedule-asgi-1:
 
-*Request example 1*:
+**[⇡] Request example 1**:
 
 .. sourcecode:: http
 
    POST /api/doctasks/schedule HTTP/1.1
-   Authorization: Token *************************
+   Authorization: Token ***************
    Content-type: application/json
 
    [
@@ -42,28 +42,32 @@
        }
    ]
 
-*Response example 1*:
+.. _post-from-api/doctasks/schedule-asgi-1:
+
+**[⇣] Response example 1**:
 
 .. sourcecode:: http
 
    HTTP/1.1 201 CREATED
    Content-type: application/json
    Server: Unit/1.34.2
-   Date: Thu, 11 Sep 2025 22:37:35 GMT
+   Date: Fri, 19 Sep 2025 23:21:14 GMT
    Transfer-encoding: chunked
 
    {
-       "request_id": "4976bbf34ea34d38a5d9ff747105186d"
+       "request_id": "9cf2e204d9f846e4a647af73b999cc10"
    }
 
 ----
 
-*Request example 2*:
+.. _post-to-api/doctasks/schedule-asgi-2:
+
+**[⇡] Request example 2**:
 
 .. sourcecode:: http
 
    POST /api/doctasks/schedule HTTP/1.1
-   Authorization: Token *************************
+   Authorization: Token ***************
    Content-type: application/json
 
    [
@@ -82,18 +86,20 @@
        }
    ]
 
-*Response example 2*:
+.. _post-from-api/doctasks/schedule-asgi-2:
+
+**[⇣] Response example 2**:
 
 .. sourcecode:: http
 
    HTTP/1.1 400 BAD_REQUEST
    Content-type: application/json
    Server: Unit/1.34.2
-   Date: Thu, 11 Sep 2025 22:37:35 GMT
+   Date: Fri, 19 Sep 2025 23:21:14 GMT
    Transfer-encoding: chunked
 
    {
-       "request_id": "b5228213acb64955a6c75ee52d87ec74",
+       "request_id": "d17e1520e99e40f6a82d1183d17c3f4a",
        "details": [
            {
                "registered_task": [

@@ -1,14 +1,16 @@
-----
+.. _get-to-api/doctasks-wsgi-1:
 
-*Request example 1*:
+**[⇡] Request example 1**:
 
 .. sourcecode:: http
 
    GET /api/doctasks?limit=2&offset=1 HTTP/1.1
-   Authorization: Token *************************
+   Authorization: Token ***************
    Content-type: application/json
 
-*Response example 1*:
+.. _get-from-api/doctasks-wsgi-1:
+
+**[⇣] Response example 1**:
 
 .. sourcecode:: http
 
@@ -16,47 +18,46 @@
    Content-type: application/json
    Allow: GET, POST, HEAD, OPTIONS
    X-frame-options: DENY
-   Content-length: 694
+   Content-length: 681
    X-content-type-options: nosniff
    Referrer-policy: same-origin
    Cross-origin-opener-policy: same-origin
 
    {
-       "count": 10,
+       "count": 149,
        "next": "http://testserver/api/doctasks?limit=2&offset=3",
        "previous": "http://testserver/api/doctasks?limit=2",
        "results": [
            {
                "registered_task": "django_tasks.tasks.sleep_test",
                "inputs": {
-                   "duration": 4,
-                   "raise_error": false
+                   "duration": 0.1,
+                   "raise_error": true
                },
-               "id": 1,
-               "scheduled_at": "2025-09-11T22:34:17.068666Z",
-               "completed_at": "2025-09-11T22:34:21.089218Z",
+               "id": 6,
+               "scheduled_at": "2025-09-19T18:53:34.601391Z",
+               "completed_at": "2025-09-19T18:53:34.708179Z",
                "document": [
                    {
-                       "output": "Slept for 4 seconds",
-                       "status": "Success",
-                       "http_status": 200
+                       "status": "Error",
+                       "http_status": 200,
+                       "exception-repr": "Exception('Test error')"
                    }
                ]
            },
            {
                "registered_task": "django_tasks.tasks.sleep_test",
                "inputs": {
-                   "duration": 8,
-                   "raise_error": true
+                   "duration": 0.8
                },
-               "id": 2,
-               "scheduled_at": "2025-09-11T22:34:17.071717Z",
-               "completed_at": "2025-09-11T22:34:25.097348Z",
+               "id": 4,
+               "scheduled_at": "2025-09-19T18:53:34.510051Z",
+               "completed_at": "2025-09-19T18:53:35.346341Z",
                "document": [
                    {
-                       "status": "Error",
-                       "http_status": 200,
-                       "exception-repr": "Exception('Test error')"
+                       "output": "Slept for 0.8 seconds",
+                       "status": "Success",
+                       "http_status": 200
                    }
                ]
            }
@@ -65,15 +66,19 @@
 
 ----
 
-*Request example 2*:
+.. _get-to-api/doctasks-wsgi-2:
+
+**[⇡] Request example 2**:
 
 .. sourcecode:: http
 
    GET /api/doctasks?limit=1 HTTP/1.1
-   Authorization: Token *************************
+   Authorization: Token ***************
    Content-type: application/json
 
-*Response example 2*:
+.. _get-from-api/doctasks-wsgi-2:
+
+**[⇣] Response example 2**:
 
 .. sourcecode:: http
 
@@ -81,25 +86,25 @@
    Content-type: application/json
    Allow: GET, POST, HEAD, OPTIONS
    X-frame-options: DENY
-   Content-length: 382
+   Content-length: 386
    X-content-type-options: nosniff
    Referrer-policy: same-origin
    Cross-origin-opener-policy: same-origin
 
    {
-       "count": 11,
+       "count": 150,
        "next": "http://testserver/api/doctasks?limit=1&offset=1",
        "previous": null,
        "results": [
            {
                "registered_task": "django_tasks.tasks.sleep_test",
                "inputs": {
-                   "duration": 1,
+                   "duration": 0.15,
                    "raise_error": true
                },
-               "id": 3,
-               "scheduled_at": "2025-09-11T22:34:19.673896Z",
-               "completed_at": "2025-09-11T22:34:20.690435Z",
+               "id": 5,
+               "scheduled_at": "2025-09-19T18:53:34.510597Z",
+               "completed_at": "2025-09-19T18:53:34.698931Z",
                "document": [
                    {
                        "status": "Error",

@@ -11,7 +11,7 @@ ASGI server endpoints
 
    :reqheader Authorization: Token required to authenticate.
 
-   **Examples**:
+   `Response example 2 <post-from-api/doctasks/schedule-asgi-2_>`_ shows possible validation errors.
 
    .. include:: requests/asgi-post-apidoctasksschedule.rst
 
@@ -28,8 +28,6 @@ WSGI server endpoints
 
    :reqheader Authorization: Token required to authenticate.
 
-   **Examples**:
-
    .. include:: requests/wsgi-get-apidoctasks.rst
 
 
@@ -38,7 +36,5 @@ WSGI server endpoints
    Schedules a single doc-task through local websocket.
 
    :reqheader Authorization: Token required to authenticate.
-
-   **Examples**:
 
    .. include:: requests/wsgi-post-apidoctasks.rst

@@ -2,6 +2,8 @@ import abc
 import json
 import os
 
+from typing import Optional
+
 import requests
 
 from rest_framework.test import APIClient
@@ -24,11 +26,11 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
         'Content-Type': 'application/json',
     }
 
-    def __init__(self, method: str, uri: str, data: JSON = None, **headers: str):
+    def __init__(self, method: str, uri: str, data: JSON = None, headers: Optional[dict[str, str]] = None, **lookup):
         self.method = method.strip().lower()
-        self.uri = uri.strip()
+        self.uri = uri.strip().lstrip('/').format(**lookup)
         self.data = data
-        self.headers = headers
+        self.headers = headers or {}
         self.headers.update(self.default_request_headers)
 
     @abc.abstractmethod
@@ -60,12 +62,24 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
         return f'{self.base_url}/{self.uri}'
 
     @property
+    def base_uri(self) -> str:
+        return self.uri.split('?')[0] if '?' in self.uri else self.uri
+
+    @property
     def action(self) -> str:
-        return f"{self.method}-{(self.uri.split('?')[0] if '?' in self.uri else self.uri).replace('/', '')}"
+        return f"{self.method}-{self.base_uri.replace('/', '')}"
+
+    @property
+    def type_code(self) -> str:
+        return self.__class__.__name__.replace('RequestResponseCase', '').lower()
 
     def generate_rst_lines(self, number: int):
-        yield '----\n\n'
-        yield f'*Request example {number}*:\n\n'
+        request_section = f'Request example {number}'
+        response_section = f'Response example {number}'
+        base_uri, type_code = self.base_uri, self.type_code
+
+        yield f'.. _{self.method}-to-{base_uri}-{type_code}-{number}:\n\n'
+        yield f'**[⇡] {request_section}**:\n\n'
         yield '.. sourcecode:: http\n\n'
         yield f'   {self.method.upper()} /{self.uri} HTTP/1.1\n'
 
@@ -77,7 +91,8 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
             for data_line in json.dumps(self.data, indent=4).splitlines():
                 yield f'   {data_line}\n'
 
-        yield f'\n*Response example {number}*:\n\n'
+        yield f'\n.. _{self.method}-from-{base_uri}-{type_code}-{number}:\n\n'
+        yield f'**[⇣] {response_section}**:\n\n'
         yield '.. sourcecode:: http\n\n'
         yield f'   HTTP/1.1 {self.status_code} {self.status_code.name}\n'
 
@@ -120,4 +135,6 @@ class HttpEndpointCaseSet:
         with open(self.rst_path, 'w') as rst_file:
             for i, request_response_case in enumerate(self.cases, start=1):
                 rst_file.writelines(request_response_case.generate_rst_lines(i))
-                rst_file.write('\n')
+
+                if i != len(self.cases):
+                    rst_file.write('\n----\n\n')
