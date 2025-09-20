@@ -26,9 +26,9 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
         'Content-Type': 'application/json',
     }
 
-    def __init__(self, method: str, uri: str, data: JSON = None, headers: Optional[dict[str, str]] = None, **lookup):
+    def __init__(self, method: str, uri: str, data: JSON = None, headers: Optional[dict[str, str]] = None):
         self.method = method.strip().lower()
-        self.uri = uri.strip().lstrip('/').format(**lookup)
+        self.uri = uri.strip().lstrip('/')
         self.data = data
         self.headers = headers or {}
         self.headers.update(self.default_request_headers)
