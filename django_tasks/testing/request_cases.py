@@ -1,5 +1,6 @@
 import abc
 import json
+import logging
 import os
 
 from typing import Optional
@@ -84,7 +85,15 @@ class RequestResponseCase(metaclass=abc.ABCMeta):
         yield f'   {self.method.upper()} /{self.uri} HTTP/1.1\n'
 
         for key, header in self.headers.items():
-            yield f'   {key.capitalize()}: {header}\n'
+            if key.lower() == 'authorization':
+                word, token, *_ = header.split()
+
+                if not (not _ and word.lower() in ['basic', 'token', 'bearer']):
+                    logging.getLogger('pytest').warning(f"Unexpected authorization header format: {header}")
+
+                yield f'   {key.capitalize()}: {word.capitalize()} {"*"*len(token)}\n'
+            else:
+                yield f'   {key.capitalize()}: {header}\n'
 
         if self.data:
             yield '   \n'

@@ -5,9 +5,9 @@
 .. sourcecode:: http
 
    POST /api/doctasks/schedule HTTP/1.1
-   Authorization: Token ***************
+   Authorization: Token ****************************************
    Content-type: application/json
-
+   
    [
        {
            "registered_task": "django_tasks.tasks.sleep_test",
@@ -51,11 +51,11 @@
    HTTP/1.1 201 CREATED
    Content-type: application/json
    Server: Unit/1.34.2
-   Date: Fri, 19 Sep 2025 23:21:14 GMT
+   Date: Mon, 22 Sep 2025 22:03:19 GMT
    Transfer-encoding: chunked
-
+   
    {
-       "request_id": "9cf2e204d9f846e4a647af73b999cc10"
+       "request_id": "0dc86aaf2f5f4426a1bdb00a434ae054"
    }
 
 ----
@@ -67,9 +67,9 @@
 .. sourcecode:: http
 
    POST /api/doctasks/schedule HTTP/1.1
-   Authorization: Token ***************
+   Authorization: Token ****************************************
    Content-type: application/json
-
+   
    [
        {
            "registered_task": "django_tasks.foo.sleep_test",
@@ -95,11 +95,11 @@
    HTTP/1.1 400 BAD_REQUEST
    Content-type: application/json
    Server: Unit/1.34.2
-   Date: Fri, 19 Sep 2025 23:21:14 GMT
+   Date: Mon, 22 Sep 2025 22:03:20 GMT
    Transfer-encoding: chunked
-
+   
    {
-       "request_id": "d17e1520e99e40f6a82d1183d17c3f4a",
+       "request_id": "e362eafcb5294181ab76e47eb6c21064",
        "details": [
            {
                "registered_task": [

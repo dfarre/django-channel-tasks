@@ -5,7 +5,7 @@
 .. sourcecode:: http
 
    POST /api/doctasks HTTP/1.1
-   Authorization: Token a04a6414e6e06da44568c1d53cee59a83e855e0a
+   Authorization: Token ****************************************
    Content-type: application/json
    
    {
@@ -32,7 +32,7 @@
    Cross-origin-opener-policy: same-origin
    
    {
-       "request_id": "ca292b3d91124feaa4e30f49432bc5b6",
+       "request_id": "e784124500b14fe590972b7a8eae4731",
        "details": [
            {
                "status": "Started",
