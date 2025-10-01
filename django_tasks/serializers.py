@@ -7,7 +7,6 @@ from typing import Any
 from rest_framework.serializers import ModelSerializer, SlugRelatedField
 
 from django_tasks import models
-
 from django_tasks.task_inspector import get_task_coro
 from django_tasks.typing import JSON, TaskJSON
 

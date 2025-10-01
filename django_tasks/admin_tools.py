@@ -55,6 +55,7 @@ class ChannelTasksAdminSite(admin.AdminSite):
     site_title = 'Django Channel Tasks Admin'
     site_header = 'Channel Tasks'
     index_title = 'Index'
+    index_template = 'admin_index.html'
 
     def each_context(self, request: HttpRequest):
         """
@@ -68,10 +69,9 @@ class ChannelTasksAdminSite(admin.AdminSite):
             context['cached_task_events'] = TaskCache(username).get_index()
             context['websocket_uri'] = os.path.join('/', settings.CHANNEL_TASKS.proxy_route, 'tasks/clear-cache')
             context['websocket_port'] = os.getenv('CHANNEL_TASKS_ASGI_PORT', 8001)
-            context['bootstrap_version'] = os.getenv('BOOTSTRAP_VERSION', '5.3.7')
-            context['bootstrap_version_integrity'] = os.getenv(
-                'BOOTSTRAP_VERSION_INTEGRITY',
-                'sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q')
+            context['authenticated'] = True
+        else:
+            context['authenticated'] = False
 
         return context
 
@@ -152,7 +152,7 @@ class AdminTaskAction:
                 inputs={'instance_ids': list(queryset.values_list('pk', flat=True))}
             )], headers={'Cookie': request.headers['Cookie']})
             description = self.kwargs.get('description', self.task_name)
-            msg = f"Requested to '{description}' on {objects_repr}."
+            msg = f"Requested to '{description}' on {objects_repr}. Check socket notifications for updates."
             modeladmin.message_user(request, msg, messages.INFO)
 
             return post_schedule_callable(modeladmin, request, queryset, ws_response)

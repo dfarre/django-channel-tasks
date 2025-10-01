@@ -1,0 +1,11 @@
+{% extends "admin/index.html" %}
+{% block content %}
+    {{ block.super }}
+    {{ authenticated|json_script:"user_is_authenticated" }}
+    {% if authenticated %}
+        {{ cached_task_events|json_script:"cached_alerts" }}
+        {{ websocket_port|json_script:"socket_port" }}
+        {{ websocket_uri|json_script:"socket_uri" }}
+        {% include "task_alerts.html" %}
+    {% endif %}
+{% endblock content %}

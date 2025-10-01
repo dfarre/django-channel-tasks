@@ -18,6 +18,11 @@ class TaskCache:
     def cache_key(self) -> str:
         return f'{self.user_name}.task_events'
 
+    def clear_user_cache(self):
+        """Clears all the tasks cache of the user."""
+        cache.set(self.cache_key, defaultdict(list))
+        logging.getLogger('django').warning('Cache completely cleared.')
+
     def get_index(self):
         return cache.get_or_set(self.cache_key, defaultdict(list))
 

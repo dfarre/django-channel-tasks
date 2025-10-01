@@ -105,7 +105,12 @@ class TaskCacheClearConsumer(TaskGroupJsonConsumer):
         """Clears a specific task cache."""
         logging.getLogger('django').debug(
             'Processing cache clear through channel %s. Data: %s', self.channel_name, request_content)
-        await sync_to_async(self.user_task_cache.clear_task_cache)(request_content['task_id'])
+
+        if request_content.get('task_id'):
+            await sync_to_async(self.user_task_cache.clear_task_cache)(request_content['task_id'])
+        else:
+            await sync_to_async(self.user_task_cache.clear_user_cache)()
+
         return status.HTTP_200_OK
 
 

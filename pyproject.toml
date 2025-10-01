@@ -86,14 +86,13 @@ packages = [
     "django_tasks.testing",
     "django_tasks.websocket",
     "django_tasks.templates",
-    "django_tasks.templates.admin",
     "django_tasks.static.js",
 ]
 
 [tool.setuptools.package-data]
 "django_tasks" = [
     "templates/task_alerts.html",
-    "templates/admin/base.html",
+    "templates/admin_index.html",
     "static/js/task_alerts.js",
 ]
 
