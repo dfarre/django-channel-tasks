@@ -136,9 +136,10 @@
     };
 
     $(document).ready(function () {
-       if (JSON.parse($('#user_is_authenticated').text()) === true) {
-           var websocket = websocket || newChannelTasksWebSocket();
-       }
+        const authenticated = $('#user_is_authenticated')
+        if (authenticated.length > 0 && JSON.parse(authenticated.first().text()) === true) {
+            var websocket = websocket || newChannelTasksWebSocket();
+        }
     });
 
 })(jQuery);
