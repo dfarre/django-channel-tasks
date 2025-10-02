@@ -5,6 +5,9 @@
         "django_extensions",
         "django.contrib.postgres"
     ],
+    "jazzmin": {
+        "copyright": "Daniel Farré Manzorro"
+    },
     "insert-middleware": [
         {"name": "request_logging.middleware.LoggingMiddleware", "position": 100}
     ],
