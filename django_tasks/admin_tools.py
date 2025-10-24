@@ -107,15 +107,16 @@ class ModelTask:
         try:
             instance = await self.model_class.objects.aget(pk=instance_id)
         except self.model_class.DoesNotExist:
-            logging.getLogger('django').error(
-                'Instance of %s with pk=%s not found.', self.model_class.__name__, instance_id)
-        else:
-            try:
-                output = await sync_to_async(self.instance_task)(instance)
-            except Exception:
-                logging.getLogger('django').exception('Got exception:')
-            else:
-                return output
+            error_msg = f'Instance of {self.model_class.__name__} with pk={instance_id} not found.'
+            logging.getLogger('django').error(error_msg)
+            return ((error_msg, messages.ERROR),)
+
+        try:
+            return await sync_to_async(self.instance_task)(instance)
+        except Exception as error:
+            error_msg = f'Unexpected exception: {repr(error)}.'
+            logging.getLogger('django').error('Unexpected exception:', exc_info=True)
+            return ((error_msg, messages.ERROR),)
 
 
 class AdminTaskAction:
